@@ -19,5 +19,44 @@
 }
 
 .link {
-  color: #1f7a4d;
+  color: #2563eb;
+}
+
+.label {
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 26px;
+  color: #334155;
+}
+
+.field {
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: #f4f7fb;
+  border-radius: 12px;
+  font-size: 28px;
+}
+
+.primary {
+  margin: 12px 0 16px;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 12px;
+  font-size: 30px;
+}
+
+.error {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 26px;
+  color: #b42318;
+  line-height: 1.5;
+}
+
+.agree {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
 }
