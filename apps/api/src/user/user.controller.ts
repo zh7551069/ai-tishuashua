@@ -1,18 +1,9 @@
-import {
-  Controller,
-  createParamDecorator,
-  Get,
-  UseGuards,
-  type ExecutionContext,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { UserSummary } from '@tishuashua/shared';
 import { UserSummaryDto } from '../auth/dto/user-summary.dto';
-import { SessionAuthGuard, type AuthenticatedRequest } from '../session/session-auth.guard';
-
-const CurrentUser = createParamDecorator((_: unknown, context: ExecutionContext): UserSummary => {
-  return context.switchToHttp().getRequest<AuthenticatedRequest>().user;
-});
+import { CurrentUser } from '../common/current-user';
+import { SessionAuthGuard } from '../session/session-auth.guard';
 
 @ApiTags('user')
 @Controller('users')
