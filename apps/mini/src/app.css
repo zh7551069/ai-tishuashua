@@ -1,0 +1,23 @@
+.page {
+  padding: 32px;
+}
+
+.title {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 40px;
+  font-weight: 600;
+}
+
+.hint,
+.link {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 28px;
+  color: #5c6b66;
+  line-height: 1.5;
+}
+
+.link {
+  color: #1f7a4d;
+}

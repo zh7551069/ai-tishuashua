@@ -1,0 +1,39 @@
+{
+  "name": "tishuashua",
+  "version": "0.0.0",
+  "private": true,
+  "description": "题刷刷 monorepo 脚手架",
+  "packageManager": "pnpm@10.33.4",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "deps:up": "docker compose up -d",
+    "deps:down": "docker compose down",
+    "dev": "turbo run dev",
+    "dev:api": "turbo run dev --filter=@tishuashua/api",
+    "dev:worker": "turbo run dev --filter=@tishuashua/worker",
+    "dev:admin": "turbo run dev --filter=@tishuashua/admin",
+    "dev:mini": "turbo run dev --filter=@tishuashua/mini",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "prettier": "^3.5.3",
+    "turbo": "^2.11.10",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "@tarojs/binding",
+      "esbuild"
+    ]
+  }
+}
