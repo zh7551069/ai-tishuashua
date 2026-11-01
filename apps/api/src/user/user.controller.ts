@@ -1,13 +1,28 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { scaffoldPlaceholder } from '@tishuashua/shared';
+import {
+  Controller,
+  createParamDecorator,
+  Get,
+  UseGuards,
+  type ExecutionContext,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { UserSummary } from '@tishuashua/shared';
+import { UserSummaryDto } from '../auth/dto/user-summary.dto';
+import { SessionAuthGuard, type AuthenticatedRequest } from '../session/session-auth.guard';
+
+const CurrentUser = createParamDecorator((_: unknown, context: ExecutionContext): UserSummary => {
+  return context.switchToHttp().getRequest<AuthenticatedRequest>().user;
+});
 
 @ApiTags('user')
 @Controller('users')
 export class UserController {
   @Get('me')
-  @ApiOperation({ summary: '当前用户（占位）', description: '依赖微信登录，尚未实现。' })
-  me() {
-    return scaffoldPlaceholder('user', 'me');
+  @UseGuards(SessionAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '当前用户', description: '需要微信登录签发的 Bearer token。' })
+  @ApiOkResponse({ type: UserSummaryDto })
+  me(@CurrentUser() user: UserSummary): UserSummary {
+    return user;
   }
 }

@@ -10,6 +10,32 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TURBO_TELEMETRY_DISABLED: '1'
+      DATABASE_URL: postgres://tishuashua:tishuashua@127.0.0.1:5432/tishuashua
+      REDIS_URL: redis://127.0.0.1:6379
+      WECHAT_LOGIN_MOCK: 'true'
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tishuashua
+          POSTGRES_PASSWORD: tishuashua
+          POSTGRES_DB: tishuashua
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tishuashua -d tishuashua"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -22,4 +48,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      - run: pnpm test
       - run: pnpm build

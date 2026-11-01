@@ -16,4 +16,10 @@ export { parseRedisUrl } from './redis';
 export type { RedisEndpoint } from './redis';
 export type { GenerateQuizJobPayload, QuizItem, QuizOption, QuizPaper, QuizSession } from './quiz';
 export type { CoursewareRef, ExtractCoursewareJobPayload } from './courseware';
-export type { AdminLoginRequest, WechatLoginRequest } from './auth';
+export type {
+  AdminLoginRequest,
+  UserStatus,
+  UserSummary,
+  WechatLoginRequest,
+  WechatLoginResponse,
+} from './auth';

@@ -17,6 +17,7 @@
     "dev:mini": "turbo run dev --filter=@tishuashua/mini",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

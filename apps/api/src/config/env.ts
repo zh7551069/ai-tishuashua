@@ -6,6 +6,8 @@ export interface ApiEnv {
   redisUrl: string;
   wechatAppId: string;
   wechatAppSecret: string;
+  /** 仅当值为 true 或 1 时启用。默认关闭，不请求微信。 */
+  wechatLoginMock: boolean;
   adminOrigins: string[];
   ossEndpoint: string;
   ossBucket: string;
@@ -30,6 +32,7 @@ export function loadApiEnv(config: ConfigService): ApiEnv {
     redisUrl: read(config, 'REDIS_URL'),
     wechatAppId: read(config, 'WECHAT_APP_ID'),
     wechatAppSecret: read(config, 'WECHAT_APP_SECRET'),
+    wechatLoginMock: ['true', '1'].includes(read(config, 'WECHAT_LOGIN_MOCK').toLowerCase()),
     adminOrigins: origins
       ? origins
           .split(',')
@@ -48,7 +51,11 @@ export function loadApiEnv(config: ConfigService): ApiEnv {
 
 /** 只报告是否已配置，避免把密钥打进日志。 */
 export function describeConfiguredServices(env: ApiEnv): string {
-  const wechat = env.wechatAppId && env.wechatAppSecret ? 'configured' : 'missing';
+  const wechat = env.wechatLoginMock
+    ? 'mock'
+    : env.wechatAppId && env.wechatAppSecret
+      ? 'configured'
+      : 'missing';
   const oss = env.ossBucket && env.ossAccessKeyId ? 'configured' : 'missing';
   const llm = env.llmApiKey ? 'configured' : 'missing';
   return `wechat=${wechat} oss=${oss} llm=${llm}`;

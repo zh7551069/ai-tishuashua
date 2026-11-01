@@ -1,19 +1,19 @@
 # 题刷刷
 
-AI 刷题微信小程序与管理后台的 monorepo **脚手架**。这里只有目录边界、空模块、路由占位、健康检查和共享类型，没有出题、登录会话、上传或证书等业务实现。
+AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通（`code` → 用户 upsert → Redis 会话）；出题、上传、证书等其余业务仍是占位。登录的本地步骤见 [docs/wechat-login.md](docs/wechat-login.md)。
 
 技术栈按架构 v0.2：Taro 微信小程序、无状态 NestJS API、BullMQ Worker、PostgreSQL、Redis、对象存储（COS/OSS）、国内 LLM（DeepSeek / 通义）。本期不是微信云开发，小程序通过 HTTP 访问自建 API。
 
 ## 系统职责
 
-| 目录              | 职责                                                                                                                                                                                                           |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/mini`       | 微信小程序。Taro + React + TypeScript。页面壳：首页、微信登录、刷题、错题、证书、成绩。登录适配层只向微信要 `code`。                                                                                           |
-| `apps/api`        | 无状态 NestJS API。模块壳：`auth/wechat`、`user`、`quiz/session`、`wrong-book`、`certificate`、`courseware`、`admin-gateway`。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。 |
-| `apps/worker`     | 独立部署的队列消费者。监听 `quiz.generate`（出题）和 `courseware.extract`（课件提炼）。处理函数只打日志并返回占位结果。                                                                                        |
-| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页是帐密表单占位，和微信登录分开。                                                |
-| `packages/shared` | 卷结构、错题入卷比例上限、课件 50MB 上限、API 错误码、队列名和任务载荷。                                                                                                                                       |
-| `packages/config` | 共享 `tsconfig`。ESLint / Prettier 放在仓库根目录。                                                                                                                                                            |
+| 目录              | 职责                                                                                                                                                                                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/mini`       | 微信小程序。Taro + React + TypeScript。落地页用 `Taro.login` 的 `code` 换会话并进入首页；协议和隐私是可打开的正文。刷题、错题、证书、成绩仍是页面壳。                                                             |
+| `apps/api`        | 无状态 NestJS API。`POST /api/auth/wechat/login` 与 `GET /api/users/me` 已实现，会话在 Redis，用户在 PostgreSQL。其余模块仍是壳。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。 |
+| `apps/worker`     | 独立部署的队列消费者。监听 `quiz.generate`（出题）和 `courseware.extract`（课件提炼）。处理函数只打日志并返回占位结果。                                                                                           |
+| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页是帐密表单占位，和微信登录分开。                                                   |
+| `packages/shared` | 卷结构、错题入卷比例上限、课件 50MB 上限、API 错误码、登录请求/用户摘要、队列名和任务载荷。                                                                                                                       |
+| `packages/config` | 共享 `tsconfig`。ESLint / Prettier 放在仓库根目录。                                                                                                                                                               |
 
 管理后台不放数据库和微信密钥。微信 `AppSecret`、对象存储密钥和 LLM Key 只属于 API / Worker。
 
@@ -77,7 +77,9 @@ cp .env.example .env
 
 `docker-compose.yml` 与示例里的数据库口令 `tishuashua` 只给本机开发用，不要带到生产。
 
-小程序环境只保留 `TARO_APP_API_BASE` 和可选的 `TARO_APP_ID`。不要把 `WECHAT_APP_SECRET` 写进 `apps/mini`。
+小程序环境只保留 `TARO_APP_API_BASE` 和可选的 `TARO_APP_ID`。不要把 `WECHAT_APP_SECRET` 或 `WECHAT_LOGIN_MOCK` 写进 `apps/mini`。
+
+没有真实小程序密钥时，在 API 环境显式设置 `WECHAT_LOGIN_MOCK=true`（默认 `false`）。只有 `true` 或 `1` 会启用，启用后不请求微信。生产不要打开。详见 [docs/wechat-login.md](docs/wechat-login.md)。
 
 ## 本地依赖
 
@@ -103,7 +105,7 @@ pnpm dev:api
 - 就绪（需先起 Docker）：<http://127.0.0.1:3000/api/health/ready>
 - OpenAPI 壳：<http://127.0.0.1:3000/api/docs>
 
-除健康检查外，接口返回 `implemented: false`。例如：
+健康检查、微信登录和当前用户会返回真实结果。其余接口仍返回 `implemented: false`。例如：
 
 ```bash
 curl http://127.0.0.1:3000/api/health
@@ -112,22 +114,24 @@ curl -X POST http://127.0.0.1:3000/api/auth/wechat/login \
   -d '{"code":"demo"}'
 ```
 
-占位路由：
+上面这条登录请求在未配置微信、且 `WECHAT_LOGIN_MOCK` 不是 `true` 时返回 `503` / `WECHAT_NOT_CONFIGURED`。打开 mock 并且 Postgres、Redis 可用时返回 `token` 和用户摘要。完整命令见 [docs/wechat-login.md](docs/wechat-login.md)。
 
-| 方法       | 路径                       | 模块         |
-| ---------- | -------------------------- | ------------ |
-| POST       | `/api/auth/wechat/login`   | 微信登录     |
-| GET        | `/api/users/me`            | 当前用户     |
-| POST       | `/api/quiz/sessions`       | 创建刷题会话 |
-| GET        | `/api/quiz/sessions/:id`   | 读取会话     |
-| GET        | `/api/wrong-book`          | 错题本       |
-| GET        | `/api/certificates`        | 证书         |
-| GET        | `/api/certificates/scores` | 成绩         |
-| GET / POST | `/api/courseware`          | 课件         |
-| POST       | `/api/admin/login`         | 后台帐密登录 |
-| GET        | `/api/admin/ping`          | 后台连通性   |
+路由：
 
-API 进程不连接 BullMQ，这样没有 Redis 时服务仍能启动。入队留到实现期，队列名以 `packages/shared` 为准。
+| 方法       | 路径                       | 模块                        |
+| ---------- | -------------------------- | --------------------------- |
+| POST       | `/api/auth/wechat/login`   | 微信登录（已实现）          |
+| GET        | `/api/users/me`            | 当前用户（需 Bearer token） |
+| POST       | `/api/quiz/sessions`       | 创建刷题会话                |
+| GET        | `/api/quiz/sessions/:id`   | 读取会话                    |
+| GET        | `/api/wrong-book`          | 错题本                      |
+| GET        | `/api/certificates`        | 证书                        |
+| GET        | `/api/certificates/scores` | 成绩                        |
+| GET / POST | `/api/courseware`          | 课件                        |
+| POST       | `/api/admin/login`         | 后台帐密登录                |
+| GET        | `/api/admin/ping`          | 后台连通性                  |
+
+API 进程不连接 BullMQ，这样没有 Redis 时服务仍能启动；此时登录会返回 `REDIS_UNAVAILABLE`。入队留到实现期，队列名以 `packages/shared` 为准。用户表迁移在 API 启动时执行，失败只记日志，不阻止进程监听。
 
 ## 启动 Worker
 
@@ -161,7 +165,7 @@ CI 和本机都可以编出微信小程序产物，但预览和真机调试要�
 2. 打开微信开发者工具，导入目录 `apps/mini`（不要导入成云开发项目）。
 3. `project.config.json` 里 `miniprogramRoot` 是 `dist/`，默认 `appid` 是 `touristappid`，`urlCheck` 为 `false`，方便连本机 API。
 4. 有真实小程序后，在 `apps/mini/.env.development` 设置 `TARO_APP_ID`。Taro 会在构建时写入 AppId。`AppSecret` 仍然只放在 API。
-5. 开发者工具里编译预览。登录页按钮只调用 `Taro.login()` 取得 `code`，不上传密钥。
+5. 开发者工具里编译预览。登录页调用 `Taro.login()` 取得 `code`，再 POST 到 API。请求体里没有 AppSecret。协议和隐私从登录页打开。
 6. 上线前在微信公众平台配置 request 合法域名，并把 `urlCheck` 改回开启。本机 `http://127.0.0.1` 不能作为线上合法域名。
 
 只做一次生产构建：
@@ -172,24 +176,25 @@ pnpm --filter @tishuashua/mini build:weapp
 
 ## 常用脚本
 
-| 命令                              | 作用                                          |
-| --------------------------------- | --------------------------------------------- |
-| `pnpm deps:up` / `pnpm deps:down` | 起停 PostgreSQL 与 Redis                      |
-| `pnpm dev:api`                    | API 热重载，端口 3000                         |
-| `pnpm dev:worker`                 | Worker 热重载，端口 3001                      |
-| `pnpm dev:admin`                  | 管理后台，端口 5173                           |
-| `pnpm dev:mini`                   | 监听编译微信小程序                            |
-| `pnpm typecheck`                  | 各包 TypeScript 检查                          |
-| `pnpm lint`                       | ESLint（不含小程序目录，小程序以 `tsc` 为准） |
-| `pnpm build`                      | 构建 shared、api、worker、admin，并编译小程序 |
+| 命令                              | 作用                                                   |
+| --------------------------------- | ------------------------------------------------------ |
+| `pnpm deps:up` / `pnpm deps:down` | 起停 PostgreSQL 与 Redis                               |
+| `pnpm dev:api`                    | API 热重载，端口 3000                                  |
+| `pnpm dev:worker`                 | Worker 热重载，端口 3001                               |
+| `pnpm dev:admin`                  | 管理后台，端口 5173                                    |
+| `pnpm dev:mini`                   | 监听编译微信小程序                                     |
+| `pnpm typecheck`                  | 各包 TypeScript 检查                                   |
+| `pnpm lint`                       | ESLint（不含小程序目录，小程序以 `tsc` 为准）          |
+| `pnpm test`                       | API 单元测试；Postgres 与 Redis 可连接时跑登录集成测试 |
+| `pnpm build`                      | 构建 shared、api、worker、admin，并编译小程序          |
 
 根脚本走 Turborepo，会先构建 `@tishuashua/shared`。
 
 ## 架构对应
 
-- 客户端鉴权只有微信登录。短信登录不在本期。
-- API 无状态。会话、进度、限流、队列打算用 Redis，脚手架只把 Redis 用在健康检查和 Worker 连接上。
-- 学习数据和配置打算进 PostgreSQL。脚手架没有建表，也没有 ORM。
+- 客户端鉴权只有微信登录。短信登录不在本期。登录态是 Redis 里的不透明 token，不是 JWT。
+- API 无状态。登录会话已经写入 Redis。进度、限流还没有做。健康检查和 Worker 仍使用 Redis。
+- 用户表是最小 `users` 迁移（`pg`，没有 ORM）。学习数据和配置表还没有建。
 - 课件、封面、导出走对象存储。共享常量 `COURSEWARE_MAX_BYTES` 为 50MB。上传未实现。
 - 出题走 Worker，按需调用国内 LLM，不是静态题库。`WRONG_QUESTION_RATIO_MAX` 为 `0.5`。组卷算法未实现。
 - 管理后台是独立 Web，帐密登录，不走微信。
@@ -197,8 +202,8 @@ pnpm --filter @tishuashua/mini build:weapp
 
 ## 后续实现优先级
 
-1. 打通微信登录：小程序 `code` → API 换会话 → Redis。
-2. PostgreSQL 中的用户、学习数据、课件元数据。
+1. 微信登录已接通：小程序 `code` → API 换会话 → Redis，并 upsert 最小用户表。手机号授权仍留到设置补全。
+2. PostgreSQL 中的学习数据、课件元数据（用户表已有，其余未建）。
 3. 课件上传对象存储（遵守 50MB）并真正投递 `courseware.extract`。
 4. `quiz.generate`：按需出题，错题占比不超过 50%。
 5. 刷题会话与错题本读写。
@@ -206,4 +211,4 @@ pnpm --filter @tishuashua/mini build:weapp
 7. 管理后台帐密登录，以及 admin-gateway 的访问控制。
 8. Redis 限流。
 
-上述各项都还没有业务规则落地，接口返回值不能当成契约冻结。
+除微信登录和当前用户外，上述各项都还没有业务规则落地，那些接口的返回值不能当成契约冻结。登录响应的字段见 [docs/wechat-login.md](docs/wechat-login.md)。

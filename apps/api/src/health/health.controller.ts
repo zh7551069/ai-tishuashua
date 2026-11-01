@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Inject, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { HealthStatus } from '@tishuashua/shared';
@@ -9,7 +9,7 @@ import { probePostgres, probeRedis } from './probes';
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
-  constructor(private readonly config: ConfigService) {}
+  constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
 
   @Get()
   @ApiOperation({ summary: '存活检查，不访问数据库或 Redis' })
