@@ -118,6 +118,12 @@ export class PackViewDto implements PackView {
   certName!: string;
 
   @ApiProperty()
+  totalScore!: number;
+
+  @ApiProperty({ type: [String] })
+  enabledQuestionTypeCodes!: string[];
+
+  @ApiProperty()
   active!: boolean;
 
   @ApiProperty({ description: '关联证书已下架时为 true。此时只可删除。' })

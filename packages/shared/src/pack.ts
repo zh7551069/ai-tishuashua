@@ -18,6 +18,8 @@ export interface PackView {
   knowledgePointCount: number;
   domainName: string;
   certName: string;
+  totalScore: number;
+  enabledQuestionTypeCodes: string[];
   active: boolean;
   unavailable: boolean;
 }

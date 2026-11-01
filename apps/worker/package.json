@@ -17,6 +17,7 @@
     "@tishuashua/shared": "workspace:*",
     "bullmq": "^5.81.5",
     "express": "^5.2.1",
+    "pg": "^8.23.1",
     "ioredis": "^5.11.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^22.19.0",
+    "@types/pg": "^8.15.5",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }

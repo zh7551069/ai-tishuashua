@@ -1,19 +1,19 @@
 # 题刷刷
 
-AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通（`code` → 用户 upsert → Redis 会话）。目录和刷题包也可以用：选领域、证书、知识点后保存，首页显示当前包。出题、上传提炼、错题本仍是占位。登录见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包见 [docs/packs.md](docs/packs.md)。
+AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通（`code` → 用户 upsert → Redis 会话）。目录和刷题包也可以用：选领域、证书、知识点后保存，首页显示当前包。出题设置、AI 成卷和拉卷答题已经接通；交卷判分、上传提炼、错题本仍未完成。登录见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包见 [docs/packs.md](docs/packs.md)，出题见 [docs/quiz.md](docs/quiz.md)。
 
 技术栈按架构 v0.2：Taro 微信小程序、无状态 NestJS API、BullMQ Worker、PostgreSQL、Redis、对象存储（COS/OSS）、国内 LLM（DeepSeek / 通义）。本期不是微信云开发，小程序通过 HTTP 访问自建 API。
 
 ## 系统职责
 
-| 目录              | 职责                                                                                                                                                                                                                        |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/mini`       | 微信小程序。Taro + React + TypeScript。落地页用 `Taro.login` 的 `code` 换会话并进入首页；协议和隐私是可打开的正文。首页按有无刷题包进入选领域或当前包，证书下架时包置灰。出题设置只是占位。错题、证书查询、成绩仍是页面壳。 |
-| `apps/api`        | 无状态 NestJS API。微信登录、当前用户、目录和刷题包已实现，会话在 Redis，数据在 PostgreSQL。出题、课件、错题本、后管登录仍是壳。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。            |
-| `apps/worker`     | 独立部署的队列消费者。监听 `quiz.generate`（出题）和 `courseware.extract`（课件提炼）。处理函数只打日志并返回占位结果。                                                                                                     |
-| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页是帐密表单占位，和微信登录分开。                                                             |
-| `packages/shared` | 卷结构、错题入卷比例上限、课件 50MB 上限、API 错误码、登录请求/用户摘要、目录与刷题包类型、知识点半选、队列名和任务载荷。                                                                                                   |
-| `packages/config` | 共享 `tsconfig`。ESLint / Prettier 放在仓库根目录。                                                                                                                                                                         |
+| 目录              | 职责                                                                                                                                                                                                                                                      |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/mini`       | 微信小程序。Taro + React + TypeScript。落地页用 `Taro.login` 的 `code` 换会话并进入首页；协议和隐私是可打开的正文。首页按有无刷题包进入选领域或当前包，证书下架时包置灰且不能开始刷题。出题设置、出题进度和答题页已接通。错题、证书查询、成绩仍是页面壳。 |
+| `apps/api`        | 无状态 NestJS API。微信登录、当前用户、目录、刷题包和出题任务已实现，会话在 Redis，数据在 PostgreSQL。课件、错题本、后管登录仍是壳。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。                                      |
+| `apps/worker`     | 独立部署的队列消费者。`quiz.generate` 会读会话、调用 mock 或国内 LLM，并写入试卷。`courseware.extract` 仍只打日志。                                                                                                                                       |
+| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页是帐密表单占位，和微信登录分开。                                                                                           |
+| `packages/shared` | 出题设置、错题配额、分值归一化、Prompt 选择、mock 题目、课件 50MB 上限、API 错误码、登录与刷题包类型、队列名。成卷过程在 `@tishuashua/shared/generation`，避免小程序打进 Node 依赖。                                                                      |
+| `packages/config` | 共享 `tsconfig`。ESLint / Prettier 放在仓库根目录。                                                                                                                                                                                                       |
 
 管理后台不放数据库和微信密钥。微信 `AppSecret`、对象存储密钥和 LLM Key 只属于 API / Worker。
 
@@ -81,6 +81,8 @@ cp .env.example .env
 
 没有真实小程序密钥时，在 API 环境显式设置 `WECHAT_LOGIN_MOCK=true`（默认 `false`）。只有 `true` 或 `1` 会启用，启用后不请求微信。生产不要打开。详见 [docs/wechat-login.md](docs/wechat-login.md)。
 
+没有 LLM Key 时，出题同样要显式设置 `LLM_MOCK=true`（默认 `false`）。只有 `true` 或 `1` 会启用，启用后 Worker 不请求 DeepSeek 或通义。生产不要打开。详见 [docs/quiz.md](docs/quiz.md)。
+
 ## 本地依赖
 
 ```bash
@@ -105,7 +107,7 @@ pnpm dev:api
 - 就绪（需先起 Docker）：<http://127.0.0.1:3000/api/health/ready>
 - OpenAPI 壳：<http://127.0.0.1:3000/api/docs>
 
-健康检查、微信登录、当前用户、目录和刷题包会返回真实结果。出题、课件、错题本和 `GET /api/certificates` 仍返回 `implemented: false`。例如：
+健康检查、微信登录、当前用户、目录、刷题包和出题会返回真实结果。课件、错题本和 `GET /api/certificates` 仍返回 `implemented: false`。例如：
 
 ```bash
 curl http://127.0.0.1:3000/api/health
@@ -128,8 +130,11 @@ curl -X POST http://127.0.0.1:3000/api/auth/wechat/login \
 | GET / POST         | `/api/packs`                                              | 刷题包列表、创建（需登录）   |
 | GET / PUT / DELETE | `/api/packs/:id`                                          | 读取、重命名或换知识点、删除 |
 | POST               | `/api/packs/:id/activate`                                 | 设为当前包                   |
-| POST               | `/api/quiz/sessions`                                      | 创建刷题会话（占位）         |
-| GET                | `/api/quiz/sessions/:id`                                  | 读取会话（占位）             |
+| POST               | `/api/quiz/sessions`                                      | 创建出题任务（需登录）       |
+| GET                | `/api/quiz/sessions/:id`                                  | 进度或试卷（需登录）         |
+| POST               | `/api/quiz/sessions/:id/cancel`                           | 取消出题并丢弃半卷           |
+| POST               | `/api/quiz/sessions/:id/start`                            | 进入答题                     |
+| POST               | `/api/quiz/sessions/:id/answers`                          | 保存选择，不判分             |
 | GET                | `/api/wrong-book`                                         | 错题本（占位）               |
 | GET                | `/api/certificates`                                       | 证书占位，不是目录接口       |
 | GET                | `/api/certificates/scores`                                | 成绩（占位）                 |
@@ -137,7 +142,7 @@ curl -X POST http://127.0.0.1:3000/api/auth/wechat/login \
 | POST               | `/api/admin/login`                                        | 后台帐密登录（占位）         |
 | GET                | `/api/admin/ping`                                         | 后台连通性（占位）           |
 
-API 进程不连接 BullMQ，这样没有 Redis 时服务仍能启动；此时登录会返回 `REDIS_UNAVAILABLE`。入队留到实现期，队列名以 `packages/shared` 为准。迁移在 API 启动时执行，包含用户、目录、刷题包，以及尚未接 API 的学习表。失败只记日志，不阻止进程监听。目录种子见 [docs/packs.md](docs/packs.md)。
+没有 Redis 时 API 仍能启动，登录和出题入队会返回 `REDIS_UNAVAILABLE`。出题创建成功后才会连接 BullMQ 并投递 `quiz.generate`。迁移在 API 启动时执行。失败只记日志，不阻止进程监听。目录种子见 [docs/packs.md](docs/packs.md)，出题种子见 [docs/quiz.md](docs/quiz.md)。
 
 ## 启动 Worker
 
@@ -200,9 +205,9 @@ pnpm --filter @tishuashua/mini build:weapp
 
 - 客户端鉴权只有微信登录。短信登录不在本期。登录态是 Redis 里的不透明 token，不是 JWT。
 - API 无状态。登录会话已经写入 Redis。进度、限流还没有做。健康检查和 Worker 仍使用 Redis。
-- 用户、目录和刷题包用 `pg` 迁移，没有 ORM。出题会话、错题、提示词、上传和提炼只建了表，没有业务接口。知识点没有 weight。
+- 用户、目录、刷题包和出题会话用 `pg` 迁移，没有 ORM。上传和提炼只建了表。知识点没有 weight。
 - 课件、封面、导出走对象存储。共享常量 `COURSEWARE_MAX_BYTES` 为 50MB。上传未实现。
-- 出题走 Worker，按需调用国内 LLM，不是静态题库。`WRONG_QUESTION_RATIO_MAX` 为 `0.5`。组卷算法未实现。
+- 出题走 Worker，按需调用国内 LLM，不是静态题库。`WRONG_QUESTION_RATIO_MAX` 为 `0.5`。未消灭错题最多占这个比例，其余原创。分值在落库前归一化到证书总分。没有 Key 且未打开 `LLM_MOCK` 时拒绝出题。
 - 管理后台是独立 Web，帐密登录，不走微信。
 - 明确不做：短信登录、RAG / 向量库、计费大盘、K8s 多副本、微信云开发。
 
@@ -211,10 +216,10 @@ pnpm --filter @tishuashua/mini build:weapp
 1. 微信登录已接通：小程序 `code` → API 换会话 → Redis，并 upsert 用户表。手机号授权仍留到设置补全。
 2. 目录和刷题包已接通：上架领域 / 证书 / 教材知识点树，以及建包、切换、重命名、删除。证书下架后包只可删除。后管改目录还没有做，本地用种子数据。
 3. 课件上传对象存储（遵守 50MB）并真正投递 `courseware.extract`。
-4. `quiz.generate`：按需出题，错题占比不超过 50%。下架包不可出题。
-5. 刷题会话与错题本读写。表已建，接口仍是占位。
+4. `quiz.generate` 已接通：设置页、进度、取消、mock 或真模型成卷、拉卷和保存选择。交卷判分、解析和错题写入仍未做。
+5. 错题本读写。表已建，错题会在出题时按配额带入，页面和写入接口仍是占位。
 6. 成绩查询，以及后管里的证书维护。`GET /api/certificates` 仍是占位，和小程序用的 `/api/catalog` 不是同一个接口。
 7. 管理后台帐密登录，以及 admin-gateway 的访问控制。
 8. Redis 限流。
 
-出题、上传、错题本和后管登录的返回值还不能当成契约冻结。登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)。
+上传、错题本和后管登录的返回值还不能当成契约冻结。登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题字段见 [docs/quiz.md](docs/quiz.md)。

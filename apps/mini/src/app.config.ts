@@ -8,6 +8,8 @@ export default defineAppConfig({
     'pages/legal/terms/index',
     'pages/legal/privacy/index',
     'pages/quiz/index',
+    'pages/quiz/progress/index',
+    'pages/quiz/paper/index',
     'pages/wrong-book/index',
     'pages/certificate/index',
     'pages/score/index',

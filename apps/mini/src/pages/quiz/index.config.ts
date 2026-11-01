@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: '刷题',
+  navigationBarTitleText: '出题设置',
 });

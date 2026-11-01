@@ -8,6 +8,7 @@ import {
   type GenerateQuizJobPayload,
 } from '@tishuashua/shared';
 import { Worker, type ConnectionOptions } from 'bullmq';
+import { Pool } from 'pg';
 import { loadWorkerEnv } from './config/env';
 import { handleExtractCourseware } from './processors/extract-courseware';
 import { handleGenerateQuiz } from './processors/generate-quiz';
@@ -16,13 +17,15 @@ import { handleGenerateQuiz } from './processors/generate-quiz';
 export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QueueConsumerService.name);
   private workers: Worker[] = [];
+  private pool: Pool | null = null;
 
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit(): void {
     const env = loadWorkerEnv(this.config);
+    const llm = env.llmMock ? 'mock' : env.llmConfigured ? 'configured' : 'missing';
     this.logger.log(
-      `oss=${env.ossBucket ? 'configured' : 'missing'} llm=${env.llmConfigured ? 'configured' : 'missing'} provider=${env.llmProvider || 'unset'}`,
+      `oss=${env.ossBucket ? 'configured' : 'missing'} llm=${llm} provider=${env.llmProvider || 'unset'} db=${env.databaseUrl ? 'configured' : 'missing'}`,
     );
 
     if (!env.redisUrl) {
@@ -44,28 +47,44 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const generateWorker = new Worker<GenerateQuizJobPayload>(
-      JOB_GENERATE_QUIZ,
-      handleGenerateQuiz,
-      { connection },
-    );
+    if (!env.databaseUrl) {
+      this.logger.error('DATABASE_URL 未配置，quiz.generate 消费者未启动');
+    } else {
+      this.pool = new Pool({
+        connectionString: env.databaseUrl,
+        max: 5,
+        connectionTimeoutMillis: 3000,
+      });
+      this.pool.on('error', (error: Error) => {
+        this.logger.error(error.message);
+      });
+      const pool = this.pool;
+      const generateWorker = new Worker<GenerateQuizJobPayload>(
+        JOB_GENERATE_QUIZ,
+        (job) => handleGenerateQuiz(job, pool),
+        { connection, concurrency: 2, lockDuration: 10 * 60 * 1000 },
+      );
+      generateWorker.on('error', (error: Error) => {
+        this.logger.error(error.message);
+      });
+      this.workers.push(generateWorker);
+    }
     const extractWorker = new Worker<ExtractCoursewareJobPayload>(
       JOB_EXTRACT_COURSEWARE,
       handleExtractCourseware,
       { connection },
     );
 
-    for (const worker of [generateWorker, extractWorker]) {
-      worker.on('error', (error: Error) => {
-        this.logger.error(error.message);
-      });
-    }
-
-    this.workers = [generateWorker, extractWorker];
+    extractWorker.on('error', (error: Error) => {
+      this.logger.error(error.message);
+    });
+    this.workers.push(extractWorker);
     this.logger.log(`listening queues: ${JOB_GENERATE_QUIZ}, ${JOB_EXTRACT_COURSEWARE}`);
   }
 
   async onModuleDestroy(): Promise<void> {
     await Promise.all(this.workers.map((worker) => worker.close()));
+    await this.pool?.end().catch(() => undefined);
+    this.pool = null;
   }
 }
