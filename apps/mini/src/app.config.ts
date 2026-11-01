@@ -11,6 +11,7 @@ export default defineAppConfig({
     'pages/quiz/progress/index',
     'pages/quiz/paper/index',
     'pages/wrong-book/index',
+    'pages/wrong-book/detail/index',
     'pages/certificate/index',
     'pages/score/index',
   ],

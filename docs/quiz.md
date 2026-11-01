@@ -2,7 +2,7 @@
 
 有刷题包之后，可以从首页进入出题设置，创建一次出题任务，看进度或取消，成功后进入答题页看卷。题目是按知识点原创的，不是从静态题库里捞。未消灭的错题最多占 `floor(题量 × 50%)`，其余名额交给模型。没有 Key 时不会偷偷出题，必须显式打开 `LLM_MOCK`。
 
-交卷、判分、解析展示、到时强制收卷、错题写入错题本都不在这一刀。答题页可以看题并保存选择。
+答题页可以保存选择。练习和考试都可以主动交卷。交卷后才下发正确答案和解析，并写入成绩。考试到点会由服务端强制收卷。答错、少选和未作答写入错题本，完全答对会消灭同一题。
 
 ## 开关
 
@@ -119,7 +119,7 @@ curl -sS -X POST http://127.0.0.1:3000/api/quiz/sessions/会话id/start \
   -H "authorization: Bearer $TOKEN"
 ```
 
-保存选择。不判分。空数组表示清除。
+保存选择。不判分。空数组表示清除。交卷后不能再改。
 
 ```bash
 curl -sS -X POST http://127.0.0.1:3000/api/quiz/sessions/会话id/answers \
@@ -128,19 +128,89 @@ curl -sS -X POST http://127.0.0.1:3000/api/quiz/sessions/会话id/answers \
   -d '{"questionId":"题目id","selected":["A"]}'
 ```
 
+## 交卷与判分
+
+练习和考试都用同一个交卷接口。未交卷的拉卷响应里没有 `answer`、`analysis`，题目的 `review` 为 `null`。交卷后 `status` 变成 `submitted`，`result` 带总分、得分、正确率、得分率、及格与否，每题的 `review` 带正确答案、解析、得分和 `outcome`。
+
+```bash
+curl -sS -X POST http://127.0.0.1:3000/api/quiz/sessions/会话id/submit \
+  -H "authorization: Bearer $TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{}'
+```
+
+重复交卷返回同一份成绩，不会把错题次数再加一次。
+
+判分规则：
+
+| 情况                               | 得分              | outcome      |
+| ---------------------------------- | ----------------- | ------------ |
+| 未作答                             | 0                 | `unanswered` |
+| 单选、判断与标准答案完全一致       | 满分              | `correct`    |
+| 单选、判断不一致                   | 0                 | `wrong`      |
+| 多选与标准答案完全一致（顺序无关） | 满分              | `correct`    |
+| 多选少选，且没有选到错误选项       | `floor(满分 / 2)` | `partial`    |
+| 多选多选了或选错                   | 0                 | `wrong`      |
+
+正确率是完全答对的题数除以题量，少选不算正确。得分率是得分除以总分。题目分值沿用成卷时已经归一化到证书总分的整数。及格线来自证书的 `pass_score`；没有及格线时 `passed` 为 `null`。
+
+成绩列表只含已交卷摘要，不含题目：
+
+```bash
+curl -sS http://127.0.0.1:3000/api/quiz/sessions \
+  -H "authorization: Bearer $TOKEN"
+```
+
+`GET /api/certificates/scores` 仍是占位，不是这份成绩。
+
+## 考试到时收卷
+
+倒计时从进入答题开始。`POST /start` 或第一次保存选择会写下 `started_at`，之后不再改。考试模式才有 `deadlineAt`：
+
+- 整卷倒计时：`started_at + paperMinutes`
+- 每题限时：没有逐题开始时间，用 `perQuestionSeconds × 题量` 作为整卷截止
+
+到点之后，读取会话、保存选择、交卷或打开成绩列表，都会先把这场考试收成 `submit_reason = timeout`。保存选择会得到 `409`。未到点时，即使请求体写 `"reason": "timeout"`，也记为 `manual`。客户端若在截止前 1.5 秒内因为钟差交卷，仍记为到时收卷。
+
+练习模式可以开计时，到点不收卷，也不下发答案。练习和考试都是交卷后才看解析。
+
+## 错题本
+
+交卷时：
+
+- `wrong`、`partial`、`unanswered` 写入 `wrong_items`，状态 `pending`
+- 同一用户、同一证书下，题型、题干、选项和答案都相同的记录会累加 `wrong_count`，不会另起一条
+- `correct` 会把这条未消灭错题标为 `cleared`。已消灭的记录不会被 `wrong_carry` 再带进新试卷
+
+快照字段和出题时解析错题的格式一致：`type`、`stem`、`options`、`answer`、`analysis`、`score`。
+
+```bash
+curl -sS http://127.0.0.1:3000/api/wrong-book \
+  -H "authorization: Bearer $TOKEN"
+
+curl -sS http://127.0.0.1:3000/api/wrong-book/错题id \
+  -H "authorization: Bearer $TOKEN"
+
+curl -sS -X POST http://127.0.0.1:3000/api/wrong-book/错题id/clear \
+  -H "authorization: Bearer $TOKEN"
+```
+
+列表默认 `pending`。`?status=cleared` 或 `?status=all` 可以看已消灭和全部，最多 100 条。只能看自己的错题。
+
 小程序路径：
 
 | 页面                          | 路径                                    |
 | ----------------------------- | --------------------------------------- |
 | 出题设置                      | `/pages/quiz/index?packId=`             |
 | 出题中，约 1.5 秒轮询，可取消 | `/pages/quiz/progress/index?sessionId=` |
-| 答题                          | `/pages/quiz/paper/index?sessionId=`    |
+| 答题、交卷后的成绩和解析      | `/pages/quiz/paper/index?sessionId=`    |
+| 错题本                        | `/pages/wrong-book/index`               |
+| 错题详情                      | `/pages/wrong-book/detail/index?id=`    |
+| 成绩列表                      | `/pages/score/index`                    |
 
 ## 还没做
 
-- 交卷、判分、成绩写入
-- 把正确答案和解析展示给练习模式
-- 考试时间到了强制收卷。整卷倒计时只在答题页倒计时，到点仍可继续选择
-- 答错后写入错题本，以及错题本页面
 - 后管发布 Prompt。本地靠迁移种子
 - 课件上传和提炼
+- 弱项复练的高级策略。错题只按未消灭、错过次数带入，没有单独的复练编排
+- 每题限时没有逐题时钟，考试里把它折成整卷截止时间

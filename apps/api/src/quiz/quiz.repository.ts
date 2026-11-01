@@ -2,16 +2,25 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   QUIZ_DIFFICULTIES,
   QUIZ_MODES,
+  QUIZ_SUBMIT_REASONS,
   QUIZ_TYPES,
+  examDeadlineAt,
+  gradeSelection,
   normalizeSelection,
+  summarizeGrades,
   type QuizMode,
   type QuizOption,
+  type QuizOutcome,
   type QuizQuestionView,
+  type QuizResultView,
+  type QuizScoreSummary,
   type QuizSessionStatus,
   type QuizSessionView,
   type QuizSettings,
+  type QuizSubmitReason,
   type QuizTypeCode,
 } from '@tishuashua/shared';
+import { randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import { rethrowDatabaseError } from '../common/database-error';
 import { DatabaseService } from '../db/database.service';
@@ -42,6 +51,35 @@ interface SessionRow {
   error_code: string | null;
   error_message: string | null;
   pack_snapshot: unknown;
+  started_at: Date | string | null;
+  submitted_at: Date | string | null;
+  pass_snapshot: unknown;
+  submit_reason: string | null;
+}
+
+interface LockedSessionRow {
+  id: string;
+  user_id: string;
+  status: string;
+  mode: string;
+  settings: unknown;
+  question_count: number | string;
+  started_at: Date | string | null;
+  pack_snapshot: unknown;
+}
+
+interface GradableQuestion {
+  id: string;
+  type: QuizTypeCode;
+  stem: string;
+  options: QuizOption[];
+  answer: string[];
+  analysis: string;
+  kpIds: string[];
+  score: number;
+  selected: string[];
+  earnedScore: number;
+  outcome: QuizOutcome;
 }
 
 interface QuestionRow {
@@ -53,6 +91,8 @@ interface QuestionRow {
   score: number | string;
   source: string;
   selected: unknown;
+  answer?: unknown;
+  analysis?: string | null;
 }
 
 export interface QuizPackRecord {
@@ -197,7 +237,8 @@ export class QuizRepository {
         `
           SELECT
             id, pack_id, mode, status, settings, question_count, generated_count,
-            error_code, error_message, pack_snapshot
+            error_code, error_message, pack_snapshot, started_at, submitted_at,
+            pass_snapshot, submit_reason
           FROM quiz_sessions
           WHERE id = $1 AND user_id = $2
         `,
@@ -209,7 +250,9 @@ export class QuizRepository {
       }
       const visible =
         row.status === 'ready' || row.status === 'in_progress' || row.status === 'submitted';
-      const questions = visible ? await this.loadQuestions(pool, row.id) : [];
+      const questions = visible
+        ? await this.loadQuestions(pool, row.id, row.status === 'submitted')
+        : [];
       return mapSession(row, questions);
     } catch (error) {
       rethrowDatabaseError('quiz', error);
@@ -245,22 +288,34 @@ export class QuizRepository {
     });
   }
 
-  async start(userId: string, sessionId: string): Promise<'missing' | 'conflict' | 'started'> {
+  async start(
+    userId: string,
+    sessionId: string,
+  ): Promise<'missing' | 'conflict' | 'started' | 'submitted'> {
     return this.transaction(async (client) => {
-      const result = await client.query<{ status: string }>(
-        `SELECT status FROM quiz_sessions WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+      const result = await client.query<{ status: string; started_at: Date | string | null }>(
+        `SELECT status, started_at FROM quiz_sessions WHERE id = $1 AND user_id = $2 FOR UPDATE`,
         [sessionId, userId],
       );
-      const status = result.rows[0]?.status;
-      if (!status) {
+      const row = result.rows[0];
+      if (!row) {
         return 'missing';
       }
-      if (status !== 'ready' && status !== 'in_progress') {
+      if (row.status === 'submitted') {
+        return 'submitted';
+      }
+      if (row.status !== 'ready' && row.status !== 'in_progress') {
         return 'conflict';
       }
-      if (status === 'ready') {
+      if (row.status === 'ready' || !row.started_at) {
         await client.query(
-          `UPDATE quiz_sessions SET status = 'in_progress', updated_at = now() WHERE id = $1`,
+          `
+            UPDATE quiz_sessions
+            SET status = 'in_progress',
+                started_at = COALESCE(started_at, now()),
+                updated_at = now()
+            WHERE id = $1
+          `,
           [sessionId],
         );
       }
@@ -275,7 +330,7 @@ export class QuizRepository {
     selected: string[],
   ): Promise<
     | { kind: 'missing' }
-    | { kind: 'conflict' }
+    | { kind: 'conflict'; message: string }
     | { kind: 'question' }
     | { kind: 'invalid'; message: string }
     | { kind: 'saved'; selected: string[] }
@@ -289,8 +344,11 @@ export class QuizRepository {
       if (!status) {
         return { kind: 'missing' };
       }
+      if (status === 'submitted') {
+        return { kind: 'conflict', message: '已经交卷，不能再改答案' };
+      }
       if (status !== 'ready' && status !== 'in_progress') {
-        return { kind: 'conflict' };
+        return { kind: 'conflict', message: '试卷还不能作答' };
       }
       const question = await client.query<{ type_code: string; options: unknown }>(
         `
@@ -314,7 +372,13 @@ export class QuizRepository {
       }
       if (status === 'ready') {
         await client.query(
-          `UPDATE quiz_sessions SET status = 'in_progress', updated_at = now() WHERE id = $1`,
+          `
+            UPDATE quiz_sessions
+            SET status = 'in_progress',
+                started_at = COALESCE(started_at, now()),
+                updated_at = now()
+            WHERE id = $1
+          `,
           [sessionId],
         );
       }
@@ -335,23 +399,114 @@ export class QuizRepository {
     });
   }
 
-  private async loadQuestions(db: Queryable, sessionId: string): Promise<QuizQuestionView[]> {
+  async expireDueExams(userId: string): Promise<void> {
+    await this.transaction(async (client) => {
+      const result = await client.query<LockedSessionRow>(
+        `
+          SELECT id, user_id, status, mode, settings, question_count, started_at, pack_snapshot
+          FROM quiz_sessions
+          WHERE user_id = $1 AND status IN ('ready', 'in_progress') AND mode = 'exam'
+          FOR UPDATE
+        `,
+        [userId],
+      );
+      const now = new Date();
+      for (const row of result.rows) {
+        if (isExamExpired(row, now)) {
+          await finishSession(client, row, 'timeout');
+        }
+      }
+    });
+  }
+
+  async submit(
+    userId: string,
+    sessionId: string,
+    requested: QuizSubmitReason,
+  ): Promise<'missing' | 'conflict' | 'submitted'> {
+    return this.transaction(async (client) => {
+      const row = await lockSession(client, userId, sessionId);
+      if (!row) {
+        return 'missing';
+      }
+      if (row.status === 'submitted') {
+        return 'submitted';
+      }
+      if (row.status !== 'ready' && row.status !== 'in_progress') {
+        return 'conflict';
+      }
+      const now = new Date();
+      const expired = isExamExpired(row, now);
+      const nearTimeout = requested === 'timeout' && isExamExpired(row, now, TIMEOUT_GRACE_MS);
+      await finishSession(client, row, expired || nearTimeout ? 'timeout' : 'manual');
+      return 'submitted';
+    });
+  }
+
+  async listScores(userId: string): Promise<QuizScoreSummary[]> {
+    try {
+      const result = await this.database.requirePool().query<ScoreRow>(
+        `
+          SELECT id, mode, pack_snapshot, pass_snapshot, submit_reason, submitted_at
+          FROM quiz_sessions
+          WHERE user_id = $1 AND status = 'submitted'
+          ORDER BY submitted_at DESC NULLS LAST, created_at DESC
+          LIMIT 50
+        `,
+        [userId],
+      );
+      const items: QuizScoreSummary[] = [];
+      for (const row of result.rows) {
+        const item = mapScore(row);
+        if (item) {
+          items.push(item);
+        }
+      }
+      return items;
+    } catch (error) {
+      rethrowDatabaseError('quiz', error);
+    }
+  }
+
+  private async loadQuestions(
+    db: Queryable,
+    sessionId: string,
+    reveal: boolean,
+  ): Promise<QuizQuestionView[]> {
     const result = await db.query<QuestionRow>(
-      `
-        SELECT
-          q.id,
-          q.ordinal,
-          q.type_code,
-          q.stem,
-          q.options,
-          q.score,
-          q.source,
-          COALESCE(a.selected, '[]'::jsonb) AS selected
-        FROM paper_questions q
-        LEFT JOIN quiz_answers a ON a.question_id = q.id
-        WHERE q.session_id = $1
-        ORDER BY q.ordinal
-      `,
+      reveal
+        ? `
+          SELECT
+            q.id,
+            q.ordinal,
+            q.type_code,
+            q.stem,
+            q.options,
+            q.score,
+            q.source,
+            q.answer,
+            q.analysis,
+            COALESCE(a.selected, '[]'::jsonb) AS selected
+          FROM paper_questions q
+          LEFT JOIN quiz_answers a ON a.question_id = q.id
+          WHERE q.session_id = $1
+          ORDER BY q.ordinal
+        `
+        : `
+          SELECT
+            q.id,
+            q.ordinal,
+            q.type_code,
+            q.stem,
+            q.options,
+            q.score,
+            q.source,
+            COALESCE(a.selected, '[]'::jsonb) AS selected
+          FROM paper_questions q
+          LEFT JOIN quiz_answers a ON a.question_id = q.id
+          WHERE q.session_id = $1
+          ORDER BY q.ordinal
+        `,
       [sessionId],
     );
     const questions: QuizQuestionView[] = [];
@@ -359,15 +514,18 @@ export class QuizRepository {
       if (!isQuizType(row.type_code) || (row.source !== 'ai' && row.source !== 'wrong_carry')) {
         continue;
       }
+      const selected = parseStringArray(row.selected);
+      const score = Number(row.score);
       questions.push({
         id: row.id,
         ordinal: Number(row.ordinal),
         type: row.type_code,
         stem: row.stem,
         options: parseOptions(row.options),
-        score: Number(row.score),
+        score,
         source: row.source,
-        selected: parseStringArray(row.selected),
+        selected,
+        review: reveal ? reviewOf(row.type_code, row.answer, row.analysis, selected, score) : null,
       });
     }
     return questions;
@@ -381,10 +539,21 @@ function mapSession(row: SessionRow, questions: QuizQuestionView[]): QuizSession
   const paperTotal = questions.reduce((sum, question) => sum + question.score, 0);
   const visible =
     row.status === 'ready' || row.status === 'in_progress' || row.status === 'submitted';
+  const mode = isMode(row.mode) ? row.mode : settings.mode;
+  const startedAt = toDate(row.started_at);
+  const deadline =
+    startedAt === null
+      ? null
+      : examDeadlineAt({
+          mode,
+          timer: settings.timer,
+          startedAt,
+          questionCount: total,
+        });
   return {
     id: row.id,
     packId: row.pack_id,
-    mode: isMode(row.mode) ? row.mode : settings.mode,
+    mode,
     status: isStatus(row.status) ? row.status : 'failed',
     progress: {
       generated: Number(row.generated_count) || 0,
@@ -406,6 +575,9 @@ function mapSession(row: SessionRow, questions: QuizQuestionView[]): QuizSession
           questions,
         }
       : null,
+    result: row.status === 'submitted' ? readResult(row, questions) : null,
+    startedAt: startedAt ? startedAt.toISOString() : null,
+    deadlineAt: deadline ? deadline.toISOString() : null,
   };
 }
 
@@ -536,6 +708,442 @@ function isDifficulty(value: unknown): value is QuizSettings['difficulty'] {
 
 function isMode(value: unknown): value is QuizMode {
   return typeof value === 'string' && (QUIZ_MODES as readonly string[]).includes(value);
+}
+
+const TIMEOUT_GRACE_MS = 1500;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+interface ScoreRow {
+  id: string;
+  mode: string;
+  pack_snapshot: unknown;
+  pass_snapshot: unknown;
+  submit_reason: string | null;
+  submitted_at: Date | string | null;
+}
+
+interface WrongItemRow {
+  id: string;
+  status: string;
+  wrong_count: number | string;
+  question_snapshot: unknown;
+}
+
+async function lockSession(
+  client: Queryable,
+  userId: string,
+  sessionId: string,
+): Promise<LockedSessionRow | null> {
+  const result = await client.query<LockedSessionRow>(
+    `
+      SELECT id, user_id, status, mode, settings, question_count, started_at, pack_snapshot
+      FROM quiz_sessions
+      WHERE id = $1 AND user_id = $2
+      FOR UPDATE
+    `,
+    [sessionId, userId],
+  );
+  return result.rows[0] ?? null;
+}
+
+function isExamExpired(row: LockedSessionRow, now: Date, graceMs = 0): boolean {
+  if (row.mode !== 'exam') {
+    return false;
+  }
+  const startedAt = toDate(row.started_at);
+  if (!startedAt) {
+    return false;
+  }
+  const settings = parseSettings(row.settings);
+  const deadline = examDeadlineAt({
+    mode: 'exam',
+    timer: settings.timer,
+    startedAt,
+    questionCount: Number(row.question_count) || settings.count,
+  });
+  if (!deadline) {
+    return false;
+  }
+  return now.getTime() + graceMs >= deadline.getTime();
+}
+
+async function finishSession(
+  client: Queryable,
+  row: LockedSessionRow,
+  reason: QuizSubmitReason,
+): Promise<void> {
+  const questions = await loadGradable(client, row.id);
+  const certId = readCertId(row.pack_snapshot);
+  const passScore = await loadPassScore(client, certId);
+  const summary = summarizeGrades(questions, passScore);
+  const stored = { ...summary, reason };
+  await client.query(
+    `
+      UPDATE quiz_sessions
+      SET status = 'submitted',
+          score = $2,
+          pass_snapshot = $3::jsonb,
+          submit_reason = $4,
+          started_at = COALESCE(started_at, now()),
+          submitted_at = now(),
+          updated_at = now()
+      WHERE id = $1
+    `,
+    [row.id, summary.earnedScore, JSON.stringify(stored), reason],
+  );
+  if (certId) {
+    await syncWrongItems(client, row.user_id, certId, questions);
+  }
+}
+
+async function loadGradable(client: Queryable, sessionId: string): Promise<GradableQuestion[]> {
+  const result = await client.query<{
+    id: string;
+    type_code: string;
+    stem: string;
+    options: unknown;
+    answer: unknown;
+    analysis: string | null;
+    kp_ids: string[] | null;
+    score: number | string;
+    selected: unknown;
+  }>(
+    `
+      SELECT
+        q.id,
+        q.type_code,
+        q.stem,
+        q.options,
+        q.answer,
+        q.analysis,
+        q.kp_ids,
+        q.score,
+        COALESCE(a.selected, '[]'::jsonb) AS selected
+      FROM paper_questions q
+      LEFT JOIN quiz_answers a ON a.question_id = q.id
+      WHERE q.session_id = $1
+      ORDER BY q.ordinal
+    `,
+    [sessionId],
+  );
+  const questions: GradableQuestion[] = [];
+  for (const row of result.rows) {
+    if (!isQuizType(row.type_code)) {
+      continue;
+    }
+    const answer = parseStringArray(row.answer);
+    const selected = parseStringArray(row.selected);
+    const score = Number(row.score);
+    const graded = gradeSelection({ type: row.type_code, answer, selected, score });
+    questions.push({
+      id: row.id,
+      type: row.type_code,
+      stem: row.stem,
+      options: parseOptions(row.options),
+      answer,
+      analysis: typeof row.analysis === 'string' ? row.analysis : '',
+      kpIds: (row.kp_ids ?? []).filter(isUuid),
+      score,
+      selected,
+      earnedScore: graded.earnedScore,
+      outcome: graded.outcome,
+    });
+  }
+  return questions;
+}
+
+async function loadPassScore(client: Queryable, certId: string | null): Promise<number | null> {
+  if (!certId) {
+    return null;
+  }
+  const result = await client.query<{ pass_score: number | string | null }>(
+    `SELECT pass_score FROM certificates WHERE id = $1`,
+    [certId],
+  );
+  const value = result.rows[0]?.pass_score;
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const score = Number(value);
+  return Number.isFinite(score) ? score : null;
+}
+
+async function syncWrongItems(
+  client: Queryable,
+  userId: string,
+  certId: string,
+  questions: readonly GradableQuestion[],
+): Promise<void> {
+  const existing = await client.query<WrongItemRow>(
+    `
+      SELECT id, status, wrong_count, question_snapshot
+      FROM wrong_items
+      WHERE user_id = $1 AND cert_id = $2
+      FOR UPDATE
+    `,
+    [userId, certId],
+  );
+  const byKey = new Map<string, WrongItemRow>();
+  for (const item of existing.rows) {
+    const key = keyFromSnapshot(item.question_snapshot);
+    if (!key) {
+      continue;
+    }
+    const current = byKey.get(key);
+    if (!current || preferWrongItem(item, current)) {
+      byKey.set(key, item);
+    }
+  }
+
+  for (const question of questions) {
+    const snapshot = {
+      type: question.type,
+      stem: question.stem,
+      options: question.options,
+      answer: question.answer,
+      analysis: question.analysis,
+      score: question.score,
+    };
+    const key = wrongItemKey(snapshot);
+    const match = byKey.get(key);
+    if (question.outcome === 'correct') {
+      if (match && match.status !== 'cleared') {
+        await client.query(
+          `UPDATE wrong_items SET status = 'cleared', updated_at = now() WHERE id = $1`,
+          [match.id],
+        );
+        match.status = 'cleared';
+      }
+      continue;
+    }
+    if (!match) {
+      const inserted = await client.query<{ id: string }>(
+        `
+          INSERT INTO wrong_items (
+            id, user_id, cert_id, kp_ids, question_snapshot, status, wrong_count
+          )
+          VALUES ($5, $1, $2, $3::uuid[], $4::jsonb, 'pending', 1)
+          RETURNING id
+        `,
+        [userId, certId, question.kpIds, JSON.stringify(snapshot), randomUUID()],
+      );
+      const id = inserted.rows[0]?.id;
+      if (id) {
+        byKey.set(key, {
+          id,
+          status: 'pending',
+          wrong_count: 1,
+          question_snapshot: snapshot,
+        });
+      }
+      continue;
+    }
+    await client.query(
+      `
+        UPDATE wrong_items
+        SET status = 'pending',
+            wrong_count = wrong_count + 1,
+            question_snapshot = $2::jsonb,
+            kp_ids = $3::uuid[],
+            updated_at = now()
+        WHERE id = $1
+      `,
+      [match.id, JSON.stringify(snapshot), question.kpIds],
+    );
+    match.status = 'pending';
+    match.wrong_count = Number(match.wrong_count) + 1;
+    match.question_snapshot = snapshot;
+  }
+}
+
+function preferWrongItem(next: WrongItemRow, current: WrongItemRow): boolean {
+  if (next.status === 'pending' && current.status !== 'pending') {
+    return true;
+  }
+  if (current.status === 'pending' && next.status !== 'pending') {
+    return false;
+  }
+  return Number(next.wrong_count) > Number(current.wrong_count);
+}
+
+function wrongItemKey(snapshot: {
+  type: string;
+  stem: string;
+  options: readonly QuizOption[];
+  answer: readonly string[];
+}): string {
+  const options = snapshot.options
+    .map((option) => `${option.id}\u0000${option.text}`)
+    .join('\u0001');
+  const answer = [...snapshot.answer].sort().join('\u0001');
+  return `${snapshot.type}\u0002${snapshot.stem.trim()}\u0002${options}\u0002${answer}`;
+}
+
+function keyFromSnapshot(value: unknown): string | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const body = value as {
+    type?: unknown;
+    stem?: unknown;
+    options?: unknown;
+    answer?: unknown;
+  };
+  if (typeof body.type !== 'string' || typeof body.stem !== 'string') {
+    return null;
+  }
+  return wrongItemKey({
+    type: body.type,
+    stem: body.stem,
+    options: parseOptions(body.options),
+    answer: parseStringArray(body.answer),
+  });
+}
+
+function reviewOf(
+  type: QuizTypeCode,
+  answer: unknown,
+  analysis: string | null | undefined,
+  selected: string[],
+  score: number,
+): QuizQuestionView['review'] {
+  const correct = parseStringArray(answer);
+  const graded = gradeSelection({ type, answer: correct, selected, score });
+  return {
+    answer: correct,
+    analysis: typeof analysis === 'string' ? analysis : '',
+    earnedScore: graded.earnedScore,
+    outcome: graded.outcome,
+  };
+}
+
+function readResult(row: SessionRow, questions: QuizQuestionView[]): QuizResultView {
+  const submittedAt = toIso(row.submitted_at) ?? new Date(0).toISOString();
+  const reason = isSubmitReason(row.submit_reason) ? row.submit_reason : 'manual';
+  const stored = parseStoredResult(row.pass_snapshot);
+  if (stored) {
+    return { ...stored, reason: stored.reason, submittedAt };
+  }
+  const summary = summarizeGrades(
+    questions.map((question) => ({
+      score: question.score,
+      earnedScore: question.review?.earnedScore ?? 0,
+      outcome: question.review?.outcome ?? 'unanswered',
+    })),
+    null,
+  );
+  return { ...summary, reason, submittedAt };
+}
+
+function mapScore(row: ScoreRow): QuizScoreSummary | null {
+  const stored = parseStoredResult(row.pass_snapshot);
+  if (!stored) {
+    return null;
+  }
+  const snapshot = parseSnapshot(row.pack_snapshot);
+  const submittedAt = toIso(row.submitted_at);
+  if (!submittedAt) {
+    return null;
+  }
+  return {
+    id: row.id,
+    mode: isMode(row.mode) ? row.mode : 'practice',
+    certName: snapshot.certName,
+    packName: snapshot.name,
+    earnedScore: stored.earnedScore,
+    totalScore: stored.totalScore,
+    accuracy: stored.accuracy,
+    scoreRate: stored.scoreRate,
+    correctCount: stored.correctCount,
+    questionCount: stored.questionCount,
+    passed: stored.passed,
+    passScore: stored.passScore,
+    reason: isSubmitReason(row.submit_reason) ? row.submit_reason : stored.reason,
+    submittedAt,
+  };
+}
+
+type StoredResult = Omit<QuizResultView, 'submittedAt'>;
+
+function parseStoredResult(value: unknown): StoredResult | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const body = value as Record<string, unknown>;
+  const reason = body.reason;
+  if (!isSubmitReason(reason)) {
+    return null;
+  }
+  const numbers = [
+    'earnedScore',
+    'totalScore',
+    'correctCount',
+    'wrongCount',
+    'unansweredCount',
+    'partialCount',
+    'questionCount',
+    'accuracy',
+    'scoreRate',
+  ] as const;
+  const parsed: Record<(typeof numbers)[number], number> = {
+    earnedScore: 0,
+    totalScore: 0,
+    correctCount: 0,
+    wrongCount: 0,
+    unansweredCount: 0,
+    partialCount: 0,
+    questionCount: 0,
+    accuracy: 0,
+    scoreRate: 0,
+  };
+  for (const key of numbers) {
+    const number = Number(body[key]);
+    if (!Number.isFinite(number)) {
+      return null;
+    }
+    parsed[key] = number;
+  }
+  const passScore =
+    body.passScore === null || body.passScore === undefined ? null : Number(body.passScore);
+  if (passScore !== null && !Number.isFinite(passScore)) {
+    return null;
+  }
+  const passed = typeof body.passed === 'boolean' ? body.passed : null;
+  return {
+    ...parsed,
+    passed,
+    passScore,
+    reason,
+  };
+}
+
+function readCertId(value: unknown): string | null {
+  if (!value || typeof value !== 'object' || !('certId' in value)) {
+    return null;
+  }
+  const certId = (value as { certId?: unknown }).certId;
+  return typeof certId === 'string' && isUuid(certId) ? certId : null;
+}
+
+function toDate(value: Date | string | null | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function toIso(value: Date | string | null | undefined): string | null {
+  const date = toDate(value);
+  return date ? date.toISOString() : null;
+}
+
+function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+function isSubmitReason(value: unknown): value is QuizSubmitReason {
+  return typeof value === 'string' && (QUIZ_SUBMIT_REASONS as readonly string[]).includes(value);
 }
 
 function isStatus(value: string): value is QuizSessionStatus {
