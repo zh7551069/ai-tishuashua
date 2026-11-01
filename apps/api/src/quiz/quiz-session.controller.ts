@@ -13,7 +13,7 @@ export class QuizSessionController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '创建刷题会话（占位）',
-    description: `后续由队列 ${JOB_GENERATE_QUIZ} 按需出题，不是静态题库。错题入卷比例上限 ${WRONG_QUESTION_RATIO_MAX}。`,
+    description: `后续由队列 ${JOB_GENERATE_QUIZ} 按需出题，不是静态题库。错题入卷比例上限 ${WRONG_QUESTION_RATIO_MAX}。证书已下架的刷题包不可出题。本接口仍未实现。`,
   })
   create() {
     return scaffoldPlaceholder('quiz', 'createSession');

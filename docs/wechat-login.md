@@ -2,7 +2,7 @@
 
 小程序只用微信登录。流程是：`Taro.login` 拿到 `code` → `POST /api/auth/wechat/login` → 服务端调用微信 `jscode2session` → 按 `openId` 注册或登录 → 签发不透明 token，会话写入 Redis。带 `Authorization: Bearer <token>` 可以访问 `GET /api/users/me`。
 
-本期没有短信登录、游客、其他 OAuth，也没有后管帐密和刷题包。手机号不是登录必填项；用户表有 `phone_masked`，未授权时为 `null`。
+本期没有短信登录、游客、其他 OAuth，也没有后管帐密。手机号不是登录必填项；用户表有 `phone_masked`，未授权时为 `null`。刷题包是后续切片，见 [packs.md](packs.md)。
 
 ## 本地依赖
 
@@ -10,7 +10,7 @@
 pnpm deps:up
 ```
 
-PostgreSQL `127.0.0.1:5432`，Redis `127.0.0.1:6379`，库名、用户名、密码都是 `tishuashua`。API 启动时会执行 `apps/api/migrations`。当前只有 `users` 表，没有学习数据表。
+PostgreSQL `127.0.0.1:5432`，Redis `127.0.0.1:6379`，库名、用户名、密码都是 `tishuashua`。API 启动时会执行 `apps/api/migrations`。用户表之外的目录和刷题包见 [packs.md](packs.md)。
 
 没有 Docker 时，API 仍能启动；登录会返回 `DATABASE_UNAVAILABLE` 或 `REDIS_UNAVAILABLE`。`GET /api/health` 不依赖它们。
 
@@ -104,7 +104,7 @@ pnpm dev:mini
 
 1. 可选填昵称。
 2. 点「微信一键登录」。开发者工具里 `Taro.login` 会给出 code；API 需已打开 mock 或配好微信密钥。
-3. 成功后看到昵称、头像是否同步、手机号「未授权，稍后在设置中补全」，再点「开始备考」进入首页壳。
+3. 成功后看到昵称、头像是否同步、手机号「未授权，稍后在设置中补全」，再点「开始备考」进入首页。没有刷题包时从首页去选领域。
 4. 取消或失败留在落地页，可以重试。
 5. 《用户协议》和《隐私政策》打开的是小程序里的正文页，不是空占位。
 
@@ -123,6 +123,6 @@ pnpm test
 ## 和架构 v0.2 的差异
 
 - 会话是 Redis 里的不透明 token，不是 JWT。任务要求会话落 Redis；JWT 本身不需要把会话写进 Redis。
-- 用户表用已有的 `pg` 执行 SQL 迁移，没有引入 ORM。学习数据模型没有一起建。
+- 用户表用已有的 `pg` 执行 SQL 迁移，没有引入 ORM。目录和刷题包在后续迁移里，不改登录这条链路。
 - 脚手架里的 Taro 是 4.3，架构文本写的是 Taro 3。这里沿用仓库里的 Taro 4，没有降级。
 - `code2session` 不返回昵称、头像、手机号。昵称和头像由客户端可选上送。手机号授权（`getPhoneNumber`）留到设置补全，登录不强制。
