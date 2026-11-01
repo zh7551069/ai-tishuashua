@@ -47,6 +47,24 @@ export const QUIZ_MODE_LABELS: Record<QuizMode, string> = {
   exam: '考试',
 };
 
+export const QUIZ_OUTCOMES = ['correct', 'wrong', 'partial', 'unanswered'] as const;
+export type QuizOutcome = (typeof QUIZ_OUTCOMES)[number];
+
+export const QUIZ_OUTCOME_LABELS: Record<QuizOutcome, string> = {
+  correct: '正确',
+  wrong: '答错',
+  partial: '少选',
+  unanswered: '未作答',
+};
+
+export const QUIZ_SUBMIT_REASONS = ['manual', 'timeout'] as const;
+export type QuizSubmitReason = (typeof QUIZ_SUBMIT_REASONS)[number];
+
+export const QUIZ_SUBMIT_REASON_LABELS: Record<QuizSubmitReason, string> = {
+  manual: '主动交卷',
+  timeout: '到时收卷',
+};
+
 export interface QuizOption {
   id: string;
   text: string;
@@ -99,7 +117,15 @@ export interface QuizSessionContext {
   totalScore: number;
 }
 
-/** 下发给答题页的题目。不含标准答案和解析。 */
+/** 交卷后才附在题目上。未交卷时为 null，响应里没有标准答案和解析。 */
+export interface QuizQuestionReview {
+  answer: string[];
+  analysis: string;
+  earnedScore: number;
+  outcome: QuizOutcome;
+}
+
+/** 下发给答题页的题目。未交卷时 review 为 null。 */
 export interface QuizQuestionView {
   id: string;
   ordinal: number;
@@ -109,6 +135,44 @@ export interface QuizQuestionView {
   score: number;
   source: QuestionSource;
   selected: string[];
+  review: QuizQuestionReview | null;
+}
+
+export interface QuizResultView {
+  earnedScore: number;
+  totalScore: number;
+  correctCount: number;
+  wrongCount: number;
+  unansweredCount: number;
+  partialCount: number;
+  questionCount: number;
+  accuracy: number;
+  scoreRate: number;
+  passed: boolean | null;
+  passScore: number | null;
+  reason: QuizSubmitReason;
+  submittedAt: string;
+}
+
+export interface QuizScoreSummary {
+  id: string;
+  mode: QuizMode;
+  certName: string;
+  packName: string;
+  earnedScore: number;
+  totalScore: number;
+  accuracy: number;
+  scoreRate: number;
+  correctCount: number;
+  questionCount: number;
+  passed: boolean | null;
+  passScore: number | null;
+  reason: QuizSubmitReason;
+  submittedAt: string;
+}
+
+export interface QuizScoreList {
+  items: QuizScoreSummary[];
 }
 
 export interface QuizPaperView {
@@ -126,6 +190,11 @@ export interface QuizSessionView {
   error: QuizSessionError | null;
   context: QuizSessionContext;
   paper: QuizPaperView | null;
+  result: QuizResultView | null;
+  /** 进入答题的时间。倒计时从这一刻起算。 */
+  startedAt: string | null;
+  /** 考试模式的收卷截止时间。练习模式为 null。 */
+  deadlineAt: string | null;
 }
 
 export interface QuizAnswerResult {
@@ -136,6 +205,10 @@ export interface QuizAnswerResult {
 export interface SaveQuizAnswerRequest {
   questionId: string;
   selected: string[];
+}
+
+export interface SubmitQuizRequest {
+  reason?: QuizSubmitReason;
 }
 
 /** Worker 只需要会话 id。题量、题型和计时都在 quiz_sessions 里。 */

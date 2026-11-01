@@ -122,6 +122,7 @@ export default function HomePage() {
           }}
         />
       ) : null}
+      {ready ? <StudyLinks /> : null}
       {error ? (
         <Button className="primary" onClick={() => void load()}>
           重试
@@ -177,6 +178,22 @@ async function confirmDelete(pack: PackView): Promise<void> {
   }
   await deletePack(token, pack.id);
   await Taro.reLaunch({ url: '/pages/home/index' });
+}
+
+function StudyLinks() {
+  return (
+    <View>
+      <Button
+        className="ghost"
+        onClick={() => void Taro.navigateTo({ url: '/pages/wrong-book/index' })}
+      >
+        错题本
+      </Button>
+      <Button className="ghost" onClick={() => void Taro.navigateTo({ url: '/pages/score/index' })}>
+        成绩
+      </Button>
+    </View>
+  );
 }
 
 function EmptyPack(props: { onCreate: () => void }) {

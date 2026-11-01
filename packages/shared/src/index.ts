@@ -36,6 +36,8 @@ export type {
 } from './quiz-engine';
 export { readProcessLlmEnv, resolveLlmMode } from './llm-env';
 export type { LlmMode, LlmRuntimeEnv } from './llm-env';
+export { examDeadlineAt, gradeSelection, summarizeGrades } from './quiz-grade';
+export type { GradedSelection, QuizGradeSummary } from './quiz-grade';
 export {
   DEFAULT_PAPER_MINUTES,
   DEFAULT_PER_QUESTION_SECONDS,
@@ -47,7 +49,11 @@ export {
   QUIZ_DIFFICULTY_LABELS,
   QUIZ_MODES,
   QUIZ_MODE_LABELS,
+  QUIZ_OUTCOMES,
+  QUIZ_OUTCOME_LABELS,
   QUIZ_SESSION_STATUSES,
+  QUIZ_SUBMIT_REASONS,
+  QUIZ_SUBMIT_REASON_LABELS,
   QUIZ_TYPE_LABELS,
   QUIZ_TYPES,
   QUESTION_SOURCES,
@@ -60,14 +66,20 @@ export type {
   QuizDifficulty,
   QuizMode,
   QuizOption,
+  QuizOutcome,
   QuizPaperView,
   QuizProgress,
+  QuizQuestionReview,
   QuizQuestionView,
+  QuizResultView,
+  QuizScoreList,
+  QuizScoreSummary,
   QuizSessionContext,
   QuizSessionError,
   QuizSessionStatus,
   QuizSessionView,
   QuizSettings,
+  QuizSubmitReason,
   QuizTimer,
   QuizTimerOff,
   QuizTimerPaper,
@@ -75,7 +87,10 @@ export type {
   QuizTypeCode,
   QuestionSource,
   SaveQuizAnswerRequest,
+  SubmitQuizRequest,
 } from './quiz';
+export { WRONG_ITEM_STATUSES, WRONG_ITEM_STATUS_LABELS } from './wrong-book';
+export type { WrongBookItem, WrongBookList, WrongItemStatus } from './wrong-book';
 export type { CoursewareRef, ExtractCoursewareJobPayload } from './courseware';
 export type {
   CatalogTreeNode,

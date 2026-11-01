@@ -88,7 +88,13 @@ export class QuizService {
   }
 
   async get(userId: string, sessionId: string): Promise<QuizSessionView> {
+    await this.quizzes.expireDueExams(userId);
     return this.requireSession(userId, sessionId);
+  }
+
+  async listScores(userId: string) {
+    await this.quizzes.expireDueExams(userId);
+    return { items: await this.quizzes.listScores(userId) };
   }
 
   async cancel(userId: string, sessionId: string): Promise<QuizSessionView> {
@@ -107,6 +113,7 @@ export class QuizService {
   }
 
   async start(userId: string, sessionId: string): Promise<QuizSessionView> {
+    await this.quizzes.expireDueExams(userId);
     const result = await this.quizzes.start(userId, sessionId);
     if (result === 'missing') {
       throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '出题会话不存在');
@@ -117,12 +124,33 @@ export class QuizService {
     return this.requireSession(userId, sessionId);
   }
 
+  async submit(
+    userId: string,
+    sessionId: string,
+    reason: 'manual' | 'timeout',
+  ): Promise<QuizSessionView> {
+    await this.quizzes.expireDueExams(userId);
+    const result = await this.quizzes.submit(userId, sessionId, reason);
+    if (result === 'missing') {
+      throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '出题会话不存在');
+    }
+    if (result === 'conflict') {
+      throw new ApiException(
+        HttpStatus.CONFLICT,
+        ApiErrorCode.VALIDATION_ERROR,
+        '当前状态不能交卷',
+      );
+    }
+    return this.requireSession(userId, sessionId);
+  }
+
   async saveAnswer(
     userId: string,
     sessionId: string,
     questionId: string,
     selected: string[],
   ): Promise<QuizAnswerResult> {
+    await this.quizzes.expireDueExams(userId);
     const result = await this.quizzes.saveAnswer(userId, sessionId, questionId, selected);
     if (result.kind === 'missing') {
       throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '出题会话不存在');
@@ -131,7 +159,7 @@ export class QuizService {
       throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '题目不存在');
     }
     if (result.kind === 'conflict') {
-      throw new ApiException(HttpStatus.CONFLICT, ApiErrorCode.VALIDATION_ERROR, '试卷还不能作答');
+      throw new ApiException(HttpStatus.CONFLICT, ApiErrorCode.VALIDATION_ERROR, result.message);
     }
     if (result.kind === 'invalid') {
       throw new ApiException(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, result.message);

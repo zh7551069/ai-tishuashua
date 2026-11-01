@@ -3,10 +3,14 @@ import {
   QUIZ_COUNTS,
   QUIZ_DIFFICULTIES,
   QUIZ_MODES,
+  QUIZ_SUBMIT_REASONS,
   QUIZ_TYPES,
   type QuizAnswerResult,
+  type QuizScoreList,
   type QuizSessionView,
+  type QuizSubmitReason,
   type SaveQuizAnswerRequest,
+  type SubmitQuizRequest,
 } from '@tishuashua/shared';
 import { Type } from 'class-transformer';
 import {
@@ -95,6 +99,18 @@ export class SaveQuizAnswerDto implements SaveQuizAnswerRequest {
   selected!: string[];
 }
 
+export class SubmitQuizDto implements SubmitQuizRequest {
+  @ApiPropertyOptional({ enum: QUIZ_SUBMIT_REASONS })
+  @IsOptional()
+  @IsIn(QUIZ_SUBMIT_REASONS, { message: '交卷原因不正确' })
+  reason?: QuizSubmitReason;
+}
+
+export class QuizScoreListDto implements QuizScoreList {
+  @ApiProperty({ type: 'array' })
+  items!: QuizScoreList['items'];
+}
+
 export class QuizAnswerResultDto implements QuizAnswerResult {
   @ApiProperty()
   questionId!: string;
@@ -128,6 +144,19 @@ export class QuizSessionViewDto implements QuizSessionView {
   @ApiProperty()
   context!: QuizSessionView['context'];
 
-  @ApiProperty({ nullable: true, description: '只有成卷后才返回题目，且不含标准答案。' })
+  @ApiProperty({
+    nullable: true,
+    description:
+      '成卷后返回答题题目。未交卷时题目不含标准答案和解析；交卷后 review 才有答案、解析和得分。',
+  })
   paper!: QuizSessionView['paper'];
+
+  @ApiProperty({ nullable: true, description: '未交卷时为 null。' })
+  result!: QuizSessionView['result'];
+
+  @ApiProperty({ nullable: true })
+  startedAt!: string | null;
+
+  @ApiProperty({ nullable: true, description: '只有考试模式且已开始计时才有截止时间。' })
+  deadlineAt!: string | null;
 }
