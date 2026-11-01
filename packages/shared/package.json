@@ -9,6 +9,15 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./generation": {
+      "types": "./dist/generation.d.ts",
+      "default": "./dist/generation.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "generation": ["dist/generation.d.ts"]
     }
   },
   "scripts": {

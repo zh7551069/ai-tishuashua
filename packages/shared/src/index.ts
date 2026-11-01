@@ -14,7 +14,68 @@ export { scaffoldPlaceholder } from './scaffold';
 export type { ScaffoldPlaceholder } from './scaffold';
 export { parseRedisUrl } from './redis';
 export type { RedisEndpoint } from './redis';
-export type { GenerateQuizJobPayload, QuizItem, QuizOption, QuizPaper, QuizSession } from './quiz';
+export {
+  BUILTIN_QUIZ_PROMPT,
+  buildPromptVariables,
+  mockAiQuestions,
+  normalizeQuestionScores,
+  normalizeQuizRequest,
+  normalizeSelection,
+  parseAiQuestions,
+  pickPublishedPrompt,
+  renderPrompt,
+  takeWrongCarry,
+  wrongCarryQuota,
+} from './quiz-engine';
+export type {
+  AiQuestionDraft,
+  PaperDraft,
+  PromptCandidate,
+  PromptTemplateBody,
+  WrongItemRecord,
+} from './quiz-engine';
+export { readProcessLlmEnv, resolveLlmMode } from './llm-env';
+export type { LlmMode, LlmRuntimeEnv } from './llm-env';
+export {
+  DEFAULT_PAPER_MINUTES,
+  DEFAULT_PER_QUESTION_SECONDS,
+  DEFAULT_QUIZ_COUNT,
+  DEFAULT_QUIZ_DIFFICULTY,
+  DEFAULT_QUIZ_MODE,
+  QUIZ_COUNTS,
+  QUIZ_DIFFICULTIES,
+  QUIZ_DIFFICULTY_LABELS,
+  QUIZ_MODES,
+  QUIZ_MODE_LABELS,
+  QUIZ_SESSION_STATUSES,
+  QUIZ_TYPE_LABELS,
+  QUIZ_TYPES,
+  QUESTION_SOURCES,
+} from './quiz';
+export type {
+  CreateQuizSessionRequest,
+  GenerateQuizJobPayload,
+  QuizAnswerResult,
+  QuizCount,
+  QuizDifficulty,
+  QuizMode,
+  QuizOption,
+  QuizPaperView,
+  QuizProgress,
+  QuizQuestionView,
+  QuizSessionContext,
+  QuizSessionError,
+  QuizSessionStatus,
+  QuizSessionView,
+  QuizSettings,
+  QuizTimer,
+  QuizTimerOff,
+  QuizTimerPaper,
+  QuizTimerPerQuestion,
+  QuizTypeCode,
+  QuestionSource,
+  SaveQuizAnswerRequest,
+} from './quiz';
 export type { CoursewareRef, ExtractCoursewareJobPayload } from './courseware';
 export type {
   CatalogTreeNode,

@@ -11,7 +11,7 @@ function configWith(values: Record<string, string | undefined>): ConfigService {
   } as ConfigService;
 }
 
-describe('loadApiEnv wechat mock', () => {
+describe('loadApiEnv mocks', () => {
   test('只有 true 或 1 才打开 mock', () => {
     const cases: Array<[string | undefined, boolean]> = [
       [undefined, false],
@@ -27,6 +27,8 @@ describe('loadApiEnv wechat mock', () => {
     for (const [raw, expected] of cases) {
       const env = loadApiEnv(configWith({ WECHAT_LOGIN_MOCK: raw }));
       assert.equal(env.wechatLoginMock, expected, `WECHAT_LOGIN_MOCK=${String(raw)}`);
+      const llm = loadApiEnv(configWith({ LLM_MOCK: raw }));
+      assert.equal(llm.llmMock, expected, `LLM_MOCK=${String(raw)}`);
     }
   });
 });

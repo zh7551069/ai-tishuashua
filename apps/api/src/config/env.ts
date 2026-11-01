@@ -16,6 +16,8 @@ export interface ApiEnv {
   llmProvider: string;
   llmApiKey: string;
   llmBaseUrl: string;
+  /** 仅当值为 true 或 1 时启用。默认关闭，不请求模型。 */
+  llmMock: boolean;
 }
 
 function read(config: ConfigService, key: string): string {
@@ -46,6 +48,7 @@ export function loadApiEnv(config: ConfigService): ApiEnv {
     llmProvider: read(config, 'LLM_PROVIDER'),
     llmApiKey: read(config, 'LLM_API_KEY'),
     llmBaseUrl: read(config, 'LLM_BASE_URL'),
+    llmMock: ['true', '1'].includes(read(config, 'LLM_MOCK').toLowerCase()),
   };
 }
 
@@ -57,6 +60,6 @@ export function describeConfiguredServices(env: ApiEnv): string {
       ? 'configured'
       : 'missing';
   const oss = env.ossBucket && env.ossAccessKeyId ? 'configured' : 'missing';
-  const llm = env.llmApiKey ? 'configured' : 'missing';
+  const llm = env.llmMock ? 'mock' : env.llmApiKey ? 'configured' : 'missing';
   return `wechat=${wechat} oss=${oss} llm=${llm}`;
 }

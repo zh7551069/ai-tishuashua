@@ -29,6 +29,8 @@ interface PackRow {
   active: boolean;
   domain_name: string;
   cert_name: string;
+  total_score: number;
+  enabled_question_type_codes: string[];
   unavailable: boolean;
   knowledge_points: unknown;
 }
@@ -43,6 +45,8 @@ const PACK_SELECT = `
     p.active,
     d.name AS domain_name,
     c.name AS cert_name,
+    c.total_score,
+    c.enabled_question_type_codes,
     (c.status IS DISTINCT FROM 'online') AS unavailable,
     COALESCE(
       jsonb_agg(
@@ -93,7 +97,7 @@ export class PackRepository {
         `
           ${PACK_SELECT}
           WHERE p.user_id = $1
-          GROUP BY p.id, d.name, c.name, c.status
+          GROUP BY p.id, d.name, c.name, c.status, c.total_score, c.enabled_question_type_codes
           ORDER BY p.active DESC, p.updated_at DESC
         `,
         [userId],
@@ -114,7 +118,7 @@ export class PackRepository {
         `
           ${PACK_SELECT}
           WHERE p.user_id = $1 AND p.id = $2
-          GROUP BY p.id, d.name, c.name, c.status
+          GROUP BY p.id, d.name, c.name, c.status, c.total_score, c.enabled_question_type_codes
         `,
         [userId, packId],
       );
@@ -301,6 +305,8 @@ function mapPack(row: PackRow): PackView {
     knowledgePointCount: knowledgePoints.length,
     domainName: row.domain_name,
     certName: row.cert_name,
+    totalScore: Number(row.total_score),
+    enabledQuestionTypeCodes: row.enabled_question_type_codes ?? [],
     active: row.active,
     unavailable: row.unavailable,
   };
