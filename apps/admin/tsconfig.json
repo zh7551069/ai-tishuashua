@@ -1,0 +1,7 @@
+{
+  "extends": "../../packages/config/typescript/vite.json",
+  "compilerOptions": {
+    "rootDir": "src"
+  },
+  "include": ["src"]
+}
