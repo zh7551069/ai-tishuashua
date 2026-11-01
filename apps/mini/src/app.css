@@ -346,3 +346,31 @@
   border-color: #2563eb;
   background: #2563eb;
 }
+
+.step {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.step-dot {
+  width: 16px;
+  height: 16px;
+  margin-right: 12px;
+  border-radius: 8px;
+  background: #dbe4f0;
+}
+
+.step-dot-on {
+  background: #2563eb;
+}
+
+.step-label {
+  font-size: 28px;
+  color: #0f172a;
+}
+
+.step-label-wait {
+  color: #94a3b8;
+}

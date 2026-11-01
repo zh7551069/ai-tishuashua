@@ -91,7 +91,28 @@ export type {
 } from './quiz';
 export { WRONG_ITEM_STATUSES, WRONG_ITEM_STATUS_LABELS } from './wrong-book';
 export type { WrongBookItem, WrongBookList, WrongItemStatus } from './wrong-book';
-export type { CoursewareRef, ExtractCoursewareJobPayload } from './courseware';
+export {
+  COURSEWARE_EXTENSIONS,
+  EXTRACT_JOB_STATUSES,
+  EXTRACT_STAGES,
+  USER_COURSEWARE_TEXTBOOK,
+  coursewareContentType,
+  coursewareExtension,
+  estimateExtractMinutes,
+  validateCoursewareFile,
+} from './courseware';
+export type {
+  CommitExtractRequest,
+  CommitExtractResult,
+  CoursewareExtension,
+  CoursewareFileMeta,
+  CoursewareRef,
+  ExtractCoursewareJobPayload,
+  ExtractJobStatus,
+  ExtractJobView,
+  ExtractStage,
+  ExtractedDraft,
+} from './courseware';
 export type {
   CatalogTreeNode,
   CertificateList,

@@ -60,7 +60,7 @@ export class PackService {
           '证书不属于该领域',
         );
       }
-      await this.assertKnowledgePoints(client, cert.id, knowledgePointIds);
+      await this.assertKnowledgePoints(client, userId, cert.id, knowledgePointIds);
       const name = (input.name?.trim() || cert.name).trim().slice(0, PACK_NAME_MAX_LENGTH);
       if (!name) {
         throw new ApiException(
@@ -109,7 +109,7 @@ export class PackService {
         );
       }
       if (knowledgePointIds) {
-        await this.assertKnowledgePoints(client, current.certId, knowledgePointIds);
+        await this.assertKnowledgePoints(client, userId, current.certId, knowledgePointIds);
         await this.packs.replaceKnowledgePoints(client, current.id, knowledgePointIds);
       }
       await this.packs.rename(client, current.id, userId, name);
@@ -141,10 +141,11 @@ export class PackService {
 
   private async assertKnowledgePoints(
     client: PoolClient,
+    userId: string,
     certId: string,
     ids: readonly string[],
   ): Promise<void> {
-    const rows = await this.packs.findSelectableKnowledgePoints(client, certId, ids);
+    const rows = await this.packs.findSelectableKnowledgePoints(client, certId, ids, userId);
     const found = new Set(rows.map((row) => row.id.toLowerCase()));
     if (found.size !== ids.length || ids.some((id) => !found.has(id))) {
       throw new ApiException(

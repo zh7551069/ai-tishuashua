@@ -59,7 +59,10 @@ export function describeConfiguredServices(env: ApiEnv): string {
     : env.wechatAppId && env.wechatAppSecret
       ? 'configured'
       : 'missing';
-  const oss = env.ossBucket && env.ossAccessKeyId ? 'configured' : 'missing';
+  const oss =
+    env.ossEndpoint && env.ossBucket && env.ossAccessKeyId && env.ossAccessKeySecret
+      ? 's3'
+      : 'local';
   const llm = env.llmMock ? 'mock' : env.llmApiKey ? 'configured' : 'missing';
   return `wechat=${wechat} oss=${oss} llm=${llm}`;
 }

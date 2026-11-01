@@ -13,6 +13,7 @@ import {
 import { useState } from 'react';
 import { MiniPage } from '../../../components/MiniPage';
 import { fetchKnowledgeTree } from '../../../services/catalog-api';
+import { readCoursewareJob } from '../../../services/courseware-api';
 import { withAuth } from '../../../services/guard';
 import { createPack, fetchPack, updatePack } from '../../../services/pack-api';
 import { queryValue } from '../../../services/query';
@@ -29,6 +30,7 @@ export default function KnowledgePage() {
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [extractJobId, setExtractJobId] = useState('');
 
   const load = async () => {
     if (!domainId || !certId) {
@@ -62,8 +64,24 @@ export default function KnowledgePage() {
   };
 
   useDidShow(() => {
+    setExtractJobId(certId ? readCoursewareJob(certId) : '');
     void load();
   });
+
+  const openCourseware = (jobId?: string) => {
+    if (!domainId || !certId) {
+      setError('缺少领域或证书');
+      return;
+    }
+    const query = [`domainId=${domainId}`, `certId=${certId}`];
+    if (packId) {
+      query.push(`packId=${packId}`);
+    }
+    if (jobId) {
+      query.push(`jobId=${jobId}`);
+    }
+    void Taro.navigateTo({ url: `/pages/courseware/index?${query.join('&')}` });
+  };
 
   const save = async () => {
     if (!tree || selected.length === 0) {
@@ -105,14 +123,14 @@ export default function KnowledgePage() {
         value={query}
         onInput={(event) => setQuery(event.detail.value)}
       />
-      <Button
-        className="ghost"
-        onClick={() => {
-          void Taro.showToast({ title: '即将开放', icon: 'none' });
-        }}
-      >
-        上传课件或书籍 · 即将开放
+      <Button className="ghost" onClick={() => openCourseware()}>
+        上传课件或书籍
       </Button>
+      {extractJobId ? (
+        <Button className="secondary" onClick={() => openCourseware(extractJobId)}>
+          查看课件提炼
+        </Button>
+      ) : null}
       {error ? <Text className="error">{error}</Text> : null}
       {!ready && !error ? <Text className="hint">正在加载知识点。</Text> : null}
       {ready && visible.length === 0 ? (

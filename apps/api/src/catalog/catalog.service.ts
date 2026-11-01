@@ -25,15 +25,16 @@ export class CatalogService {
     return { items: await this.catalog.listOnlineCertificates(domain.id) };
   }
 
-  async getKnowledgeTree(certificateId: string): Promise<KnowledgeTree> {
+  async getKnowledgeTree(certificateId: string, userId: string): Promise<KnowledgeTree> {
     const header = await this.catalog.findCertificateHeader(certificateId);
     if (!header || header.status !== 'online' || header.domainStatus !== 'online') {
       throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '证书不存在或已下架');
     }
-    const textbooks = await this.catalog.listOnlineTextbooks(header.certificateId);
+    const textbooks = await this.catalog.listOnlineTextbooks(header.certificateId, userId);
     const knowledgePoints = await this.catalog.listOnlineKnowledgePoints(
       header.certificateId,
       textbooks.map((textbook) => textbook.id),
+      userId,
     );
     return assembleKnowledgeTree({
       certificateId: header.certificateId,

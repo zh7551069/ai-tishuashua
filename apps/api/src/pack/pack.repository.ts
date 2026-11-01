@@ -174,6 +174,7 @@ export class PackRepository {
     client: PoolClient,
     certId: string,
     ids: readonly string[],
+    userId: string,
   ): Promise<PackKnowledgePoint[]> {
     const result = await client.query<{ id: string; name: string }>(
       `
@@ -183,6 +184,8 @@ export class PackRepository {
         WHERE kp.id = ANY($1::uuid[])
           AND kp.kind = 'knowledge_point'
           AND kp.status = 'online'
+          AND (kp.owner_user_id IS NULL OR kp.owner_user_id = $3)
+          AND (kp.textbook_id IS NULL OR tb.owner_user_id IS NULL OR tb.owner_user_id = $3)
           AND (
             (
               kp.textbook_id IS NOT NULL
@@ -205,7 +208,7 @@ export class PackRepository {
             )
           )
       `,
-      [ids, certId],
+      [ids, certId, userId],
     );
     return result.rows;
   }

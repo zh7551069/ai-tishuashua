@@ -13,11 +13,16 @@
     "./generation": {
       "types": "./dist/generation.d.ts",
       "default": "./dist/generation.js"
+    },
+    "./courseware": {
+      "types": "./dist/courseware-entry.d.ts",
+      "default": "./dist/courseware-entry.js"
     }
   },
   "typesVersions": {
     "*": {
-      "generation": ["dist/generation.d.ts"]
+      "generation": ["dist/generation.d.ts"],
+      "courseware": ["dist/courseware-entry.d.ts"]
     }
   },
   "scripts": {

@@ -8,6 +8,7 @@ lib/
 .env.local
 .env.*.local
 coverage/
+data/
 *.log
 apps/mini/.swc/
 apps/mini/.temp/
