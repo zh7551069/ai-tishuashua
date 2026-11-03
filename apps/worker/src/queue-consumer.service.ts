@@ -25,7 +25,7 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
     const env = loadWorkerEnv(this.config);
     const llm = env.llmMock ? 'mock' : env.llmConfigured ? 'configured' : 'missing';
     this.logger.log(
-      `oss=${env.ossBucket ? 'configured' : 'missing'} llm=${llm} provider=${env.llmProvider || 'unset'} db=${env.databaseUrl ? 'configured' : 'missing'}`,
+      `oss=${env.ossMode} llm=${llm} provider=${env.llmProvider || 'unset'} db=${env.databaseUrl ? 'configured' : 'missing'}`,
     );
 
     if (!env.redisUrl) {
@@ -48,33 +48,34 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
     }
 
     if (!env.databaseUrl) {
-      this.logger.error('DATABASE_URL 未配置，quiz.generate 消费者未启动');
-    } else {
-      this.pool = new Pool({
-        connectionString: env.databaseUrl,
-        max: 5,
-        connectionTimeoutMillis: 3000,
-      });
-      this.pool.on('error', (error: Error) => {
-        this.logger.error(error.message);
-      });
-      const pool = this.pool;
-      const generateWorker = new Worker<GenerateQuizJobPayload>(
-        JOB_GENERATE_QUIZ,
-        (job) => handleGenerateQuiz(job, pool),
-        { connection, concurrency: 2, lockDuration: 10 * 60 * 1000 },
-      );
-      generateWorker.on('error', (error: Error) => {
-        this.logger.error(error.message);
-      });
-      this.workers.push(generateWorker);
+      this.logger.error('DATABASE_URL 未配置，队列消费者未启动');
+      return;
     }
+
+    this.pool = new Pool({
+      connectionString: env.databaseUrl,
+      max: 5,
+      connectionTimeoutMillis: 3000,
+    });
+    this.pool.on('error', (error: Error) => {
+      this.logger.error(error.message);
+    });
+    const pool = this.pool;
+    const generateWorker = new Worker<GenerateQuizJobPayload>(
+      JOB_GENERATE_QUIZ,
+      (job) => handleGenerateQuiz(job, pool),
+      { connection, concurrency: 2, lockDuration: 10 * 60 * 1000 },
+    );
+    generateWorker.on('error', (error: Error) => {
+      this.logger.error(error.message);
+    });
+    this.workers.push(generateWorker);
+
     const extractWorker = new Worker<ExtractCoursewareJobPayload>(
       JOB_EXTRACT_COURSEWARE,
-      handleExtractCourseware,
-      { connection },
+      (job) => handleExtractCourseware(job, pool),
+      { connection, concurrency: 1, lockDuration: 10 * 60 * 1000 },
     );
-
     extractWorker.on('error', (error: Error) => {
       this.logger.error(error.message);
     });

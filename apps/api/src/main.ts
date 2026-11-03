@@ -19,7 +19,7 @@ async function bootstrap(): Promise<void> {
     new DocumentBuilder()
       .setTitle('题刷刷 API')
       .setDescription(
-        '微信登录、目录、刷题包、AI 出题、交卷判分和错题本已实现。上传提炼与证书成绩占位仍未完成。',
+        '微信登录、目录、刷题包、AI 出题、交卷判分、错题本和课件提炼已实现。证书成绩占位仍未完成。',
       )
       .setVersion('0.1.0')
       .addBearerAuth()
@@ -35,7 +35,7 @@ async function bootstrap(): Promise<void> {
     console.warn('[api] WECHAT_LOGIN_MOCK=true，不会请求微信 code2session');
   }
   if (env.llmMock) {
-    console.warn('[api] LLM_MOCK=true，出题不会请求 DeepSeek 或通义');
+    console.warn('[api] LLM_MOCK=true，出题和课件提炼不会请求 DeepSeek 或通义');
   }
 }
 

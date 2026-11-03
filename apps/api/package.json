@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "node --import tsx --test --test-reporter=spec src/auth/*.test.ts src/common/*.test.ts src/session/*.test.ts src/config/*.test.ts src/catalog/*.test.ts src/pack/*.test.ts src/quiz/*.test.ts"
+    "test": "node --import tsx --test --test-reporter=spec src/auth/*.test.ts src/common/*.test.ts src/session/*.test.ts src/config/*.test.ts src/catalog/*.test.ts src/pack/*.test.ts src/quiz/*.test.ts src/courseware/*.test.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.8",

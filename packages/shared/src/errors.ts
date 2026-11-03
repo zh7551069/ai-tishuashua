@@ -24,6 +24,14 @@ export const ApiErrorCode = {
   LLM_INVALID_OUTPUT: 'LLM_INVALID_OUTPUT',
   /** 模型类：出题过程失败，且没有留下半卷。 */
   QUIZ_GENERATION_FAILED: 'QUIZ_GENERATION_FAILED',
+  /** 课件扩展名不在 PPT / PPTX / PDF / DOC / DOCX。 */
+  COURSEWARE_UNSUPPORTED: 'COURSEWARE_UNSUPPORTED',
+  /** 单个课件超过 50MB。 */
+  COURSEWARE_TOO_LARGE: 'COURSEWARE_TOO_LARGE',
+  /** 文件里读不出可用文字。 */
+  COURSEWARE_UNREADABLE: 'COURSEWARE_UNREADABLE',
+  /** 提炼失败，且不是模型配置或输出错误。 */
+  EXTRACT_FAILED: 'EXTRACT_FAILED',
 } as const;
 
 export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];

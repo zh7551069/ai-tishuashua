@@ -36,9 +36,9 @@ export class CatalogController {
   })
   @ApiOkResponse({ type: KnowledgeTreeDto })
   knowledgeTree(
-    @CurrentUser() _user: UserSummary,
+    @CurrentUser() user: UserSummary,
     @Param('certificateId', uuid) certificateId: string,
   ) {
-    return this.catalog.getKnowledgeTree(certificateId);
+    return this.catalog.getKnowledgeTree(certificateId, user.id);
   }
 }

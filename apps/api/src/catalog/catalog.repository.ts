@@ -159,7 +159,7 @@ export class CatalogRepository {
     }
   }
 
-  async listOnlineTextbooks(certificateId: string): Promise<TextbookRow[]> {
+  async listOnlineTextbooks(certificateId: string, userId: string): Promise<TextbookRow[]> {
     try {
       const result = await this.pool().query<TextbookSqlRow>(
         `
@@ -168,9 +168,10 @@ export class CatalogRepository {
           JOIN textbook_certificates tc ON tc.textbook_id = tb.id
           WHERE tc.certificate_id = $1
             AND tb.status = 'online'
+            AND (tb.owner_user_id IS NULL OR tb.owner_user_id = $2)
           ORDER BY tb.sort_order, tb.name
         `,
-        [certificateId],
+        [certificateId, userId],
       );
       return result.rows;
     } catch (error) {
@@ -181,6 +182,7 @@ export class CatalogRepository {
   async listOnlineKnowledgePoints(
     certificateId: string,
     textbookIds: readonly string[],
+    userId: string,
   ): Promise<KnowledgeRow[]> {
     try {
       const result = await this.pool().query<KnowledgeSqlRow>(
@@ -196,6 +198,7 @@ export class CatalogRepository {
           FROM knowledge_points kp
           WHERE kp.kind = 'knowledge_point'
             AND kp.status = 'online'
+            AND (kp.owner_user_id IS NULL OR kp.owner_user_id = $3)
             AND (
               kp.textbook_id = ANY($1::uuid[])
               OR (
@@ -210,7 +213,7 @@ export class CatalogRepository {
             )
           ORDER BY kp.sort_order, kp.name
         `,
-        [textbookIds, certificateId],
+        [textbookIds, certificateId, userId],
       );
       return result.rows.map((row) => ({
         id: row.id,

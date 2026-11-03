@@ -5,6 +5,7 @@ export default defineAppConfig({
     'pages/pack/domain/index',
     'pages/pack/certificate/index',
     'pages/pack/knowledge/index',
+    'pages/courseware/index',
     'pages/legal/terms/index',
     'pages/legal/privacy/index',
     'pages/quiz/index',

@@ -2,7 +2,7 @@
 
 登录之后可以拉目录、保存刷题包，并在首页看到当前包。证书下架后，已有包变成不可用：只能删除，不能改名、不能换知识点、不能开始刷题。
 
-课件上传和 AI 提炼不在刷题包切片里。「上传课件或书籍」只会提示即将开放。出题设置、AI 出题和拉卷见 [出题](quiz.md)。
+课件上传和 AI 提炼见 [课件](courseware.md)。出题设置、AI 出题和拉卷见 [出题](quiz.md)。
 
 ## 表
 
@@ -23,14 +23,9 @@
 - `knowledge_point_certificates`：不挂教材的独立知识点。
 - `packs`、`pack_knowledge_points`：`user_id`、`domain_id`、`cert_id`、`name`、`active`。每个用户最多一个 `active = true`。`unavailable` 不落库，读的时候看证书是不是 `online`。
 
-出题会写入 `quiz_sessions`、`paper_questions`，并读取 `wrong_items`、`prompt_templates`，见 [出题](quiz.md)。
+出题会写入 `quiz_sessions`、`paper_questions`，并读取 `wrong_items`、`prompt_templates`，见 [出题](quiz.md)。课件上传和提炼使用 `user_uploads`、`extract_jobs`，见 [课件](courseware.md)。
 
-只建了表、没有业务 API 的表：
-
-- `user_uploads`
-- `extract_jobs`
-
-`GET /api/certificates`、课件、错题本、后管登录仍是原来的占位响应。出题接口见 [出题](quiz.md)。后管写目录不在本切片，本地靠种子数据。
+`GET /api/certificates` 和后管登录仍是原来的占位响应。后管写目录不在本切片，本地靠种子数据。
 
 ## 种子
 
@@ -156,4 +151,4 @@ curl -sS -X DELETE http://127.0.0.1:3000/api/packs/刷题包id \
 
 不可用首页：包卡置灰，Badge「不可用」，「开始刷题（不可用）」不可点。可以删除、新建，或重新选择领域。
 
-「开始刷题」进入出题设置。下架包的按钮保持「开始刷题（不可用）」，不能进入出题。选知识点页的上传入口仍只提示即将开放。刷题包响应里增加了 `totalScore` 和 `enabledQuestionTypeCodes`，给出题设置用来限制题型。
+「开始刷题」进入出题设置。下架包的按钮保持「开始刷题（不可用）」，不能进入出题。选知识点页可以上传课件，见 [课件](courseware.md)。刷题包响应里增加了 `totalScore` 和 `enabledQuestionTypeCodes`，给出题设置用来限制题型。
