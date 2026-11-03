@@ -91,6 +91,11 @@ export type {
 } from './quiz';
 export { WRONG_ITEM_STATUSES, WRONG_ITEM_STATUS_LABELS } from './wrong-book';
 export type { WrongBookItem, WrongBookList, WrongItemStatus } from './wrong-book';
+export type {
+  AdminWrongBookDetail,
+  AdminWrongBookList,
+  AdminWrongBookSummary,
+} from './admin-wrong-book';
 export {
   COURSEWARE_EXTENSIONS,
   EXTRACT_JOB_STATUSES,

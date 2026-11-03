@@ -4,6 +4,7 @@ import { CatalogPage } from './pages/CatalogPage';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { WrongBookPage } from './pages/WrongBookPage';
 
 export function App() {
   return (
@@ -42,16 +43,7 @@ export function App() {
             />
           }
         />
-        <Route
-          path="/wrong-book"
-          element={
-            <PlaceholderPage
-              title="错题"
-              moduleName="wrong-book"
-              description="错题本读写尚未实现。"
-            />
-          }
-        />
+        <Route path="/wrong-book" element={<WrongBookPage />} />
         <Route
           path="/certificates"
           element={

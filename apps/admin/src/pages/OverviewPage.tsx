@@ -12,7 +12,7 @@ export function OverviewPage() {
       <p className="muted">
         {sessionNotice
           ? sessionNotice
-          : '已用后管会话访问连通性接口。目录可以维护领域、证书和知识点。课件列表、错题和证书与成绩页仍是空壳。'}
+          : '已用后管会话访问连通性接口。目录可以维护领域、证书和知识点。错题可以只读查看全站记录。课件列表和证书与成绩页仍是空壳。'}
       </p>
     </section>
   );

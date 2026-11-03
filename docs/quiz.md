@@ -201,6 +201,8 @@ curl -sS -X POST http://127.0.0.1:3000/api/wrong-book/错题id/clear \
 
 列表默认 `pending`。`?status=cleared` 或 `?status=all` 可以看已消灭和全部，最多 100 条。只能看自己的错题。
 
+后管另有只读列表和详情，见 [后管错题](admin-wrong-book.md)。它使用后管会话，默认看全部状态，并可按用户和证书分页。不能调用上面的消灭接口，后管也没有删除。
+
 小程序路径：
 
 | 页面                          | 路径                                    |

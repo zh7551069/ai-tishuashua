@@ -147,7 +147,7 @@ pnpm dev:admin
 3. 刷新后仍停留在后台。
 4. 点「退出」后回到登录页，原来的 token 失效。
 
-登录后可以打开「目录」，维护领域、证书和知识点，见 [后管改目录](admin-catalog.md)。课件列表、错题和证书与成绩页面仍是空壳。小程序证书查询见 [证书查询](certificates.md)。
+登录后可以打开「目录」，维护领域、证书和知识点，见 [后管改目录](admin-catalog.md)。「错题」只读查看全站记录，见 [后管错题](admin-wrong-book.md)。课件列表和证书与成绩页面仍是空壳。小程序证书查询见 [证书查询](certificates.md)。
 
 ## 测试
 
@@ -161,4 +161,4 @@ pnpm test
 
 ## 还没做
 
-错题页和课件上传列表。目录维护见 [admin-catalog.md](admin-catalog.md)，限流见 [rate-limit.md](rate-limit.md)。
+课件上传列表。目录维护见 [admin-catalog.md](admin-catalog.md)，错题只读见 [admin-wrong-book.md](admin-wrong-book.md)，限流见 [rate-limit.md](rate-limit.md)。
