@@ -6,6 +6,12 @@ export const WRONG_QUESTION_RATIO_MAX = 0.5;
 /** 课件对象大小上限：50MB。 */
 export const COURSEWARE_MAX_BYTES = 50 * 1024 * 1024;
 
+/** 小程序成绩列表一次返回的已交卷条数。更早的记录不在这一页。 */
+export const QUIZ_SCORE_LIST_LIMIT = 50;
+
+/** 超过一页时，成绩页用这句话说明更早的记录被截掉了。 */
+export const QUIZ_SCORE_LIST_TRUNCATED_HINT = `只显示最近 ${QUIZ_SCORE_LIST_LIMIT} 条`;
+
 /** BullMQ 队列名。API 入队与 Worker 消费使用同一名称。 */
 export const JOB_GENERATE_QUIZ = 'quiz.generate';
 export const JOB_EXTRACT_COURSEWARE = 'courseware.extract';

@@ -527,10 +527,19 @@ describe('quiz generation', { concurrency: 1 }, () => {
 
     const scores = await call('/quiz/sessions', ctx.tokenA);
     assert.equal(scores.status, 200);
-    const scoreItems = (scores.body as { items?: { id: string; earnedScore: number }[] }).items;
+    const scoreBody = scores.body as {
+      items?: { id: string; earnedScore: number }[];
+      total?: number;
+      limit?: number;
+      hasMore?: boolean;
+    };
+    const scoreItems = scoreBody.items;
     const mine = scoreItems?.find((item) => item.id === paper.id);
     assert.equal(mine?.earnedScore, earned);
     assert.equal(mine ? 'answer' in mine : true, false);
+    assert.equal(scoreBody.limit, 50);
+    assert.equal(typeof scoreBody.total, 'number');
+    assert.equal(scoreBody.hasMore, (scoreBody.total ?? 0) > 50);
 
     const cleared = await call(`/wrong-book/${firstWrong.id}/clear`, ctx.tokenA, {
       method: 'POST',
@@ -693,6 +702,92 @@ describe('quiz generation', { concurrency: 1 }, () => {
     });
     assert.equal(foreign.status, 404);
   });
+
+  test('成绩超过 50 条时返回 hasMore，并且不带出更早的记录', async (t) => {
+    if (!ready(t)) return;
+    const account = await login('quiz-score-limit');
+    const pool = requiredPool();
+    const newestFirst = Array.from({ length: 51 }, () => randomUUID());
+    const oldestId = newestFirst[50];
+    const stillShownId = newestFirst[49];
+    const newestId = newestFirst[0];
+    assert.ok(oldestId && stillShownId && newestId);
+    const unreadableId = randomUUID();
+    const inProgressId = randomUUID();
+    const otherId = randomUUID();
+    const base = Date.now();
+    const at = (index: number) => new Date(base - index * 60_000).toISOString();
+    try {
+      await insertScoreRows(
+        account.user.id,
+        newestFirst.slice(0, 50).map((id, index) => ({ id, submittedAt: at(index) })),
+      );
+      await insertScoreRows(account.user.id, [
+        {
+          id: inProgressId,
+          submittedAt: at(1),
+          status: 'in_progress',
+          pass: null,
+          reason: null,
+        },
+      ]);
+      await insertScoreRows(ctx.userB, [{ id: otherId, submittedAt: at(0) }]);
+
+      const first = await call('/quiz/sessions', account.token);
+      assert.equal(first.status, 200);
+      const firstBody = first.body as {
+        items: { id: string }[];
+        total: number;
+        limit: number;
+        hasMore: boolean;
+      };
+      assert.equal(firstBody.limit, 50);
+      assert.equal(firstBody.total, 50);
+      assert.equal(firstBody.hasMore, false);
+      assert.equal(firstBody.items.length, 50);
+      assert.equal(firstBody.items[0]?.id, newestId);
+      assert.equal(
+        firstBody.items.some((item) => item.id === inProgressId),
+        false,
+      );
+      assert.equal(
+        firstBody.items.some((item) => item.id === otherId),
+        false,
+      );
+
+      await insertScoreRows(account.user.id, [
+        { id: oldestId, submittedAt: at(80) },
+        {
+          id: unreadableId,
+          submittedAt: at(90),
+          pass: { note: 'not-a-score' },
+        },
+      ]);
+
+      const second = await call('/quiz/sessions', account.token);
+      assert.equal(second.status, 200);
+      const secondBody = second.body as {
+        items: { id: string }[];
+        total: number;
+        limit: number;
+        hasMore: boolean;
+      };
+      const shown = secondBody.items.map((item) => item.id);
+      assert.equal(secondBody.limit, 50);
+      assert.equal(secondBody.total, 52);
+      assert.equal(secondBody.hasMore, true);
+      assert.equal(shown.length, 50);
+      assert.equal(shown[0], newestId);
+      assert.equal(shown.includes(stillShownId), true);
+      assert.equal(shown.includes(oldestId), false);
+      assert.equal(shown.includes(unreadableId), false);
+      assert.equal(shown.includes(inProgressId), false);
+      assert.equal(shown.includes(otherId), false);
+    } finally {
+      await pool.query('DELETE FROM users WHERE id = $1', [account.user.id]).catch(() => undefined);
+      await pool.query('DELETE FROM quiz_sessions WHERE id = $1', [otherId]).catch(() => undefined);
+    }
+  });
 });
 
 const MOCK_ANALYSIS = '这是本地 mock 题目，没有调用模型。';
@@ -845,6 +940,62 @@ function requiredPool(): Pool {
     throw new Error('测试数据库不可用');
   }
   return ctx.pool;
+}
+
+const READABLE_SCORE = {
+  earnedScore: 80,
+  totalScore: 100,
+  correctCount: 8,
+  wrongCount: 2,
+  unansweredCount: 0,
+  partialCount: 0,
+  questionCount: 10,
+  accuracy: 0.8,
+  scoreRate: 0.8,
+  passed: true,
+  passScore: 60,
+  reason: 'manual',
+};
+
+async function insertScoreRows(
+  userId: string,
+  rows: {
+    id: string;
+    submittedAt: string;
+    status?: string;
+    pass?: Record<string, unknown> | null;
+    reason?: string | null;
+  }[],
+): Promise<void> {
+  if (rows.length === 0) {
+    return;
+  }
+  const values: unknown[] = [];
+  const tuples = rows.map((row) => {
+    const status = row.status ?? 'submitted';
+    const offset = values.length;
+    values.push(
+      row.id,
+      userId,
+      JSON.stringify({ name: '截断包', certName: '截断证书' }),
+      status === 'submitted' ? 80 : null,
+      row.pass === null ? null : JSON.stringify(row.pass ?? READABLE_SCORE),
+      status,
+      row.reason === undefined ? 'manual' : row.reason,
+      row.submittedAt,
+    );
+    return `($${offset + 1}, $${offset + 2}, $${offset + 3}::jsonb, 'practice', $${offset + 4}, $${offset + 5}::jsonb, $${offset + 6}, 'normal', $${offset + 7}, $${offset + 8}, $${offset + 8})`;
+  });
+  await requiredPool().query(
+    `
+      INSERT INTO quiz_sessions (
+        id, user_id, pack_snapshot, mode, score, pass_snapshot, status, source,
+        submit_reason, submitted_at, created_at
+      )
+      VALUES ${tuples.join(', ')}
+    `,
+    values,
+  );
 }
 
 async function login(code: string): Promise<WechatLoginResponse> {

@@ -109,6 +109,15 @@ export class SubmitQuizDto implements SubmitQuizRequest {
 export class QuizScoreListDto implements QuizScoreList {
   @ApiProperty({ type: 'array' })
   items!: QuizScoreList['items'];
+
+  @ApiProperty({ description: '当前用户已交卷会话数，含快照读不出来的记录' })
+  total!: number;
+
+  @ApiProperty({ description: '本次最多返回的条数' })
+  limit!: number;
+
+  @ApiProperty({ description: '还有更早的已交卷记录没有出现在 items 里' })
+  hasMore!: boolean;
 }
 
 export class QuizAnswerResultDto implements QuizAnswerResult {

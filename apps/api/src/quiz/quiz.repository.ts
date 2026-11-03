@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   QUIZ_DIFFICULTIES,
   QUIZ_MODES,
+  QUIZ_SCORE_LIST_LIMIT,
   QUIZ_SUBMIT_REASONS,
   QUIZ_TYPES,
   examDeadlineAt,
@@ -443,17 +444,24 @@ export class QuizRepository {
     });
   }
 
-  async listScores(userId: string): Promise<QuizScoreSummary[]> {
+  async listScores(userId: string): Promise<{ items: QuizScoreSummary[]; total: number }> {
     try {
       const result = await this.database.requirePool().query<ScoreRow>(
         `
-          SELECT id, mode, pack_snapshot, pass_snapshot, submit_reason, submitted_at
+          SELECT
+            id,
+            mode,
+            pack_snapshot,
+            pass_snapshot,
+            submit_reason,
+            submitted_at,
+            COUNT(*) OVER ()::int AS total_count
           FROM quiz_sessions
           WHERE user_id = $1 AND status = 'submitted'
           ORDER BY submitted_at DESC NULLS LAST, created_at DESC
-          LIMIT 50
+          LIMIT $2
         `,
-        [userId],
+        [userId, QUIZ_SCORE_LIST_LIMIT],
       );
       const items: QuizScoreSummary[] = [];
       for (const row of result.rows) {
@@ -462,7 +470,9 @@ export class QuizRepository {
           items.push(item);
         }
       }
-      return items;
+      const rawTotal = result.rows[0]?.total_count;
+      const total = rawTotal === undefined || rawTotal === null ? 0 : Number(rawTotal);
+      return { items, total: Number.isFinite(total) ? total : items.length };
     } catch (error) {
       rethrowDatabaseError('quiz', error);
     }
@@ -720,6 +730,7 @@ interface ScoreRow {
   pass_snapshot: unknown;
   submit_reason: string | null;
   submitted_at: Date | string | null;
+  total_count?: number | string | null;
 }
 
 interface WrongItemRow {

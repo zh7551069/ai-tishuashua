@@ -173,6 +173,12 @@ export interface QuizScoreSummary {
 
 export interface QuizScoreList {
   items: QuizScoreSummary[];
+  /** 当前用户已交卷会话数。快照读不出来、因此不在 items 里的记录也算在内。 */
+  total: number;
+  /** 本次最多返回的条数。 */
+  limit: number;
+  /** total 大于 limit 时为 true，更早的成绩不在 items 里。 */
+  hasMore: boolean;
 }
 
 export interface QuizPaperView {
