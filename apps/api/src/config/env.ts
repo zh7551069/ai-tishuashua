@@ -9,6 +9,9 @@ export interface ApiEnv {
   /** 仅当值为 true 或 1 时启用。默认关闭，不请求微信。 */
   wechatLoginMock: boolean;
   adminOrigins: string[];
+  /** 后管唯一操作者。两项都非空才算已配置，代码里没有默认口令。 */
+  adminUsername: string;
+  adminPassword: string;
   ossEndpoint: string;
   ossBucket: string;
   ossAccessKeyId: string;
@@ -41,6 +44,8 @@ export function loadApiEnv(config: ConfigService): ApiEnv {
           .map((item) => item.trim())
           .filter(Boolean)
       : ['http://127.0.0.1:5173', 'http://localhost:5173'],
+    adminUsername: read(config, 'ADMIN_USERNAME'),
+    adminPassword: read(config, 'ADMIN_PASSWORD'),
     ossEndpoint: read(config, 'OSS_ENDPOINT'),
     ossBucket: read(config, 'OSS_BUCKET'),
     ossAccessKeyId: read(config, 'OSS_ACCESS_KEY_ID'),
@@ -64,5 +69,6 @@ export function describeConfiguredServices(env: ApiEnv): string {
       ? 's3'
       : 'local';
   const llm = env.llmMock ? 'mock' : env.llmApiKey ? 'configured' : 'missing';
-  return `wechat=${wechat} oss=${oss} llm=${llm}`;
+  const admin = env.adminUsername && env.adminPassword ? 'configured' : 'missing';
+  return `wechat=${wechat} oss=${oss} llm=${llm} admin=${admin}`;
 }

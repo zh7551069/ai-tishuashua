@@ -1,7 +1,7 @@
-import { PRODUCT_NAME } from '@tishuashua/shared';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from './layout/AdminLayout';
 import { LoginPage } from './pages/LoginPage';
+import { OverviewPage } from './pages/OverviewPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 
 export function App() {
@@ -9,16 +9,7 @@ export function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route element={<AdminLayout />}>
-        <Route
-          path="/"
-          element={
-            <PlaceholderPage
-              title={`${PRODUCT_NAME} 概览`}
-              moduleName="admin-gateway"
-              description="独立 Web 管理端。小程序走微信登录，这里走帐密。业务页面都还是空壳。"
-            />
-          }
-        />
+        <Route path="/" element={<OverviewPage />} />
         <Route
           path="/users"
           element={

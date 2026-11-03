@@ -25,7 +25,7 @@
 
 出题会写入 `quiz_sessions`、`paper_questions`，并读取 `wrong_items`、`prompt_templates`，见 [出题](quiz.md)。课件上传和提炼使用 `user_uploads`、`extract_jobs`，见 [课件](courseware.md)。
 
-`GET /api/certificates` 和后管登录仍是原来的占位响应。后管写目录不在本切片，本地靠种子数据。
+`GET /api/certificates` 仍是占位。后管登录见 [admin-login.md](admin-login.md)。后管写目录不在本切片，本地靠种子数据。
 
 ## 种子
 

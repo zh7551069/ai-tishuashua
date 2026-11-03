@@ -1,23 +1,39 @@
 import { PRODUCT_NAME } from '@tishuashua/shared';
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { apiBase, postJson } from '../api';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { loginAdmin } from '../api';
+import { readAdminSession, writeAdminSession } from '../session';
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const existing = readAdminSession();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
-  const [result, setResult] = useState('');
+  const [error, setError] = useState('');
+
+  if (existing) {
+    return <Navigate to="/" replace />;
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
-    setResult('');
+    setError('');
     try {
-      const payload = await postJson('/admin/login', { username, password });
-      setResult(JSON.stringify(payload, null, 2));
-    } catch (error) {
-      setResult(error instanceof Error ? error.message : '请求失败');
+      const result = await loginAdmin({ username, password });
+      if (!result.token || !result.expiresAt || !result.admin?.username) {
+        setError('登录响应不完整');
+        return;
+      }
+      writeAdminSession({
+        token: result.token,
+        expiresAt: result.expiresAt,
+        username: result.admin.username,
+      });
+      navigate('/', { replace: true });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '登录失败');
     } finally {
       setPending(false);
     }
@@ -27,7 +43,7 @@ export function LoginPage() {
     <div className="login-screen">
       <form className="card" onSubmit={onSubmit}>
         <h1>{PRODUCT_NAME} 管理登录</h1>
-        <p className="muted">帐密登录占位。提交后只展示 API 的脚手架响应，不会建立会话。</p>
+        <p className="muted">使用 API 配置的管理员帐号。成功后进入后台，失败会留在此页。</p>
         <label>
           用户名
           <input
@@ -49,14 +65,14 @@ export function LoginPage() {
             required
           />
         </label>
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <button type="submit" disabled={pending}>
-          {pending ? '提交中' : '登录'}
+          {pending ? '登录中' : '登录'}
         </button>
-        <p className="muted">API：{apiBase}/admin/login</p>
-        <p>
-          <Link to="/">返回布局</Link>
-        </p>
-        {result ? <pre>{result}</pre> : null}
       </form>
     </div>
   );

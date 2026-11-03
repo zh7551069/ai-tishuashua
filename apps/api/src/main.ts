@@ -14,28 +14,40 @@ async function bootstrap(): Promise<void> {
   app.enableCors({ origin: env.adminOrigins });
   app.enableShutdownHooks();
 
-  const document = SwaggerModule.createDocument(
-    app,
-    new DocumentBuilder()
-      .setTitle('题刷刷 API')
-      .setDescription(
-        '微信登录、目录、刷题包、AI 出题、交卷判分、错题本和课件提炼已实现。证书成绩占位仍未完成。',
-      )
-      .setVersion('0.1.0')
-      .addBearerAuth()
-      .build(),
-  );
-  SwaggerModule.setup('docs', app, document, { useGlobalPrefix: true });
+  let docsReady = false;
+  try {
+    const document = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder()
+        .setTitle('题刷刷 API')
+        .setDescription(
+          '微信登录、目录、刷题包、AI 出题、交卷判分、错题本、课件提炼和管理后台登录已实现。证书成绩占位仍未完成。',
+        )
+        .setVersion('0.1.0')
+        .addBearerAuth()
+        .build(),
+    );
+    SwaggerModule.setup('docs', app, document, { useGlobalPrefix: true });
+    docsReady = true;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown error';
+    console.warn(`[api] OpenAPI 文档未生成：${message}`);
+  }
 
   await app.listen(env.port, '0.0.0.0');
   console.log(`[api] http://127.0.0.1:${env.port}/api/health`);
-  console.log(`[api] docs http://127.0.0.1:${env.port}/api/docs`);
+  if (docsReady) {
+    console.log(`[api] docs http://127.0.0.1:${env.port}/api/docs`);
+  }
   console.log(`[api] integrations ${describeConfiguredServices(env)}`);
   if (env.wechatLoginMock) {
     console.warn('[api] WECHAT_LOGIN_MOCK=true，不会请求微信 code2session');
   }
   if (env.llmMock) {
     console.warn('[api] LLM_MOCK=true，出题和课件提炼不会请求 DeepSeek 或通义');
+  }
+  if (!env.adminUsername || !env.adminPassword) {
+    console.warn('[api] ADMIN_USERNAME / ADMIN_PASSWORD 未配置，管理后台不能登录');
   }
 }
 

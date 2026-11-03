@@ -2,7 +2,7 @@
 
 小程序只用微信登录。流程是：`Taro.login` 拿到 `code` → `POST /api/auth/wechat/login` → 服务端调用微信 `jscode2session` → 按 `openId` 注册或登录 → 签发不透明 token，会话写入 Redis。带 `Authorization: Bearer <token>` 可以访问 `GET /api/users/me`。
 
-本期没有短信登录、游客、其他 OAuth，也没有后管帐密。手机号不是登录必填项；用户表有 `phone_masked`，未授权时为 `null`。刷题包是后续切片，见 [packs.md](packs.md)。
+本期没有短信登录、游客、其他 OAuth。后管帐密不走这条链路，见 [admin-login.md](admin-login.md)。手机号不是登录必填项；用户表有 `phone_masked`，未授权时为 `null`。刷题包见 [packs.md](packs.md)。
 
 ## 本地依赖
 

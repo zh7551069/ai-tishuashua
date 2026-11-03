@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { ConfigService } from '@nestjs/config';
-import { loadApiEnv } from './env';
+import { describeConfiguredServices, loadApiEnv } from './env';
 
 function configWith(values: Record<string, string | undefined>): ConfigService {
   return {
@@ -11,7 +11,7 @@ function configWith(values: Record<string, string | undefined>): ConfigService {
   } as ConfigService;
 }
 
-describe('loadApiEnv mocks', () => {
+describe('loadApiEnv', () => {
   test('只有 true 或 1 才打开 mock', () => {
     const cases: Array<[string | undefined, boolean]> = [
       [undefined, false],
@@ -30,5 +30,22 @@ describe('loadApiEnv mocks', () => {
       const llm = loadApiEnv(configWith({ LLM_MOCK: raw }));
       assert.equal(llm.llmMock, expected, `LLM_MOCK=${String(raw)}`);
     }
+  });
+
+  test('管理后台帐号只报告是否配齐，日志不含口令', () => {
+    const missing = loadApiEnv(configWith({ ADMIN_USERNAME: ' admin ' }));
+    assert.equal(missing.adminUsername, 'admin');
+    assert.equal(missing.adminPassword, '');
+    assert.match(describeConfiguredServices(missing), /admin=missing/);
+
+    const ready = loadApiEnv(
+      configWith({ ADMIN_USERNAME: ' admin ', ADMIN_PASSWORD: ' local-secret ' }),
+    );
+    assert.equal(ready.adminUsername, 'admin');
+    assert.equal(ready.adminPassword, 'local-secret');
+    const described = describeConfiguredServices(ready);
+    assert.match(described, /admin=configured/);
+    assert.equal(described.includes('local-secret'), false);
+    assert.equal(described.includes('admin '), false);
   });
 });
