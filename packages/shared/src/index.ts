@@ -124,6 +124,11 @@ export type {
   PublishStatus,
   TextbookNode,
 } from './catalog';
+export type {
+  CertificateLatestScore,
+  CertificateQueryItem,
+  CertificateQueryList,
+} from './certificate-query';
 export {
   CATALOG_CODE_MAX_LENGTH,
   CATALOG_CODE_PATTERN,

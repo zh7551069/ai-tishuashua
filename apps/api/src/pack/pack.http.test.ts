@@ -236,9 +236,13 @@ describe('catalog and packs', { concurrency: 1 }, () => {
     );
     assert.equal(missing.status, 404);
 
-    const placeholder = await call('/certificates');
-    assert.equal(placeholder.status, 200);
-    assert.equal((placeholder.body as { implemented?: boolean }).implemented, false);
+    const certificates = await call('/certificates');
+    assert.equal(certificates.status, 401);
+    assert.equal(certificates.body.code, ApiErrorCode.UNAUTHORIZED);
+
+    const scores = await call('/certificates/scores');
+    assert.equal(scores.status, 200);
+    assert.equal((scores.body as { implemented?: boolean }).implemented, false);
 
     const tables = await ctx.pool?.query<{
       quiz_sessions: string | null;

@@ -58,7 +58,7 @@ export function App() {
             <PlaceholderPage
               title="证书与成绩"
               moduleName="certificate"
-              description="证书查询仍是占位。上架领域、证书和知识点在「目录」。"
+              description="这一页仍是空壳。小程序证书查询已经分开实现。上架领域、证书和知识点在「目录」。"
             />
           }
         />

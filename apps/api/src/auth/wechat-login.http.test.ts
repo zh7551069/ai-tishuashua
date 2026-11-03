@@ -116,10 +116,19 @@ describe('wechat login http', { concurrency: 1 }, () => {
       assert.equal(me.status, 401);
       assert.equal(meBody.code, ApiErrorCode.UNAUTHORIZED);
 
-      const placeholder = await fetch(`${booted.base}/certificates`);
-      const placeholderBody = (await placeholder.json()) as { implemented?: boolean };
-      assert.equal(placeholder.status, 200);
-      assert.equal(placeholderBody.implemented, false);
+      const certificates = await fetch(`${booted.base}/certificates`);
+      const certificatesBody = (await certificates.json()) as {
+        code?: string;
+        implemented?: boolean;
+      };
+      assert.equal(certificates.status, 401);
+      assert.equal(certificatesBody.code, ApiErrorCode.UNAUTHORIZED);
+      assert.equal(certificatesBody.implemented, undefined);
+
+      const scores = await fetch(`${booted.base}/certificates/scores`);
+      const scoresBody = (await scores.json()) as { implemented?: boolean };
+      assert.equal(scores.status, 200);
+      assert.equal(scoresBody.implemented, false);
 
       const wrongBook = await fetch(`${booted.base}/wrong-book`);
       const wrongBookBody = (await wrongBook.json()) as { code?: string };
