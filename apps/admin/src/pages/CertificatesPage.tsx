@@ -140,7 +140,7 @@ export function CertificatesPage() {
     <section className="panel wide">
       <h1>证书与成绩</h1>
       <p className="muted">
-        只读查看全站已交卷成绩。默认包含练习和考试，按交卷时间从新到旧。这里不能改分数、删除证书或消灭错题。未交卷的出题会话不在这一页。
+        只读查看全站已交卷成绩。默认包含练习和考试，按交卷时间从新到旧。这里不能改分数、删除证书或消灭错题。未交卷的出题会话在「出题会话」，不在这一页。
       </p>
       <form
         className="filters"

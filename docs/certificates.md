@@ -9,6 +9,7 @@
 | 看每一次交卷的分数         | `GET /api/quiz/sessions`，小程序 `/pages/score`，见 [出题](quiz.md)       |
 | 看自己关联过哪些证书       | `GET /api/certificates`                                                   |
 | 后管只读看全站已交卷成绩   | `GET /api/admin/certificates`，见 [后管证书与成绩](admin-certificates.md) |
+| 后管只读看未交卷的出题会话 | `GET /api/admin/quiz-sessions`，见 [后管出题会话](admin-quiz-sessions.md) |
 
 没有 `GET /api/certificates/scores`。逐次成绩用上面的 `GET /api/quiz/sessions`，不在证书路径下再挂一份，也不按证书把成绩汇总成另一套接口。后管「证书与成绩」用 `GET /api/admin/certificates`，见 [后管证书与成绩](admin-certificates.md)。证书页上的「最近一次」只是这一行里的摘要，点进去仍打开已有的试卷解析页。
 
