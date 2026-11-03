@@ -101,9 +101,8 @@ export default function LoginPage() {
 
   if (phase === 'ready' && user) {
     return (
-      <MiniPage title="登录成功" hint="资料已同步到账号。手机号未授权时可以稍后在设置里补全。">
+      <MiniPage title="登录成功" hint="登录已完成。手机号可以稍后在设置里用微信授权补全。">
         <Text className="hint">昵称 {user.nick || '未填写'}</Text>
-        <Text className="hint">头像 {user.avatar ? '已同步' : '未同步'}</Text>
         <Text className="hint">
           手机号 {user.phoneBound ? user.phoneMasked || '已绑定' : '未授权，可在设置中补全'}
         </Text>
@@ -127,10 +126,11 @@ export default function LoginPage() {
         className="field"
         type="text"
         maxlength={64}
-        placeholder="微信昵称，可稍后补"
+        placeholder="不填则显示为微信用户"
         value={nick}
         onInput={(event) => setNick(event.detail.value)}
       />
+      <Text className="hint">只在这次登录保存。设置页不能修改。</Text>
       <Button
         className="primary"
         loading={phase === 'authorizing'}
