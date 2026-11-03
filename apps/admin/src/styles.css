@@ -18,7 +18,9 @@ a {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -162,6 +164,166 @@ pre {
   background: #e8f6ee;
   color: #1f7a4d;
   font-size: 12px;
+}
+
+.tag.off {
+  background: #eef1f4;
+  color: #5c6b7a;
+}
+
+.catalog-intro {
+  margin-bottom: 16px;
+}
+
+.catalog-intro h1,
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.panel h2 {
+  margin-top: 16px;
+  font-size: 18px;
+}
+
+.catalog {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(260px, 340px) minmax(320px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.catalog .panel {
+  max-width: none;
+}
+
+.catalog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.catalog-head h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.entity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 10px;
+  text-align: left;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #e4e8ee;
+  border-radius: 10px;
+}
+
+.entity.selected {
+  border-color: #8dcfab;
+  background: #f3faf6;
+}
+
+button.entity-title {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.entity-title .tag {
+  margin-bottom: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.actions select {
+  width: auto;
+  flex: 1;
+  min-width: 160px;
+  margin-top: 0;
+}
+
+button.secondary,
+button.danger,
+button.tiny {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+button.secondary {
+  background: #fff;
+  color: #1c2430;
+  border: 1px solid #d5dbe3;
+}
+
+button.danger {
+  background: #9b2c2c;
+}
+
+select,
+textarea {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid #d5dbe3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.check-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.check-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.check-row input {
+  width: auto;
+  margin: 0;
+}
+
+.node {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 2px solid #e4e8ee;
+}
+
+.hint {
+  margin: 4px 0 0;
+  color: #5c6b7a;
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .catalog {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 800px) {

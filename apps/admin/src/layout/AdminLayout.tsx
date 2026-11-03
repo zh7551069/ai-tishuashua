@@ -6,6 +6,7 @@ import { clearAdminSession, readAdminSession, type StoredAdminSession } from '..
 
 const links = [
   { to: '/', label: '概览', end: true },
+  { to: '/catalog', label: '目录' },
   { to: '/users', label: '用户' },
   { to: '/courseware', label: '课件' },
   { to: '/quiz', label: '出题会话' },

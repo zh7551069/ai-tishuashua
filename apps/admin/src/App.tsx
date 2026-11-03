@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from './layout/AdminLayout';
+import { CatalogPage } from './pages/CatalogPage';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
@@ -10,6 +11,7 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<AdminLayout />}>
         <Route path="/" element={<OverviewPage />} />
+        <Route path="/catalog" element={<CatalogPage />} />
         <Route
           path="/users"
           element={
@@ -56,7 +58,7 @@ export function App() {
             <PlaceholderPage
               title="证书与成绩"
               moduleName="certificate"
-              description="证书与成绩查询尚未实现。"
+              description="证书查询仍是占位。上架领域、证书和知识点在「目录」。"
             />
           }
         />

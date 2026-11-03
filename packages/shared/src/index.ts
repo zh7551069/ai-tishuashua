@@ -124,6 +124,37 @@ export type {
   PublishStatus,
   TextbookNode,
 } from './catalog';
+export {
+  CATALOG_CODE_MAX_LENGTH,
+  CATALOG_CODE_PATTERN,
+  CATALOG_EXTRA_MAX_LENGTH,
+  CATALOG_NAME_MAX_LENGTH,
+  CATALOG_PROMPT_MAX_LENGTH,
+  CATALOG_SCORE_MAX,
+  CATALOG_SORT_MAX,
+  CATALOG_SOURCE_REF_MAX_LENGTH,
+} from './admin-catalog';
+export type {
+  AdminCatalogDeleteResult,
+  AdminCatalogTree,
+  AdminCertificate,
+  AdminCertificateList,
+  AdminCertificatePatch,
+  AdminCertificateWrite,
+  AdminDomain,
+  AdminDomainList,
+  AdminDomainPatch,
+  AdminDomainWrite,
+  AdminKnowledgeNode,
+  AdminKnowledgePatch,
+  AdminKnowledgeWrite,
+  AdminTextbook,
+  AdminTextbookLink,
+  AdminTextbookPatch,
+  AdminTextbookSummary,
+  AdminTextbookWrite,
+  CatalogNodeKind,
+} from './admin-catalog';
 export type {
   CreatePackRequest,
   DeletePackResult,

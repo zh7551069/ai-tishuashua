@@ -32,9 +32,20 @@ export function logoutAdmin(token: string): Promise<AdminLogoutResponse> {
   return request<AdminLogoutResponse>('/admin/logout', { method: 'POST', token });
 }
 
+export function adminFetch<T>(
+  path: string,
+  options: { method?: 'GET' | 'POST' | 'PUT' | 'DELETE'; token?: string; body?: unknown } = {},
+): Promise<T> {
+  return request<T>(path, {
+    method: options.method ?? 'GET',
+    token: options.token,
+    body: options.body,
+  });
+}
+
 async function request<T>(
   path: string,
-  options: { method: 'GET' | 'POST'; token?: string; body?: unknown },
+  options: { method: 'GET' | 'POST' | 'PUT' | 'DELETE'; token?: string; body?: unknown },
 ): Promise<T> {
   let response: Response;
   try {
