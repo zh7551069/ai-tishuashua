@@ -1,19 +1,19 @@
 # 题刷刷
 
-AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通（`code` → 用户 upsert → Redis 会话）。目录和刷题包也可以用：选领域、证书、知识点后保存，首页显示当前包。出题、交卷判分、解析、错题本和课件提炼已经接通。登录见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包见 [docs/packs.md](docs/packs.md)，出题与交卷见 [docs/quiz.md](docs/quiz.md)，课件见 [docs/courseware.md](docs/courseware.md)。
+AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通（`code` → 用户 upsert → Redis 会话）。目录和刷题包也可以用：选领域、证书、知识点后保存，首页显示当前包。出题、交卷判分、解析、错题本、成绩列表和课件提炼已经接通。登录见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包见 [docs/packs.md](docs/packs.md)，出题与交卷见 [docs/quiz.md](docs/quiz.md)，课件见 [docs/courseware.md](docs/courseware.md)。
 
 技术栈按架构 v0.2：Taro 微信小程序、无状态 NestJS API、BullMQ Worker、PostgreSQL、Redis、对象存储（COS/OSS）、国内 LLM（DeepSeek / 通义）。本期不是微信云开发，小程序通过 HTTP 访问自建 API。
 
 ## 系统职责
 
-| 目录              | 职责                                                                                                                                                                                                                                                          |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/mini`       | 微信小程序。Taro + React + TypeScript。落地页用 `Taro.login` 的 `code` 换会话并进入首页；协议和隐私是可打开的正文。首页按有无刷题包进入选领域或当前包，证书下架时包置灰且不能开始刷题。出题、答题交卷、成绩解析、错题本和课件提炼已接通。证书查询仍是页面壳。 |
-| `apps/api`        | 无状态 NestJS API。微信登录、当前用户、目录、刷题包、出题、交卷判分、错题本和课件提炼已实现，会话在 Redis，数据在 PostgreSQL。后管登录仍是壳。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。                                |
-| `apps/worker`     | 独立部署的队列消费者。`quiz.generate` 会读会话、调用 mock 或国内 LLM，并写入试卷。`courseware.extract` 读取课件并提炼知识点草稿。                                                                                                                             |
-| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页是帐密表单占位，和微信登录分开。                                                                                               |
-| `packages/shared` | 出题设置、错题配额、分值归一化、Prompt 选择、mock 题目、课件 50MB 上限、API 错误码、登录与刷题包类型、队列名。成卷在 `@tishuashua/shared/generation`，提炼在 `@tishuashua/shared/courseware`，避免小程序打进 Node 依赖。                                      |
-| `packages/config` | 共享 `tsconfig`。ESLint / Prettier 放在仓库根目录。                                                                                                                                                                                                           |
+| 目录              | 职责                                                                                                                                                                                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/mini`       | 微信小程序。Taro + React + TypeScript。落地页用 `Taro.login` 的 `code` 换会话并进入首页；协议和隐私是可打开的正文。首页按有无刷题包进入选领域或当前包，证书下架时包置灰且不能开始刷题。出题、答题交卷、成绩解析、成绩列表、错题本和课件提炼已接通。证书查询仍是页面壳。 |
+| `apps/api`        | 无状态 NestJS API。微信登录、当前用户、目录、刷题包、出题、交卷判分、错题本和课件提炼已实现，会话在 Redis，数据在 PostgreSQL。后管登录仍是壳。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。                                          |
+| `apps/worker`     | 独立部署的队列消费者。`quiz.generate` 会读会话、调用 mock 或国内 LLM，并写入试卷。`courseware.extract` 读取课件并提炼知识点草稿。                                                                                                                                       |
+| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页是帐密表单占位，和微信登录分开。                                                                                                         |
+| `packages/shared` | 出题设置、错题配额、分值归一化、Prompt 选择、mock 题目、课件 50MB 上限、API 错误码、登录与刷题包类型、队列名。成卷在 `@tishuashua/shared/generation`，提炼在 `@tishuashua/shared/courseware`，避免小程序打进 Node 依赖。                                                |
+| `packages/config` | 共享 `tsconfig`。ESLint / Prettier 放在仓库根目录。                                                                                                                                                                                                                     |
 
 管理后台不放数据库和微信密钥。微信 `AppSecret`、对象存储密钥和 LLM Key 只属于 API / Worker。
 
@@ -225,8 +225,8 @@ pnpm --filter @tishuashua/mini build:weapp
 3. 课件上传和提炼已接通：直传登记、进度、取消、mock 或真模型提炼，勾选后进入当前证书的「我的课件」。后管上传列表和会员提炼配额还没有做。
 4. `quiz.generate` 已接通：设置页、进度、取消、mock 或真模型成卷、拉卷、保存选择、交卷判分和解析。
 5. 错题本已接通：交卷写入、列表、详情和消灭。出题时仍只带未消灭错题。后管错题页仍是壳。
-6. 小程序成绩列表读已交卷会话。后管证书维护和 `GET /api/certificates` 仍是占位，和小程序用的 `/api/catalog` 不是同一个接口。
+6. 小程序成绩列表已接通：首页「成绩」打开 `/pages/score/index`，读取 `GET /api/quiz/sessions` 的已交卷摘要（分数、时间、证书、刷题包等），再进入 `/pages/quiz/paper/index` 看解析。后管证书维护和 `GET /api/certificates` 仍是占位，和小程序用的 `/api/catalog` 不是同一个接口。`GET /api/certificates/scores` 也不是这份成绩。
 7. 管理后台帐密登录，以及 admin-gateway 的访问控制。
 8. Redis 限流。
 
-后管登录的返回值还不能当成契约冻结。登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题、交卷和错题本字段见 [docs/quiz.md](docs/quiz.md)，课件字段见 [docs/courseware.md](docs/courseware.md)。
+后管登录的返回值还不能当成契约冻结。登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题、交卷、成绩列表和错题本字段见 [docs/quiz.md](docs/quiz.md)，课件字段见 [docs/courseware.md](docs/courseware.md)。
