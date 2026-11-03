@@ -213,6 +213,7 @@ describe('wechat login http', { concurrency: 1 }, () => {
       assert.equal(first.user.nick, '备考同学');
       assert.equal(first.user.avatar, 'https://example.com/a.png');
       assert.equal(first.user.phoneMasked, null);
+      assert.equal(first.user.phoneBound, false);
       assert.equal(first.user.unionId, null);
       assert.equal(first.user.status, 'active');
       assert.match(first.user.wxOpenId, /^mock_[0-9a-f]{24}$/);
@@ -233,6 +234,7 @@ describe('wechat login http', { concurrency: 1 }, () => {
       assert.equal(meResponse.status, 200);
       assert.equal(me.id, userId);
       assert.equal(me.phoneMasked, null);
+      assert.equal(me.phoneBound, false);
 
       await redis.expire(sessionKey(first.token), 30);
       const slid = await fetch(`${booted.base}/users/me`, {
@@ -260,6 +262,7 @@ describe('wechat login http', { concurrency: 1 }, () => {
       assert.equal(kept.status, 200);
       assert.equal(keptUser.unionId, 'union-kept');
       assert.equal(keptUser.phoneMasked, '138****2160');
+      assert.equal(keptUser.phoneBound, true);
       assert.equal(keptUser.nick, '备考同学');
 
       const count = await pool.query<{ count: number }>(

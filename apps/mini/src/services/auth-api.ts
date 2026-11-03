@@ -28,6 +28,15 @@ export function fetchCurrentUser(token: string): Promise<UserSummary> {
   });
 }
 
+/** 把 getPhoneNumber 的 code 绑到当前会话。不是短信登录。 */
+export function bindWechatPhone(token: string, code: string): Promise<UserSummary> {
+  return request<UserSummary>('/users/me/phone', {
+    method: 'POST',
+    token,
+    data: { code },
+  });
+}
+
 async function request<T>(
   path: string,
   options: { method: 'GET' | 'POST'; token?: string; data?: unknown },

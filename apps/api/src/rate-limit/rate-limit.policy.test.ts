@@ -78,6 +78,7 @@ describe('rate limit routes', () => {
     assert.equal(classifyRoute('/api/certificates/scores', 'GET').kind, 'public');
     assert.equal(classifyRoute('/api/certificates/scores/', 'GET').kind, 'public');
     assert.equal(classifyRoute('/api/users/me', 'GET').kind, 'wechat-api');
+    assert.equal(classifyRoute('/api/users/me/phone', 'POST').kind, 'wechat-api');
   });
 
   test('出题创建和课件上传单独分档，交卷和成绩列表不在这档', () => {

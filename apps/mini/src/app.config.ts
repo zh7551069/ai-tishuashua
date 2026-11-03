@@ -2,6 +2,7 @@ export default defineAppConfig({
   pages: [
     'pages/login/index',
     'pages/home/index',
+    'pages/settings/index',
     'pages/pack/domain/index',
     'pages/pack/certificate/index',
     'pages/pack/knowledge/index',

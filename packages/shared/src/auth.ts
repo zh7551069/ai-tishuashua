@@ -15,8 +15,19 @@ export interface UserSummary {
   unionId: string | null;
   nick: string | null;
   phoneMasked: string | null;
+  /** 已通过微信手机号授权绑定。未绑定时为 false，且 phoneMasked 为 null。 */
+  phoneBound: boolean;
   avatar: string | null;
   status: UserStatus;
+}
+
+/**
+ * POST /users/me/phone。
+ * code 来自按钮 getPhoneNumber，不是 wx.login 的 code，也不是短信验证码。
+ * 不能用它登录；调用时要带已有微信会话。
+ */
+export interface BindWechatPhoneRequest {
+  code: string;
 }
 
 /** 不透明会话 token。服务端把会话放在 Redis，响应里没有 session_key。 */

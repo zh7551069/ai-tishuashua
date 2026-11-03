@@ -14,6 +14,7 @@ function user(status: UserSummary['status']): UserSummary {
     unionId: null,
     nick: '备考同学',
     phoneMasked: null,
+    phoneBound: false,
     avatar: null,
     status,
   };
