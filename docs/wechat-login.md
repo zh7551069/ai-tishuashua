@@ -93,6 +93,7 @@ curl -sS http://127.0.0.1:3000/api/users/me \
 | `REDIS_UNAVAILABLE`     | Redis 未配置或不可用                                         |
 | `UNAUTHORIZED`          | 没有 token，或 token 已失效                                  |
 | `FORBIDDEN`             | 用户 `status` 为 `banned`                                    |
+| `RATE_LIMITED`          | 登录或已登录请求超过窗口。见 [rate-limit.md](rate-limit.md)  |
 
 ## 小程序
 

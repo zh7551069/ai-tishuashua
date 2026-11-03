@@ -45,7 +45,23 @@ describe('loadApiEnv', () => {
     assert.equal(ready.adminPassword, 'local-secret');
     const described = describeConfiguredServices(ready);
     assert.match(described, /admin=configured/);
+    assert.match(described, /rateLimit=on/);
     assert.equal(described.includes('local-secret'), false);
     assert.equal(described.includes('admin '), false);
+  });
+
+  test('限流默认开启，false 或 0 关闭，不信任代理', () => {
+    const defaults = loadApiEnv(configWith({}));
+    assert.equal(defaults.rateLimit.enabled, true);
+    assert.equal(defaults.rateLimit.windowSeconds, 60);
+    assert.equal(defaults.rateLimit.wechatLoginMax, 60);
+    assert.equal(defaults.rateLimit.adminLoginMax, 30);
+    assert.equal(defaults.trustProxy, false);
+    assert.match(describeConfiguredServices(defaults), /rateLimit=on/);
+
+    const off = loadApiEnv(configWith({ RATE_LIMIT_ENABLED: 'false', TRUST_PROXY: '1' }));
+    assert.equal(off.rateLimit.enabled, false);
+    assert.equal(off.trustProxy, true);
+    assert.match(describeConfiguredServices(off), /rateLimit=off/);
   });
 });

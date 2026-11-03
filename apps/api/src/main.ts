@@ -11,6 +11,11 @@ async function bootstrap(): Promise<void> {
   const env = loadApiEnv(app.get(ConfigService));
 
   configureHttp(app);
+  if (env.trustProxy) {
+    const server = app.getHttpAdapter().getInstance() as { set(name: string, value: number): void };
+    server.set('trust proxy', 1);
+    console.log('[api] trust proxy enabled');
+  }
   app.enableCors({ origin: env.adminOrigins });
   app.enableShutdownHooks();
 
@@ -21,7 +26,7 @@ async function bootstrap(): Promise<void> {
       new DocumentBuilder()
         .setTitle('题刷刷 API')
         .setDescription(
-          '微信登录、目录、刷题包、AI 出题、交卷判分、错题本、课件提炼和管理后台登录已实现。证书成绩占位仍未完成。',
+          '微信登录、目录、刷题包、AI 出题、交卷判分、错题本、课件提炼、管理后台登录和 Redis 限流已实现。证书成绩占位仍未完成。',
         )
         .setVersion('0.1.0')
         .addBearerAuth()

@@ -10,6 +10,7 @@ import { DatabaseModule } from './db/database.module';
 import { HealthModule } from './health/health.module';
 import { PackModule } from './pack/pack.module';
 import { QuizModule } from './quiz/quiz.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { SessionModule } from './session/session.module';
 import { UserModule } from './user/user.module';
 import { WrongBookModule } from './wrong-book/wrong-book.module';
@@ -22,6 +23,7 @@ import { WrongBookModule } from './wrong-book/wrong-book.module';
     }),
     DatabaseModule,
     SessionModule,
+    RateLimitModule,
     HealthModule,
     AuthModule,
     UserModule,

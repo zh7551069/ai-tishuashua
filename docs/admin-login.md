@@ -73,6 +73,7 @@ TTL 7 天。带对应 token 的请求会把 TTL 重新设为 7 天。响应里�
 | `ADMIN_NOT_CONFIGURED` | 没有配齐 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`                     |
 | `UNAUTHORIZED`         | 用户名或口令不正确；没有后管会话；会话失效；拿微信 token 访问后管 |
 | `REDIS_UNAVAILABLE`    | 帐号正确，但 Redis 未配置或不可用                                 |
+| `RATE_LIMITED`         | 登录或已登录请求超过窗口。见 [rate-limit.md](rate-limit.md)       |
 
 错误的用户名和错误的口令返回同一句「用户名或密码不正确」。微信 token 访问后管时也是 `UNAUTHORIZED`，因为后管键里没有它，不会把它当成已识别的用户再拒绝。
 
