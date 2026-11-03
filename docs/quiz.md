@@ -154,16 +154,16 @@ curl -sS -X POST http://127.0.0.1:3000/api/quiz/sessions/会话id/submit \
 
 正确率是完全答对的题数除以题量，少选不算正确。得分率是得分除以总分。题目分值沿用成卷时已经归一化到证书总分的整数。及格线来自证书的 `pass_score`；没有及格线时 `passed` 为 `null`。
 
-成绩列表只含已交卷摘要，不含题目。小程序这一页已经接通，读的就是下面这个接口：
+成绩列表只含已交卷摘要，不含题目。一次最多 50 条。小程序这一页已经接通，读的就是下面这个接口：
 
 ```bash
 curl -sS http://127.0.0.1:3000/api/quiz/sessions \
   -H "authorization: Bearer $TOKEN"
 ```
 
-响应 `items` 每条是 `QuizScoreSummary`：`id`、`mode`、`certName`、`packName`、`earnedScore`、`totalScore`、`accuracy`、`scoreRate`、`correctCount`、`questionCount`、`passed`、`passScore`、`reason`、`submittedAt`。按交卷时间从新到旧，最多 50 条。未登录返回 401。打开列表时，已到点但还没交卷的考试会先被收卷，再出现在结果里。
+响应除了 `items`，还有 `total`、`limit` 和 `hasMore`。`items` 每条是 `QuizScoreSummary`：`id`、`mode`、`certName`、`packName`、`earnedScore`、`totalScore`、`accuracy`、`scoreRate`、`correctCount`、`questionCount`、`passed`、`passScore`、`reason`、`submittedAt`。按交卷时间从新到旧，最多 `limit` 条（50）。`total` 是当前用户已交卷会话数，快照读不出来、因此不会出现在 `items` 里的记录也算进去。`hasMore` 在 `total` 大于 `limit` 时为 true，表示更早的成绩被截掉了。未交卷不计入。未登录返回 401。打开列表时，已到点但还没交卷的考试会先被收卷，再出现在结果里。
 
-小程序首页「成绩」进入 `/pages/score/index`。列表展示证书、刷题包、模式、得分、正确率、得分率、对题数、及格与及格线、交卷原因和交卷时间。没有 token 或会话失效时停在本页，引导去登录。加载中、还没有交卷记录、请求失败是分开的状态，失败可以重试。点一条进入已有的 `/pages/quiz/paper/index?sessionId=`。已交卷会话不会再次开考，沿用交卷结果页看正确答案和解析。
+小程序首页「成绩」进入 `/pages/score/index`。列表展示证书、刷题包、模式、得分、正确率、得分率、对题数、及格与及格线、交卷原因和交卷时间。`hasMore` 为 true 时，列表上方显示「只显示最近 50 条」。没有 token 或会话失效时停在本页，引导去登录。加载中、还没有交卷记录、请求失败是分开的状态，失败可以重试。点一条进入已有的 `/pages/quiz/paper/index?sessionId=`。已交卷会话不会再次开考，沿用交卷结果页看正确答案和解析。
 
 没有 `GET /api/certificates/scores`。这份成绩就是上面的 `GET /api/quiz/sessions`。证书查询见 [证书查询](certificates.md)，它只在证书一行上附最近一次已落库的分数，不替代这里的列表。后管「证书与成绩」是全站已交卷的只读列表，见 [后管证书与成绩](admin-certificates.md)，也不在这一页。后管「出题会话」只读未交卷会话，不含分数和题目，见 [后管出题会话](admin-quiz-sessions.md)。
 

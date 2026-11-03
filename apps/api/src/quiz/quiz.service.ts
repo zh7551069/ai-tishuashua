@@ -10,6 +10,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import { ApiException } from '../common/api.exception';
 import { QuizQueueService } from './quiz-queue.service';
+import { toQuizScoreList } from './quiz-score-list';
 import { QuizRepository } from './quiz.repository';
 
 @Injectable()
@@ -94,7 +95,8 @@ export class QuizService {
 
   async listScores(userId: string) {
     await this.quizzes.expireDueExams(userId);
-    return { items: await this.quizzes.listScores(userId) };
+    const page = await this.quizzes.listScores(userId);
+    return toQuizScoreList(page.items, page.total);
   }
 
   async cancel(userId: string, sessionId: string): Promise<QuizSessionView> {

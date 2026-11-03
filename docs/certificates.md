@@ -50,7 +50,7 @@
 | `uploadCount`              | 本人挂在这张证书上的课件                                 |
 | `latestScore`              | 最近一次已交卷的分数摘要；快照里没有数字分数时为 `null`  |
 
-`latestScore` 有 `sessionId`、`earnedScore`、`totalScore`、`passed`、`submittedAt`。数字和 `passed` 都读当时写入的 `pass_snapshot`，不会按现在的及格线重算。`passed` 不是布尔值时记为 `null`。这不是 `QuizScoreSummary`，没有题目、模式、刷题包名和正确率。要看每一次交卷，用成绩列表。
+`latestScore` 有 `sessionId`、`earnedScore`、`totalScore`、`passed`、`submittedAt`。数字和 `passed` 都读当时写入的 `pass_snapshot`，不会按现在的及格线重算。`passed` 不是布尔值时记为 `null`。这不是 `QuizScoreSummary`，没有题目、模式、刷题包名和正确率。要看已交卷记录，用成绩列表。那一页只显示最近 50 条，更多时会标明。
 
 ## 调用
 

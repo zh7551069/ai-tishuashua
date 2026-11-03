@@ -18,7 +18,12 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { JOB_GENERATE_QUIZ, WRONG_QUESTION_RATIO_MAX, type UserSummary } from '@tishuashua/shared';
+import {
+  JOB_GENERATE_QUIZ,
+  QUIZ_SCORE_LIST_LIMIT,
+  WRONG_QUESTION_RATIO_MAX,
+  type UserSummary,
+} from '@tishuashua/shared';
 import { CurrentUser } from '../common/current-user';
 import { parseDto } from '../common/parse-dto';
 import { SessionAuthGuard } from '../session/session-auth.guard';
@@ -56,7 +61,7 @@ export class QuizSessionController {
   @Get()
   @ApiOperation({
     summary: '成绩列表',
-    description: '只返回当前用户已交卷的成绩摘要，不含题目。读取时会先把已到点的考试收卷。',
+    description: `只返回当前用户已交卷的成绩摘要，不含题目，按交卷时间从新到旧，最多 ${QUIZ_SCORE_LIST_LIMIT} 条。total 是已交卷总数，hasMore 为 true 时还有更早的记录没出现在 items 里。读取时会先把已到点的考试收卷。`,
   })
   @ApiOkResponse({ type: QuizScoreListDto })
   list(@CurrentUser() user: UserSummary) {

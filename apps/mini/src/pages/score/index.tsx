@@ -2,6 +2,7 @@ import { Button, Text, View } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import {
   QUIZ_MODE_LABELS,
+  QUIZ_SCORE_LIST_TRUNCATED_HINT,
   QUIZ_SUBMIT_REASON_LABELS,
   type QuizScoreSummary,
 } from '@tishuashua/shared';
@@ -14,6 +15,7 @@ import { clearToken, readToken } from '../../services/session';
 
 export default function ScorePage() {
   const [items, setItems] = useState<QuizScoreSummary[]>([]);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
   const [guest, setGuest] = useState(false);
@@ -24,6 +26,7 @@ export default function ScorePage() {
     if (!token) {
       setGuest(true);
       setItems([]);
+      setHasMore(false);
       setReady(true);
       return;
     }
@@ -31,12 +34,14 @@ export default function ScorePage() {
     try {
       const data = await fetchQuizScores(token);
       setItems(data.items);
+      setHasMore(data.hasMore);
       setReady(true);
     } catch (caught) {
       if (isAuthFailure(caught)) {
         clearToken();
         setGuest(true);
         setItems([]);
+        setHasMore(false);
         setError('');
         setReady(true);
         return;
@@ -44,6 +49,7 @@ export default function ScorePage() {
       setGuest(false);
       setReady(false);
       setItems([]);
+      setHasMore(false);
       setError(caught instanceof Error ? caught.message : '成绩加载失败');
     }
   };
@@ -57,7 +63,10 @@ export default function ScorePage() {
       {guest ? <GuestScore /> : null}
       {!guest && error ? <Text className="error">{error}</Text> : null}
       {!guest && !ready && !error ? <Text className="hint">正在加载成绩。</Text> : null}
-      {!guest && ready && items.length === 0 ? <EmptyScore /> : null}
+      {!guest && ready && hasMore ? (
+        <Text className="hint">{QUIZ_SCORE_LIST_TRUNCATED_HINT}</Text>
+      ) : null}
+      {!guest && ready && items.length === 0 && !hasMore ? <EmptyScore /> : null}
       {!guest && ready
         ? items.map((item) => {
             const heading = scoreHeading(item);
