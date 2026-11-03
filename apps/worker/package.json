@@ -2,7 +2,7 @@
   "name": "@tishuashua/worker",
   "version": "0.0.0",
   "private": true,
-  "description": "题刷刷队列消费者。与 API 分目录，可独立部署。当前只消费占位任务。",
+  "description": "题刷刷队列消费者。与 API 分目录，可独立部署。消费 quiz.generate 与 courseware.extract。",
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",

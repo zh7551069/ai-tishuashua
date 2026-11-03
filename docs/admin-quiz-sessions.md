@@ -1,6 +1,6 @@
 # 后管出题会话
 
-登录后的管理后台可以只读查看全站未交卷的出题会话。接口在 `admin-gateway` 下，和帐密登录共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用小程序的 `GET /api/quiz/sessions`。
+登录后的管理后台可以只读查看全站未交卷的出题会话。接口在 `admin-gateway` 下，和帐密登录、目录维护、用户只读、错题只读、课件只读、证书与成绩只读共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用小程序的 `GET /api/quiz/sessions`。
 
 这一页不是下面任何一条：
 
@@ -10,7 +10,7 @@
 | 后管只读看全站已交卷成绩 | `GET /api/admin/certificates`，见 [后管证书与成绩](admin-certificates.md) |
 | 后管只读看未交卷会话     | `GET /api/admin/quiz-sessions`                                |
 
-这里不显示题目、答案和分数，不取消出题，也不改状态。已交卷的成绩留在「证书与成绩」。
+这里不显示题目、答案和分数，不取消出题，也不改状态。已交卷的成绩留在「证书与成绩」。没有 `GET /api/certificates/scores`。小程序逐次成绩是 `GET /api/quiz/sessions`。
 
 已登录的 `/api/admin/quiz-sessions` 走后管额度。见 [限流](rate-limit.md)。
 

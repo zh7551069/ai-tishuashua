@@ -1,6 +1,6 @@
 # 后管错题
 
-登录后的管理后台可以只读查看全站错题。接口在 `admin-gateway` 下，和帐密登录、目录维护共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用小程序的 `/api/wrong-book`。
+登录后的管理后台可以只读查看全站错题。接口在 `admin-gateway` 下，和帐密登录、目录维护、用户只读、出题会话只读、课件只读、证书与成绩只读共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用小程序的 `/api/wrong-book`。
 
 小程序错题本仍然只看当前用户，默认 `pending`，最多 100 条，消灭走 `POST /api/wrong-book/:id/clear`。见 [出题与交卷](quiz.md)。后管这一页不消灭、不删除。仓库里没有后管改错题的要求，所以没有写接口。
 
@@ -64,7 +64,7 @@ pnpm dev:admin
 3. 点「查看」打开题干、选项、答案和解析。关闭后回到列表。
 4. 请求失败时留在页面上，可以重试。会话失效会回到登录页。
 
-课件页只读查看全站上传，见 [后管课件](admin-courseware.md)。证书与成绩页只读查看全站已交卷，见 [后管证书与成绩](admin-certificates.md)。
+用户页只读查看脱敏摘要，见 [后管用户](admin-users.md)。出题会话页只读查看未交卷会话，见 [后管出题会话](admin-quiz-sessions.md)。课件页只读查看全站上传，见 [后管课件](admin-courseware.md)。证书与成绩页只读查看全站已交卷，见 [后管证书与成绩](admin-certificates.md)。小程序成绩走 `GET /api/quiz/sessions`，没有 `GET /api/certificates/scores`。
 
 ## 测试
 

@@ -1,6 +1,6 @@
 # 后管课件
 
-登录后的管理后台可以只读查看全站课件上传和提炼任务。接口在 `admin-gateway` 下，和帐密登录、目录维护、错题只读共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用小程序的 `/api/courseware/jobs/:id`。
+登录后的管理后台可以只读查看全站课件上传和提炼任务。接口在 `admin-gateway` 下，和帐密登录、目录维护、用户只读、出题会话只读、错题只读、证书与成绩只读共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用小程序的 `/api/courseware/jobs/:id`。
 
 小程序上传、进度、取消和勾选回树不变，见 [课件](courseware.md)。后管这一页不重新上传、不取消别人的任务、不改提炼次数。仓库里没有这些写操作的要求，所以没有写接口。「免费终身 1 次提炼」配额仍然不做，上传接口不拦次数。
 
@@ -70,7 +70,7 @@ pnpm dev:admin
 3. 点「查看」打开进度、错误和提炼草稿。关闭后回到列表。
 4. 请求失败时留在页面上，可以重试。会话失效会回到登录页。
 
-证书与成绩页只读查看全站已交卷，见 [后管证书与成绩](admin-certificates.md)。
+用户页只读查看脱敏摘要，见 [后管用户](admin-users.md)。出题会话页只读查看未交卷会话，见 [后管出题会话](admin-quiz-sessions.md)。证书与成绩页只读查看全站已交卷，见 [后管证书与成绩](admin-certificates.md)。小程序成绩走 `GET /api/quiz/sessions`，没有 `GET /api/certificates/scores`。
 
 ## 测试
 

@@ -1,8 +1,8 @@
 # 后管用户
 
-登录后的管理后台可以只读查看全站用户摘要。接口在 `admin-gateway` 下，和帐密登录、目录维护、错题只读、课件只读、证书与成绩只读共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用 `GET /api/users/me`。
+登录后的管理后台可以只读查看全站用户摘要。接口在 `admin-gateway` 下，和帐密登录、目录维护、出题会话只读、错题只读、课件只读、证书与成绩只读共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用 `GET /api/users/me`。
 
-这一页不是小程序设置页，也不是封禁后台。没有封禁、解封、改昵称或改手机号的接口。`banned` 如果要改，只能改数据库，列表里只读展示。
+这一页只读展示用户摘要，不能封禁、解封、改昵称或改手机号。`banned` 如果要改，只能改数据库，列表里只读展示。小程序设置页（`/pages/settings/index`）展示脱敏手机号，并用微信授权把 `code` 交给 `POST /api/users/me/phone`。「退出登录」只清除本机 token。见 [微信登录](wechat-login.md)。
 
 已登录的 `/api/admin/users` 走后管额度。见 [限流](rate-limit.md)。
 

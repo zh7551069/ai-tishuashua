@@ -4,7 +4,7 @@
 
 这不是 JWT。微信用户 token 打不开后管接口，后管 token 也打不开 `GET /api/users/me`。
 
-占位时期的响应是 `implemented: false`。那个形状不是契约。下面是本切片定下的字段。
+登录成功返回不透明 token、签发时的到期时间和用户名。响应里没有 `implemented`。字段如下。
 
 ## 配置
 
