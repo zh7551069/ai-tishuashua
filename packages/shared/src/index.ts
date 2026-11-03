@@ -107,6 +107,15 @@ export type {
   AdminCoursewareList,
   AdminCoursewareSummary,
 } from './admin-courseware';
+export { ADMIN_SCORE_UNREADABLE } from './admin-certificates';
+export type {
+  AdminCertificateLinkDetail,
+  AdminCertificateLinkList,
+  AdminCertificateLinkSummary,
+  AdminScoreDetail,
+  AdminScoreList,
+  AdminScoreSummary,
+} from './admin-certificates';
 export {
   COURSEWARE_EXTENSIONS,
   EXTRACT_JOB_STATUSES,

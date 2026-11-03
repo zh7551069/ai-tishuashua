@@ -330,6 +330,13 @@ textarea {
   font-size: 13px;
 }
 
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
 .filters {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -2,14 +2,15 @@
 
 小程序首页「证书」打开 `/pages/certificate/index`，读取 `GET /api/certificates`。这里看的是当前微信账号已经关联过的证书，不是选领域建刷题包时的目录，也不是后管维护的官方目录。
 
-| 想做的事                   | 用哪个接口                                                          |
-| -------------------------- | ------------------------------------------------------------------- |
-| 选领域后挑一张上架证书建包 | `GET /api/catalog/domains/:domainId/certificates`                   |
-| 后管维护证书，含下架       | `/api/admin/catalog/*`，见 [后管改目录](admin-catalog.md)           |
-| 看每一次交卷的分数         | `GET /api/quiz/sessions`，小程序 `/pages/score`，见 [出题](quiz.md) |
-| 看自己关联过哪些证书       | `GET /api/certificates`                                             |
+| 想做的事                   | 用哪个接口                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------- |
+| 选领域后挑一张上架证书建包 | `GET /api/catalog/domains/:domainId/certificates`                                                 |
+| 后管维护证书，含下架       | `/api/admin/catalog/*`，见 [后管改目录](admin-catalog.md)                                         |
+| 看每一次交卷的分数         | `GET /api/quiz/sessions`，小程序 `/pages/score`，见 [出题](quiz.md)                               |
+| 看自己关联过哪些证书       | `GET /api/certificates`                                                                           |
+| 后管看全站关联和已交卷成绩 | `/api/admin/certificate-links` 与 `/api/admin/scores`，见 [后管证书与成绩](admin-certificates.md) |
 
-`GET /api/certificates/scores` 仍是脚手架占位，响应里 `implemented` 为 `false`。它不是上面的成绩列表，也不把成绩再按证书汇总成另一套接口。证书页上的「最近一次」只是这一行里的摘要，点进去仍打开已有的试卷解析页。
+`GET /api/certificates/scores` 仍是脚手架占位，响应里 `implemented` 为 `false`。它不是上面的成绩列表，也不把成绩再按证书汇总成另一套接口。证书页上的「最近一次」只是这一行里的摘要，点进去仍打开已有的试卷解析页。后管要看全站成绩时用自己的只读接口，不实现这个占位。
 
 ## 哪些证书会出现
 

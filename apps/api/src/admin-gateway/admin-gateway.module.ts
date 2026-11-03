@@ -2,6 +2,12 @@ import { Module } from '@nestjs/common';
 import { AdminCatalogController } from '../admin-catalog/admin-catalog.controller';
 import { AdminCatalogRepository } from '../admin-catalog/admin-catalog.repository';
 import { AdminCatalogService } from '../admin-catalog/admin-catalog.service';
+import { AdminCertificateLinkController } from '../admin-certificates/admin-certificate-link.controller';
+import { AdminCertificateLinkRepository } from '../admin-certificates/admin-certificate-link.repository';
+import { AdminCertificateLinkService } from '../admin-certificates/admin-certificate-link.service';
+import { AdminScoreController } from '../admin-certificates/admin-score.controller';
+import { AdminScoreRepository } from '../admin-certificates/admin-score.repository';
+import { AdminScoreService } from '../admin-certificates/admin-score.service';
 import { AdminCoursewareController } from '../admin-courseware/admin-courseware.controller';
 import { AdminCoursewareRepository } from '../admin-courseware/admin-courseware.repository';
 import { AdminCoursewareService } from '../admin-courseware/admin-courseware.service';
@@ -18,6 +24,8 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminCatalogController,
     AdminWrongBookController,
     AdminCoursewareController,
+    AdminCertificateLinkController,
+    AdminScoreController,
   ],
   providers: [
     AdminLoginService,
@@ -28,6 +36,10 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminWrongBookService,
     AdminCoursewareRepository,
     AdminCoursewareService,
+    AdminCertificateLinkRepository,
+    AdminCertificateLinkService,
+    AdminScoreRepository,
+    AdminScoreService,
   ],
 })
 export class AdminGatewayModule {}
