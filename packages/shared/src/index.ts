@@ -118,6 +118,29 @@ export type {
   AdminCertificateScoreSummary,
   AdminCertificateSource,
 } from './admin-certificates';
+export { ADMIN_USER_STATUSES, ADMIN_USER_STATUS_LABELS } from './admin-users';
+export type {
+  AdminUserDetail,
+  AdminUserList,
+  AdminUserStatus,
+  AdminUserSummary,
+} from './admin-users';
+export {
+  ADMIN_QUIZ_SESSION_SOURCE_LABELS,
+  ADMIN_QUIZ_SESSION_SOURCES,
+  ADMIN_QUIZ_SESSION_STATUS_LABELS,
+  ADMIN_QUIZ_SESSION_STATUSES,
+  ADMIN_QUIZ_SESSION_UNREADABLE_PACK,
+} from './admin-quiz-sessions';
+export type {
+  AdminQuizSessionDetail,
+  AdminQuizSessionError,
+  AdminQuizSessionList,
+  AdminQuizSessionProgress,
+  AdminQuizSessionSource,
+  AdminQuizSessionStatus,
+  AdminQuizSessionSummary,
+} from './admin-quiz-sessions';
 export {
   COURSEWARE_EXTENSIONS,
   EXTRACT_JOB_STATUSES,

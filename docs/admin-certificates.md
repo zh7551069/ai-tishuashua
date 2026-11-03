@@ -11,7 +11,7 @@
 | 后管维护领域、证书和知识点 | `/api/admin/catalog/*`，见 [后管改目录](admin-catalog.md) |
 | 后管只读看全站已交卷       | `GET /api/admin/certificates`                             |
 
-后管这一页不改分数、不删证书、不消灭错题、不取消出题。仓库里没有这些写操作的要求，所以没有写接口。未交卷的出题会话仍不在这一页，导航里的「出题会话」还是空壳。没有 `GET /api/certificates/scores`。
+后管这一页不改分数、不删证书、不消灭错题、不取消出题。仓库里没有这些写操作的要求，所以没有写接口。未交卷的出题会话不在这一页，见 [后管出题会话](admin-quiz-sessions.md)。没有 `GET /api/certificates/scores`。
 
 已登录的 `/api/admin/certificates` 走后管额度。见 [限流](rate-limit.md)。
 
