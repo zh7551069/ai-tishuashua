@@ -74,14 +74,20 @@ export default function SettingsPage() {
   const phoneText = !user?.phoneBound ? '未绑定' : user.phoneMasked || '已绑定';
 
   return (
-    <MiniPage title="设置" hint="查看当前账号。手机号用微信授权补全，不是短信验证码登录。">
+    <MiniPage
+      title="设置"
+      hint="查看当前账号。昵称不能在这里改。手机号用微信授权补全，不是短信登录。"
+    >
       {error ? <Text className="error">{error}</Text> : null}
       {!ready && !error ? <Text className="hint">正在读取账号。</Text> : null}
       {ready && user ? (
         <View>
           <View className="card">
             <Text className="tree-name">{user.nick || '微信用户'}</Text>
-            <Text className="meta">头像 {user.avatar ? '已同步' : '未同步'}</Text>
+            <Text className="meta">
+              昵称只在登录时填写，这里不能修改。要填写或更换，请退出后重新登录并在登录页填写；留空会保留已有昵称。
+            </Text>
+            <Text className="meta">本小程序不上传头像。</Text>
             <Text className="meta">手机号 {phoneText}</Text>
             <Text className="meta">
               {user.phoneBound ? '已通过微信授权绑定' : '尚未授权微信手机号'}
@@ -106,7 +112,35 @@ export default function SettingsPage() {
           重试
         </Button>
       ) : null}
+      {ready || error ? <LogoutBlock disabled={binding} onLogout={() => void onLogout()} /> : null}
     </MiniPage>
+  );
+}
+
+async function onLogout(): Promise<void> {
+  const result = await Taro.showModal({
+    title: '退出登录',
+    content: '只清除本机登录态，不会删除账号和已保存的学习数据。',
+    confirmText: '退出',
+    confirmColor: '#b42318',
+  });
+  if (!result.confirm) {
+    return;
+  }
+  clearToken();
+  await Taro.reLaunch({ url: '/pages/login/index' });
+}
+
+function LogoutBlock(props: { disabled: boolean; onLogout: () => void }) {
+  return (
+    <View>
+      <Button className="danger" disabled={props.disabled} onClick={props.onLogout}>
+        退出登录
+      </Button>
+      <Text className="hint">
+        只清除本机登录态。账号、刷题记录、错题、课件、成绩和脱敏手机号仍保留。账号注销尚未开放。
+      </Text>
+    </View>
   );
 }
 
