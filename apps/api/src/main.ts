@@ -26,7 +26,7 @@ async function bootstrap(): Promise<void> {
       new DocumentBuilder()
         .setTitle('题刷刷 API')
         .setDescription(
-          '微信登录、目录、刷题包、AI 出题、交卷判分、错题本、证书查询、课件提炼、管理后台登录和 Redis 限流已实现。GET /api/certificates/scores 仍是占位。',
+          '微信登录、目录、刷题包、AI 出题、交卷判分、错题本、证书查询、课件提炼、管理后台登录、目录维护、后管错题只读和 Redis 限流已实现。GET /api/certificates/scores 仍是占位。',
         )
         .setVersion('0.1.0')
         .addBearerAuth()
