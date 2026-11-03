@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { AdminCatalogController } from '../admin-catalog/admin-catalog.controller';
 import { AdminCatalogRepository } from '../admin-catalog/admin-catalog.repository';
 import { AdminCatalogService } from '../admin-catalog/admin-catalog.service';
+import { AdminCertificateController } from '../admin-certificates/admin-certificates.controller';
+import { AdminCertificateRepository } from '../admin-certificates/admin-certificates.repository';
+import { AdminCertificateService } from '../admin-certificates/admin-certificates.service';
 import { AdminCoursewareController } from '../admin-courseware/admin-courseware.controller';
 import { AdminCoursewareRepository } from '../admin-courseware/admin-courseware.repository';
 import { AdminCoursewareService } from '../admin-courseware/admin-courseware.service';
@@ -18,6 +21,7 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminCatalogController,
     AdminWrongBookController,
     AdminCoursewareController,
+    AdminCertificateController,
   ],
   providers: [
     AdminLoginService,
@@ -28,6 +32,8 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminWrongBookService,
     AdminCoursewareRepository,
     AdminCoursewareService,
+    AdminCertificateRepository,
+    AdminCertificateService,
   ],
 })
 export class AdminGatewayModule {}

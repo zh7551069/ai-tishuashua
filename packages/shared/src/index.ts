@@ -108,6 +108,19 @@ export type {
   AdminCoursewareSummary,
 } from './admin-courseware';
 export {
+  ADMIN_CERTIFICATE_SOURCE_LABELS,
+  ADMIN_CERTIFICATE_SOURCES,
+  ADMIN_CERTIFICATE_UNREADABLE_PACK,
+  ADMIN_CERTIFICATE_UNREADABLE_SCORE,
+} from './admin-certificates';
+export type {
+  AdminCertificateScoreDetail,
+  AdminCertificateScoreList,
+  AdminCertificateScoreQuestion,
+  AdminCertificateScoreSummary,
+  AdminCertificateSource,
+} from './admin-certificates';
+export {
   COURSEWARE_EXTENSIONS,
   EXTRACT_JOB_STATUSES,
   EXTRACT_STAGES,

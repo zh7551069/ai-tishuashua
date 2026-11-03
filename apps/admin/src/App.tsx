@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from './layout/AdminLayout';
 import { CatalogPage } from './pages/CatalogPage';
+import { CertificatesPage } from './pages/CertificatesPage';
 import { CoursewarePage } from './pages/CoursewarePage';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
@@ -36,16 +37,7 @@ export function App() {
           }
         />
         <Route path="/wrong-book" element={<WrongBookPage />} />
-        <Route
-          path="/certificates"
-          element={
-            <PlaceholderPage
-              title="证书与成绩"
-              moduleName="certificate"
-              description="这一页仍是空壳。小程序证书查询已经分开实现。上架领域、证书和知识点在「目录」。"
-            />
-          }
-        />
+        <Route path="/certificates" element={<CertificatesPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
