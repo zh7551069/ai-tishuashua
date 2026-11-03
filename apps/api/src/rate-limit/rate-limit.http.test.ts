@@ -160,7 +160,7 @@ describe('rate limit http', { concurrency: 1 }, () => {
       assert.equal(health.status, 200);
       assert.equal(health.body.status, 'ok');
 
-      const certificates = await request(booted.base, '/certificates', {
+      const certificates = await request(booted.base, '/certificates/scores', {
         method: 'GET',
         ip: publicIp,
       });

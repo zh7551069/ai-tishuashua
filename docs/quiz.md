@@ -165,7 +165,7 @@ curl -sS http://127.0.0.1:3000/api/quiz/sessions \
 
 小程序首页「成绩」进入 `/pages/score/index`。列表展示证书、刷题包、模式、得分、正确率、得分率、对题数、及格与及格线、交卷原因和交卷时间。没有 token 或会话失效时停在本页，引导去登录。加载中、还没有交卷记录、请求失败是分开的状态，失败可以重试。点一条进入已有的 `/pages/quiz/paper/index?sessionId=`。已交卷会话不会再次开考，沿用交卷结果页看正确答案和解析。
 
-`GET /api/certificates/scores` 仍是占位，不是这份成绩。后管证书维护也不在这一页。
+`GET /api/certificates/scores` 仍是占位，不是这份成绩。证书查询见 [证书查询](certificates.md)，它只在证书一行上附最近一次已落库的分数，不替代这里的列表。后管「证书与成绩」页也不在这一页。
 
 ## 考试到时收卷
 

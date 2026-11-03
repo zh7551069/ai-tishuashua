@@ -25,7 +25,7 @@
 
 出题会写入 `quiz_sessions`、`paper_questions`，并读取 `wrong_items`、`prompt_templates`，见 [出题](quiz.md)。课件上传和提炼使用 `user_uploads`、`extract_jobs`，见 [课件](courseware.md)。
 
-`GET /api/certificates` 仍是证书查询占位，不是这份目录。后管登录见 [admin-login.md](admin-login.md)。后管可以维护官方目录，见 [后管改目录](admin-catalog.md)。种子仍会在启动时写入，已有 `code` 不会被覆盖。
+`GET /api/certificates` 是当前用户的证书查询，不是这份目录。字段和出现条件见 [证书查询](certificates.md)。后管登录见 [admin-login.md](admin-login.md)。后管可以维护官方目录，见 [后管改目录](admin-catalog.md)。种子仍会在启动时写入，已有 `code` 不会被覆盖。
 
 ## 种子
 

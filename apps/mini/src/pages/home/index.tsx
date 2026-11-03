@@ -192,6 +192,12 @@ function StudyLinks() {
       <Button className="ghost" onClick={() => void Taro.navigateTo({ url: '/pages/score/index' })}>
         成绩
       </Button>
+      <Button
+        className="ghost"
+        onClick={() => void Taro.navigateTo({ url: '/pages/certificate/index' })}
+      >
+        证书
+      </Button>
     </View>
   );
 }
