@@ -32,6 +32,7 @@ class MemoryUsers {
       unionId: input.unionId,
       nick: input.nick,
       phoneMasked: null,
+      phoneBound: false,
       avatar: input.avatar,
       status: 'active',
     };

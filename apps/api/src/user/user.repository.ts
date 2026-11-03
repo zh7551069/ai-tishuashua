@@ -2,6 +2,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ApiErrorCode, type UserStatus, type UserSummary } from '@tishuashua/shared';
 import { randomUUID } from 'node:crypto';
 import type { QueryResult } from 'pg';
+import { isMaskedPhone } from '../auth/phone-mask';
 import { ApiException, logServerError } from '../common/api.exception';
 import { DatabaseService } from '../db/database.service';
 
@@ -47,6 +48,35 @@ export class UserRepository {
         [randomUUID(), input.wxOpenId, input.unionId, input.nick, input.avatar],
       );
       return mapUser(requiredRow(result));
+    } catch (error) {
+      throw this.asDatabaseError(error);
+    }
+  }
+
+  async bindPhone(id: string, phoneMasked: string): Promise<UserSummary> {
+    if (!isMaskedPhone(phoneMasked)) {
+      throw new ApiException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        ApiErrorCode.INTERNAL,
+        '手机号未能脱敏',
+      );
+    }
+    const pool = this.database.requirePool();
+    try {
+      const result = await pool.query<UserRow>(
+        `
+          UPDATE users
+          SET phone_masked = $2, updated_at = now()
+          WHERE id = $1
+          RETURNING ${USER_COLUMNS}
+        `,
+        [id, phoneMasked],
+      );
+      const row = result.rows[0];
+      if (!row) {
+        throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '用户不存在');
+      }
+      return mapUser(row);
     } catch (error) {
       throw this.asDatabaseError(error);
     }
@@ -100,6 +130,7 @@ function mapUser(row: UserRow): UserSummary {
     unionId: row.union_id,
     nick: row.nick,
     phoneMasked: row.phone_masked,
+    phoneBound: Boolean(row.phone_masked),
     avatar: row.avatar,
     status: asStatus(row.status),
   };

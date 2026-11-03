@@ -212,6 +212,7 @@ export type {
   AdminLogoutResponse,
   AdminPingResponse,
   AdminSummary,
+  BindWechatPhoneRequest,
   UserStatus,
   UserSummary,
   WechatLoginRequest,

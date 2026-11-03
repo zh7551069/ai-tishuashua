@@ -1,5 +1,6 @@
 -- 最小用户表，对齐架构 v0.2 的 User 字段。学习数据（包、场次、错题）不在本切片。
--- phone_masked 只保存脱敏展示值（例如 138****2160）。本切片登录不写入手机号。
+-- phone_masked 只保存脱敏展示值（例如 138****2160）。
+-- 微信登录不写这一列。设置页授权后由 POST /api/users/me/phone 写入脱敏值，不保存完整号码。
 
 CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY,
