@@ -5,6 +5,7 @@ export const ApiErrorCode = {
   /** 关联证书已下架。刷题包只可删除，不可修改或出题。 */
   PACK_UNAVAILABLE: 'PACK_UNAVAILABLE',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
+  /** 超过 API 限流窗口。HTTP 429。规则见 docs/rate-limit.md。 */
   RATE_LIMITED: 'RATE_LIMITED',
   NOT_IMPLEMENTED: 'NOT_IMPLEMENTED',
   INTERNAL: 'INTERNAL',

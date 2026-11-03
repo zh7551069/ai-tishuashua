@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { parseRateLimitSettings, type RateLimitSettings } from '../rate-limit/rate-limit.policy';
 
 export interface ApiEnv {
   port: number;
@@ -21,6 +22,9 @@ export interface ApiEnv {
   llmBaseUrl: string;
   /** 仅当值为 true 或 1 时启用。默认关闭，不请求模型。 */
   llmMock: boolean;
+  /** 仅当值为 true 或 1 时信任反向代理传来的客户端 IP。默认关闭。 */
+  trustProxy: boolean;
+  rateLimit: RateLimitSettings;
 }
 
 function read(config: ConfigService, key: string): string {
@@ -54,6 +58,8 @@ export function loadApiEnv(config: ConfigService): ApiEnv {
     llmApiKey: read(config, 'LLM_API_KEY'),
     llmBaseUrl: read(config, 'LLM_BASE_URL'),
     llmMock: ['true', '1'].includes(read(config, 'LLM_MOCK').toLowerCase()),
+    trustProxy: ['true', '1'].includes(read(config, 'TRUST_PROXY').toLowerCase()),
+    rateLimit: parseRateLimitSettings((key) => read(config, key)),
   };
 }
 
@@ -70,5 +76,6 @@ export function describeConfiguredServices(env: ApiEnv): string {
       : 'local';
   const llm = env.llmMock ? 'mock' : env.llmApiKey ? 'configured' : 'missing';
   const admin = env.adminUsername && env.adminPassword ? 'configured' : 'missing';
-  return `wechat=${wechat} oss=${oss} llm=${llm} admin=${admin}`;
+  const rateLimit = env.rateLimit.enabled ? 'on' : 'off';
+  return `wechat=${wechat} oss=${oss} llm=${llm} admin=${admin} rateLimit=${rateLimit}`;
 }

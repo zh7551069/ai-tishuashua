@@ -152,7 +152,7 @@ curl -X POST http://127.0.0.1:3000/api/auth/wechat/login \
 | POST               | `/api/admin/logout`                                       | 注销后管会话（需后管会话）   |
 | GET                | `/api/admin/ping`                                         | 后管连通性（需后管会话）     |
 
-没有 Redis 时 API 仍能启动。微信登录、帐号正确的后管登录、出题和课件提炼入队会返回 `REDIS_UNAVAILABLE`。出题创建成功后投递 `quiz.generate`，课件上传成功后投递 `courseware.extract`。迁移在 API 启动时执行。失败只记日志，不阻止进程监听。目录种子见 [docs/packs.md](docs/packs.md)，出题见 [docs/quiz.md](docs/quiz.md)，课件见 [docs/courseware.md](docs/courseware.md)，后管登录见 [docs/admin-login.md](docs/admin-login.md)。
+没有 Redis 时 API 仍能启动。微信登录、帐号正确的后管登录、出题和课件提炼入队会返回 `REDIS_UNAVAILABLE`。限流在 Redis 不可用时不拦截，因此这些错误码保持不变；规则见 [docs/rate-limit.md](docs/rate-limit.md)。出题创建成功后投递 `quiz.generate`，课件上传成功后投递 `courseware.extract`。迁移在 API 启动时执行。失败只记日志，不阻止进程监听。目录种子见 [docs/packs.md](docs/packs.md)，出题见 [docs/quiz.md](docs/quiz.md)，课件见 [docs/courseware.md](docs/courseware.md)，后管登录见 [docs/admin-login.md](docs/admin-login.md)。
 
 ## 启动 Worker
 
@@ -197,24 +197,24 @@ pnpm --filter @tishuashua/mini build:weapp
 
 ## 常用脚本
 
-| 命令                              | 作用                                                                                       |
-| --------------------------------- | ------------------------------------------------------------------------------------------ |
-| `pnpm deps:up` / `pnpm deps:down` | 起停 PostgreSQL 与 Redis                                                                   |
-| `pnpm dev:api`                    | API 热重载，端口 3000                                                                      |
-| `pnpm dev:worker`                 | Worker 热重载，端口 3001                                                                   |
-| `pnpm dev:admin`                  | 管理后台，端口 5173                                                                        |
-| `pnpm dev:mini`                   | 监听编译微信小程序                                                                         |
-| `pnpm typecheck`                  | 各包 TypeScript 检查                                                                       |
-| `pnpm lint`                       | ESLint（不含小程序目录，小程序以 `tsc` 为准）                                              |
-| `pnpm test`                       | API 单元测试；Postgres 与 Redis 可连接时跑微信等集成测试，Redis 可连接时跑后管登录集成测试 |
-| `pnpm build`                      | 构建 shared、api、worker、admin，并编译小程序                                              |
+| 命令                              | 作用                                                                                             |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `pnpm deps:up` / `pnpm deps:down` | 起停 PostgreSQL 与 Redis                                                                         |
+| `pnpm dev:api`                    | API 热重载，端口 3000                                                                            |
+| `pnpm dev:worker`                 | Worker 热重载，端口 3001                                                                         |
+| `pnpm dev:admin`                  | 管理后台，端口 5173                                                                              |
+| `pnpm dev:mini`                   | 监听编译微信小程序                                                                               |
+| `pnpm typecheck`                  | 各包 TypeScript 检查                                                                             |
+| `pnpm lint`                       | ESLint（不含小程序目录，小程序以 `tsc` 为准）                                                    |
+| `pnpm test`                       | API 单元测试；Postgres 与 Redis 可连接时跑微信等集成测试，Redis 可连接时跑后管登录和限流集成测试 |
+| `pnpm build`                      | 构建 shared、api、worker、admin，并编译小程序                                                    |
 
 根脚本走 Turborepo，会先构建 `@tishuashua/shared`。
 
 ## 架构对应
 
 - 小程序鉴权只有微信登录。短信登录不在本期。登录态是 Redis 里的不透明 token，不是 JWT。后管使用另一套不透明 token，键前缀不同。
-- API 无状态。微信登录和后管登录的会话已经写入 Redis。进度、限流还没有做。健康检查和 Worker 仍使用 Redis。
+- API 无状态。微信登录和后管登录的会话已经写入 Redis，限流计数也在 Redis。健康检查和 Worker 仍使用 Redis。
 - 用户、目录、刷题包、出题会话和课件提炼用 `pg` 迁移，没有 ORM。知识点没有 weight。用户提炼的知识点带 `owner_user_id`，只出现在本人的证书树里。
 - 课件走对象存储。未配齐 `OSS_ENDPOINT`、`OSS_BUCKET`、`OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET` 时写本地目录，不访问云厂商。配齐后走 S3 兼容接口，默认 path-style，可接 MinIO。共享常量 `COURSEWARE_MAX_BYTES` 为 50MB。
 - 出题和课件提炼走 Worker，按需调用国内 LLM。`WRONG_QUESTION_RATIO_MAX` 为 `0.5`。没有 Key 且未打开 `LLM_MOCK` 时拒绝出题和上传提炼。免费终身 1 次提炼配额本期不做门禁。
@@ -230,6 +230,6 @@ pnpm --filter @tishuashua/mini build:weapp
 5. 错题本已接通：交卷写入、列表、详情和消灭。出题时仍只带未消灭错题。后管错题页仍是壳。
 6. 小程序成绩列表已接通：首页「成绩」打开 `/pages/score/index`，读取 `GET /api/quiz/sessions` 的已交卷摘要（分数、时间、证书、刷题包等），再进入 `/pages/quiz/paper/index` 看解析。后管证书维护和 `GET /api/certificates` 仍是占位，和小程序用的 `/api/catalog` 不是同一个接口。`GET /api/certificates/scores` 也不是这份成绩。
 7. 管理后台帐密登录已接通：API 用环境变量里的帐号签发 Redis 不透明 token，admin-gateway 拒绝缺少会话、失效会话和微信用户 token。后管改目录、证书维护、错题页和上传列表仍未做。
-8. Redis 限流。
+8. Redis 限流已接通：登录、证书占位，以及已登录的小程序和后管接口按 IP 与身份在 Redis 里分开计数。超限返回 `429` / `RATE_LIMITED`。开关、阈值，以及没有 Redis 时不拦截的原因见 [docs/rate-limit.md](docs/rate-limit.md)。
 
 后管登录字段见 [docs/admin-login.md](docs/admin-login.md)。本切片替换了占位响应，此前没有冻结契约。微信登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题、交卷、成绩列表和错题本字段见 [docs/quiz.md](docs/quiz.md)，课件字段见 [docs/courseware.md](docs/courseware.md)。
