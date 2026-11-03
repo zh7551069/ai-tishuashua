@@ -11,6 +11,7 @@ import {
 } from '@tishuashua/shared';
 import { useEffect, useRef, useState } from 'react';
 import { MiniPage } from '../../../components/MiniPage';
+import { formatSubmittedAt } from '../../../services/format';
 import { isAuthFailure, withAuth } from '../../../services/guard';
 import { HttpError } from '../../../services/http';
 import { queryValue } from '../../../services/query';
@@ -290,7 +291,9 @@ function ResultCard(props: { session: QuizSessionView }) {
         正确 {result.correctCount} · 少选 {result.partialCount} · 答错 {result.wrongCount} · 未作答{' '}
         {result.unansweredCount}
       </Text>
-      <Text className="meta">{QUIZ_SUBMIT_REASON_LABELS[result.reason]}</Text>
+      <Text className="meta">
+        {QUIZ_SUBMIT_REASON_LABELS[result.reason]} · {formatSubmittedAt(result.submittedAt)}
+      </Text>
     </View>
   );
 }
