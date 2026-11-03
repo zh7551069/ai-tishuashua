@@ -26,7 +26,7 @@ API 用 Redis 固定窗口计数。超限返回 `429`，响应体是 `{ "code": 
 
 后管登录的帐号钥匙是用户名去掉首尾空白、取前 64 个字符之后的 SHA-256 前 24 位十六进制，键里没有用户名原文，也没有口令。空用户名只按 IP 计。
 
-`POST /api/quiz/sessions` 只包括创建出题。`GET /api/quiz/sessions`（成绩列表）、保存答案、交卷、取消，以及 `GET /api/certificates` 都不在这档，只走已登录小程序的通用额度。课件的进度、取消和勾选同样只走通用额度。证书查询不再走公开 IP 额度。
+`POST /api/quiz/sessions` 只包括创建出题。`GET /api/quiz/sessions`（成绩列表）、保存答案、交卷、取消，以及 `GET /api/certificates` 都不在这档，只走已登录小程序的通用额度。课件的进度、取消和勾选同样只走通用额度。后管 `GET /api/admin/courseware` 走已登录后管额度，不占用上传这一档。证书查询不再走公开 IP 额度。
 
 任一档超限即拒绝。`Retry-After` 取已超限的那些档里剩余时间最长的一秒，至少为 1。
 

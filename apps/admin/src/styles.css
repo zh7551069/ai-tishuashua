@@ -176,6 +176,11 @@ pre {
   color: #5c6b7a;
 }
 
+.tag.bad {
+  background: #fdecec;
+  color: #9b2c2c;
+}
+
 .catalog-intro {
   margin-bottom: 16px;
 }
@@ -375,8 +380,10 @@ table.data tr.selected {
   background: #f3faf6;
 }
 
-table.data .stem {
+table.data .stem,
+table.data .file {
   max-width: 280px;
+  overflow-wrap: break-word;
 }
 
 .pager {

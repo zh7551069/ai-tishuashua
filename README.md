@@ -1,19 +1,19 @@
 # 题刷刷
 
-AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通（`code` → 用户 upsert → Redis 会话）。目录和刷题包也可以用：选领域、证书、知识点后保存，首页显示当前包。出题、交卷判分、解析、错题本、成绩列表、证书查询和课件提炼已经接通。管理后台用独立帐密登录，登录后可以维护上架领域、证书和教材知识点树，并只读查看全站错题。登录见 [docs/wechat-login.md](docs/wechat-login.md)，后管登录见 [docs/admin-login.md](docs/admin-login.md)，目录维护见 [docs/admin-catalog.md](docs/admin-catalog.md)，后管错题见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)，刷题包见 [docs/packs.md](docs/packs.md)，出题与交卷见 [docs/quiz.md](docs/quiz.md)，证书查询见 [docs/certificates.md](docs/certificates.md)，课件见 [docs/courseware.md](docs/courseware.md)。
+AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通（`code` → 用户 upsert → Redis 会话）。目录和刷题包也可以用：选领域、证书、知识点后保存，首页显示当前包。出题、交卷判分、解析、错题本、成绩列表、证书查询和课件提炼已经接通。管理后台用独立帐密登录，登录后可以维护上架领域、证书和教材知识点树，并只读查看全站错题和课件上传。登录见 [docs/wechat-login.md](docs/wechat-login.md)，后管登录见 [docs/admin-login.md](docs/admin-login.md)，目录维护见 [docs/admin-catalog.md](docs/admin-catalog.md)，后管错题见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)，后管课件见 [docs/admin-courseware.md](docs/admin-courseware.md)，刷题包见 [docs/packs.md](docs/packs.md)，出题与交卷见 [docs/quiz.md](docs/quiz.md)，证书查询见 [docs/certificates.md](docs/certificates.md)，课件见 [docs/courseware.md](docs/courseware.md)。
 
 技术栈按架构 v0.2：Taro 微信小程序、无状态 NestJS API、BullMQ Worker、PostgreSQL、Redis、对象存储（COS/OSS）、国内 LLM（DeepSeek / 通义）。本期不是微信云开发，小程序通过 HTTP 访问自建 API。
 
 ## 系统职责
 
-| 目录              | 职责                                                                                                                                                                                                                                                                 |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/mini`       | 微信小程序。Taro + React + TypeScript。落地页用 `Taro.login` 的 `code` 换会话并进入首页；协议和隐私是可打开的正文。首页按有无刷题包进入选领域或当前包，证书下架时包置灰且不能开始刷题。出题、答题交卷、成绩解析、成绩列表、错题本、证书查询和课件提炼已接通。        |
-| `apps/api`        | 无状态 NestJS API。微信登录、当前用户、目录、刷题包、出题、交卷判分、错题本、证书查询和课件提炼已实现，会话在 Redis，数据在 PostgreSQL。后管帐密登录、官方目录维护和错题只读已实现。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。 |
-| `apps/worker`     | 独立部署的队列消费者。`quiz.generate` 会读会话、调用 mock 或国内 LLM，并写入试卷。`courseware.extract` 读取课件并提炼知识点草稿。                                                                                                                                    |
-| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页用帐密换 Redis 会话后进入后台，和微信登录分开。目录页可维护领域、证书和知识点树。错题页只读查看全站记录。                             |
-| `packages/shared` | 出题设置、错题配额、分值归一化、Prompt 选择、mock 题目、课件 50MB 上限、API 错误码、登录与刷题包类型、队列名。成卷在 `@tishuashua/shared/generation`，提炼在 `@tishuashua/shared/courseware`，避免小程序打进 Node 依赖。                                             |
-| `packages/config` | 共享 `tsconfig`。ESLint / Prettier 放在仓库根目录。                                                                                                                                                                                                                  |
+| 目录              | 职责                                                                                                                                                                                                                                                                               |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/mini`       | 微信小程序。Taro + React + TypeScript。落地页用 `Taro.login` 的 `code` 换会话并进入首页；协议和隐私是可打开的正文。首页按有无刷题包进入选领域或当前包，证书下架时包置灰且不能开始刷题。出题、答题交卷、成绩解析、成绩列表、错题本、证书查询和课件提炼已接通。                      |
+| `apps/api`        | 无状态 NestJS API。微信登录、当前用户、目录、刷题包、出题、交卷判分、错题本、证书查询和课件提炼已实现，会话在 Redis，数据在 PostgreSQL。后管帐密登录、官方目录维护、错题只读和课件上传只读已实现。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。 |
+| `apps/worker`     | 独立部署的队列消费者。`quiz.generate` 会读会话、调用 mock 或国内 LLM，并写入试卷。`courseware.extract` 读取课件并提炼知识点草稿。                                                                                                                                                  |
+| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页用帐密换 Redis 会话后进入后台，和微信登录分开。目录页可维护领域、证书和知识点树。错题页和课件页只读查看全站记录。                                   |
+| `packages/shared` | 出题设置、错题配额、分值归一化、Prompt 选择、mock 题目、课件 50MB 上限、API 错误码、登录与刷题包类型、队列名。成卷在 `@tishuashua/shared/generation`，提炼在 `@tishuashua/shared/courseware`，避免小程序打进 Node 依赖。                                                           |
+| `packages/config` | 共享 `tsconfig`。ESLint / Prettier 放在仓库根目录。                                                                                                                                                                                                                                |
 
 管理后台不放数据库和微信密钥。微信 `AppSecret`、对象存储密钥和 LLM Key 只属于 API / Worker。
 
@@ -122,51 +122,53 @@ curl -X POST http://127.0.0.1:3000/api/auth/wechat/login \
 
 路由：
 
-| 方法               | 路径                                                        | 模块                         |
-| ------------------ | ----------------------------------------------------------- | ---------------------------- |
-| POST               | `/api/auth/wechat/login`                                    | 微信登录（已实现）           |
-| GET                | `/api/users/me`                                             | 当前用户（需 Bearer token）  |
-| GET                | `/api/catalog/domains`                                      | 上架领域（需登录）           |
-| GET                | `/api/catalog/domains/:domainId/certificates`               | 上架证书（需登录）           |
-| GET                | `/api/catalog/certificates/:certificateId/knowledge-tree`   | 教材 / 知识点树（需登录）    |
-| GET / POST         | `/api/packs`                                                | 刷题包列表、创建（需登录）   |
-| GET / PUT / DELETE | `/api/packs/:id`                                            | 读取、重命名或换知识点、删除 |
-| POST               | `/api/packs/:id/activate`                                   | 设为当前包                   |
-| POST               | `/api/quiz/sessions`                                        | 创建出题任务（需登录）       |
-| GET                | `/api/quiz/sessions/:id`                                    | 进度或试卷（需登录）         |
-| POST               | `/api/quiz/sessions/:id/cancel`                             | 取消出题并丢弃半卷           |
-| POST               | `/api/quiz/sessions/:id/start`                              | 进入答题                     |
-| POST               | `/api/quiz/sessions/:id/answers`                            | 保存选择，不判分             |
-| POST               | `/api/quiz/sessions/:id/submit`                             | 交卷、判分、写错题           |
-| GET                | `/api/quiz/sessions`                                        | 已交卷成绩列表               |
-| GET                | `/api/wrong-book`                                           | 错题本列表（需登录）         |
-| GET                | `/api/wrong-book/:id`                                       | 错题详情                     |
-| POST               | `/api/wrong-book/:id/clear`                                 | 消灭错题                     |
-| GET                | `/api/certificates`                                         | 当前用户的证书查询（需登录） |
-| GET                | `/api/certificates/scores`                                  | 成绩占位，不是交卷成绩       |
-| POST               | `/api/courseware/uploads`                                   | 上传课件并登记提炼           |
-| GET                | `/api/courseware/jobs/:id`                                  | 提炼进度                     |
-| POST               | `/api/courseware/jobs/:id/cancel`                           | 取消提炼                     |
-| POST               | `/api/courseware/jobs/:id/commit`                           | 勾选知识点回树，可并进刷题包 |
-| POST               | `/api/admin/login`                                          | 后台帐密登录（已实现）       |
-| POST               | `/api/admin/logout`                                         | 注销后管会话（需后管会话）   |
-| GET                | `/api/admin/ping`                                           | 后管连通性（需后管会话）     |
-| GET / POST         | `/api/admin/catalog/domains`                                | 后管领域，含下架             |
-| PUT / DELETE       | `/api/admin/catalog/domains/:id`                            | 修改或删除领域               |
-| GET / POST         | `/api/admin/catalog/domains/:domainId/certificates`         | 后管证书，含下架             |
-| PUT / DELETE       | `/api/admin/catalog/certificates/:id`                       | 修改或删除证书               |
-| GET                | `/api/admin/catalog/certificates/:id/tree`                  | 官方教材 / 知识点树          |
-| POST               | `/api/admin/catalog/certificates/:id/textbooks`             | 新建并挂上教材               |
-| POST               | `/api/admin/catalog/certificates/:id/textbooks/link`        | 挂已有官方教材               |
-| DELETE             | `/api/admin/catalog/certificates/:id/textbooks/:textbookId` | 从证书卸下教材               |
-| PUT / DELETE       | `/api/admin/catalog/textbooks/:id`                          | 修改或删除教材               |
-| POST               | `/api/admin/catalog/textbooks/:id/nodes`                    | 教材下新建知识点或分组       |
-| POST               | `/api/admin/catalog/certificates/:id/knowledge-points`      | 不挂教材的独立知识点         |
-| PUT / DELETE       | `/api/admin/catalog/knowledge-points/:id`                   | 修改或删除知识点             |
-| GET                | `/api/admin/wrong-book`                                     | 后管错题列表（需后管会话）   |
-| GET                | `/api/admin/wrong-book/:id`                                 | 后管错题详情（需后管会话）   |
+| 方法               | 路径                                                        | 模块                           |
+| ------------------ | ----------------------------------------------------------- | ------------------------------ |
+| POST               | `/api/auth/wechat/login`                                    | 微信登录（已实现）             |
+| GET                | `/api/users/me`                                             | 当前用户（需 Bearer token）    |
+| GET                | `/api/catalog/domains`                                      | 上架领域（需登录）             |
+| GET                | `/api/catalog/domains/:domainId/certificates`               | 上架证书（需登录）             |
+| GET                | `/api/catalog/certificates/:certificateId/knowledge-tree`   | 教材 / 知识点树（需登录）      |
+| GET / POST         | `/api/packs`                                                | 刷题包列表、创建（需登录）     |
+| GET / PUT / DELETE | `/api/packs/:id`                                            | 读取、重命名或换知识点、删除   |
+| POST               | `/api/packs/:id/activate`                                   | 设为当前包                     |
+| POST               | `/api/quiz/sessions`                                        | 创建出题任务（需登录）         |
+| GET                | `/api/quiz/sessions/:id`                                    | 进度或试卷（需登录）           |
+| POST               | `/api/quiz/sessions/:id/cancel`                             | 取消出题并丢弃半卷             |
+| POST               | `/api/quiz/sessions/:id/start`                              | 进入答题                       |
+| POST               | `/api/quiz/sessions/:id/answers`                            | 保存选择，不判分               |
+| POST               | `/api/quiz/sessions/:id/submit`                             | 交卷、判分、写错题             |
+| GET                | `/api/quiz/sessions`                                        | 已交卷成绩列表                 |
+| GET                | `/api/wrong-book`                                           | 错题本列表（需登录）           |
+| GET                | `/api/wrong-book/:id`                                       | 错题详情                       |
+| POST               | `/api/wrong-book/:id/clear`                                 | 消灭错题                       |
+| GET                | `/api/certificates`                                         | 当前用户的证书查询（需登录）   |
+| GET                | `/api/certificates/scores`                                  | 成绩占位，不是交卷成绩         |
+| POST               | `/api/courseware/uploads`                                   | 上传课件并登记提炼             |
+| GET                | `/api/courseware/jobs/:id`                                  | 提炼进度                       |
+| POST               | `/api/courseware/jobs/:id/cancel`                           | 取消提炼                       |
+| POST               | `/api/courseware/jobs/:id/commit`                           | 勾选知识点回树，可并进刷题包   |
+| POST               | `/api/admin/login`                                          | 后台帐密登录（已实现）         |
+| POST               | `/api/admin/logout`                                         | 注销后管会话（需后管会话）     |
+| GET                | `/api/admin/ping`                                           | 后管连通性（需后管会话）       |
+| GET / POST         | `/api/admin/catalog/domains`                                | 后管领域，含下架               |
+| PUT / DELETE       | `/api/admin/catalog/domains/:id`                            | 修改或删除领域                 |
+| GET / POST         | `/api/admin/catalog/domains/:domainId/certificates`         | 后管证书，含下架               |
+| PUT / DELETE       | `/api/admin/catalog/certificates/:id`                       | 修改或删除证书                 |
+| GET                | `/api/admin/catalog/certificates/:id/tree`                  | 官方教材 / 知识点树            |
+| POST               | `/api/admin/catalog/certificates/:id/textbooks`             | 新建并挂上教材                 |
+| POST               | `/api/admin/catalog/certificates/:id/textbooks/link`        | 挂已有官方教材                 |
+| DELETE             | `/api/admin/catalog/certificates/:id/textbooks/:textbookId` | 从证书卸下教材                 |
+| PUT / DELETE       | `/api/admin/catalog/textbooks/:id`                          | 修改或删除教材                 |
+| POST               | `/api/admin/catalog/textbooks/:id/nodes`                    | 教材下新建知识点或分组         |
+| POST               | `/api/admin/catalog/certificates/:id/knowledge-points`      | 不挂教材的独立知识点           |
+| PUT / DELETE       | `/api/admin/catalog/knowledge-points/:id`                   | 修改或删除知识点               |
+| GET                | `/api/admin/wrong-book`                                     | 后管错题列表（需后管会话）     |
+| GET                | `/api/admin/wrong-book/:id`                                 | 后管错题详情（需后管会话）     |
+| GET                | `/api/admin/courseware`                                     | 后管课件上传列表（需后管会话） |
+| GET                | `/api/admin/courseware/:id`                                 | 后管课件上传详情（需后管会话） |
 
-没有 Redis 时 API 仍能启动。微信登录、帐号正确的后管登录、出题和课件提炼入队会返回 `REDIS_UNAVAILABLE`。限流在 Redis 不可用时不拦截，因此这些错误码保持不变；规则见 [docs/rate-limit.md](docs/rate-limit.md)。出题创建成功后投递 `quiz.generate`，课件上传成功后投递 `courseware.extract`。迁移在 API 启动时执行。失败只记日志，不阻止进程监听。目录种子见 [docs/packs.md](docs/packs.md)，后管改目录见 [docs/admin-catalog.md](docs/admin-catalog.md)，后管错题见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)，出题见 [docs/quiz.md](docs/quiz.md)，证书查询见 [docs/certificates.md](docs/certificates.md)，课件见 [docs/courseware.md](docs/courseware.md)，后管登录见 [docs/admin-login.md](docs/admin-login.md)。
+没有 Redis 时 API 仍能启动。微信登录、帐号正确的后管登录、出题和课件提炼入队会返回 `REDIS_UNAVAILABLE`。限流在 Redis 不可用时不拦截，因此这些错误码保持不变；规则见 [docs/rate-limit.md](docs/rate-limit.md)。出题创建成功后投递 `quiz.generate`，课件上传成功后投递 `courseware.extract`。迁移在 API 启动时执行。失败只记日志，不阻止进程监听。目录种子见 [docs/packs.md](docs/packs.md)，后管改目录见 [docs/admin-catalog.md](docs/admin-catalog.md)，后管错题见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)，后管课件见 [docs/admin-courseware.md](docs/admin-courseware.md)，出题见 [docs/quiz.md](docs/quiz.md)，证书查询见 [docs/certificates.md](docs/certificates.md)，课件见 [docs/courseware.md](docs/courseware.md)，后管登录见 [docs/admin-login.md](docs/admin-login.md)。
 
 ## 启动 Worker
 
@@ -190,7 +192,7 @@ pnpm dev:worker
 pnpm dev:admin
 ```
 
-打开 <http://127.0.0.1:5173>。没有会话时停在登录页。错误帐密留在页面上并提示；正确帐密进入概览，并带着会话访问 `GET /api/admin/ping`。进入「目录」后可以维护领域、证书和知识点树。进入「错题」后可以只读查看全站错题。课件列表和证书与成绩页仍是空壳。小程序证书查询不在后管这一页。步骤见 [docs/admin-login.md](docs/admin-login.md)、[docs/admin-catalog.md](docs/admin-catalog.md) 和 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)。
+打开 <http://127.0.0.1:5173>。没有会话时停在登录页。错误帐密留在页面上并提示；正确帐密进入概览，并带着会话访问 `GET /api/admin/ping`。进入「目录」后可以维护领域、证书和知识点树。进入「错题」后可以只读查看全站错题。进入「课件」后可以只读查看全站上传和提炼任务。证书与成绩页仍是空壳。小程序证书查询不在后管这一页。步骤见 [docs/admin-login.md](docs/admin-login.md)、[docs/admin-catalog.md](docs/admin-catalog.md)、[docs/admin-wrong-book.md](docs/admin-wrong-book.md) 和 [docs/admin-courseware.md](docs/admin-courseware.md)。
 
 ## 启动小程序
 
@@ -211,17 +213,17 @@ pnpm --filter @tishuashua/mini build:weapp
 
 ## 常用脚本
 
-| 命令                              | 作用                                                                                                                                 |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm deps:up` / `pnpm deps:down` | 起停 PostgreSQL 与 Redis                                                                                                             |
-| `pnpm dev:api`                    | API 热重载，端口 3000                                                                                                                |
-| `pnpm dev:worker`                 | Worker 热重载，端口 3001                                                                                                             |
-| `pnpm dev:admin`                  | 管理后台，端口 5173                                                                                                                  |
-| `pnpm dev:mini`                   | 监听编译微信小程序                                                                                                                   |
-| `pnpm typecheck`                  | 各包 TypeScript 检查                                                                                                                 |
-| `pnpm lint`                       | ESLint（不含小程序目录，小程序以 `tsc` 为准）                                                                                        |
-| `pnpm test`                       | API 单元测试；Postgres 与 Redis 可连接时跑微信、刷题包、证书查询、后管目录和后管错题集成测试，Redis 可连接时跑后管登录和限流集成测试 |
-| `pnpm build`                      | 构建 shared、api、worker、admin，并编译小程序                                                                                        |
+| 命令                              | 作用                                                                                                                                           |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm deps:up` / `pnpm deps:down` | 起停 PostgreSQL 与 Redis                                                                                                                       |
+| `pnpm dev:api`                    | API 热重载，端口 3000                                                                                                                          |
+| `pnpm dev:worker`                 | Worker 热重载，端口 3001                                                                                                                       |
+| `pnpm dev:admin`                  | 管理后台，端口 5173                                                                                                                            |
+| `pnpm dev:mini`                   | 监听编译微信小程序                                                                                                                             |
+| `pnpm typecheck`                  | 各包 TypeScript 检查                                                                                                                           |
+| `pnpm lint`                       | ESLint（不含小程序目录，小程序以 `tsc` 为准）                                                                                                  |
+| `pnpm test`                       | API 单元测试；Postgres 与 Redis 可连接时跑微信、刷题包、证书查询、后管目录、后管错题和后管课件集成测试，Redis 可连接时跑后管登录和限流集成测试 |
+| `pnpm build`                      | 构建 shared、api、worker、admin，并编译小程序                                                                                                  |
 
 根脚本走 Turborepo，会先构建 `@tishuashua/shared`。
 
@@ -239,12 +241,12 @@ pnpm --filter @tishuashua/mini build:weapp
 
 1. 微信登录已接通：小程序 `code` → API 换会话 → Redis，并 upsert 用户表。手机号授权仍留到设置补全。
 2. 目录和刷题包已接通：上架领域 / 证书 / 教材知识点树，以及建包、切换、重命名、删除。证书下架后包只可删除。后管可以改官方目录，变更对 `/api/catalog/*` 可见。种子仍会写入，但不会覆盖已有 `code`。
-3. 课件上传和提炼已接通：直传登记、进度、取消、mock 或真模型提炼，勾选后进入当前证书的「我的课件」。后管上传列表和会员提炼配额还没有做。
+3. 课件上传和提炼已接通：直传登记、进度、取消、mock 或真模型提炼，勾选后进入当前证书的「我的课件」。后管可以只读分页查看全站上传和提炼任务，见 [docs/admin-courseware.md](docs/admin-courseware.md)。会员提炼配额还没有做。
 4. `quiz.generate` 已接通：设置页、进度、取消、mock 或真模型成卷、拉卷、保存选择、交卷判分和解析。
 5. 错题本已接通：交卷写入、列表、详情和消灭。出题时仍只带未消灭错题。后管可以只读分页查看全站错题，见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)。后管不能消灭或删除。
 6. 小程序成绩列表已接通：首页「成绩」打开 `/pages/score/index`，读取 `GET /api/quiz/sessions` 的已交卷摘要（分数、时间、证书、刷题包等），再进入 `/pages/quiz/paper/index` 看解析。`GET /api/certificates/scores` 仍是占位，不是这份成绩。
 7. 小程序证书查询已接通：首页「证书」打开 `/pages/certificate/index`，读取 `GET /api/certificates`。只列出当前用户有刷题包、错题、课件或能对上的已交卷记录的证书，含下架。它和小程序目录 `/api/catalog`、后管目录 `/api/admin/catalog`、成绩列表都不是同一个接口。后管「证书与成绩」页仍是空壳。
-8. 管理后台帐密登录已接通：API 用环境变量里的帐号签发 Redis 不透明 token，admin-gateway 拒绝缺少会话、失效会话和微信用户 token。后管目录维护和错题只读已接通。课件上传列表仍未做。
+8. 管理后台帐密登录已接通：API 用环境变量里的帐号签发 Redis 不透明 token，admin-gateway 拒绝缺少会话、失效会话和微信用户 token。后管目录维护、错题只读和课件上传只读已接通。
 9. Redis 限流已接通：登录、成绩占位 `GET /api/certificates/scores`，以及已登录的小程序和后管接口按 IP 与身份在 Redis 里分开计数。证书查询走已登录小程序额度。超限返回 `429` / `RATE_LIMITED`。开关、阈值，以及没有 Redis 时不拦截的原因见 [docs/rate-limit.md](docs/rate-limit.md)。
 
-后管登录字段见 [docs/admin-login.md](docs/admin-login.md)，目录维护见 [docs/admin-catalog.md](docs/admin-catalog.md)，后管错题见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)。微信登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题、交卷、成绩列表和错题本字段见 [docs/quiz.md](docs/quiz.md)，证书查询字段见 [docs/certificates.md](docs/certificates.md)，课件字段见 [docs/courseware.md](docs/courseware.md)。
+后管登录字段见 [docs/admin-login.md](docs/admin-login.md)，目录维护见 [docs/admin-catalog.md](docs/admin-catalog.md)，后管错题见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)，后管课件见 [docs/admin-courseware.md](docs/admin-courseware.md)。微信登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题、交卷、成绩列表和错题本字段见 [docs/quiz.md](docs/quiz.md)，证书查询字段见 [docs/certificates.md](docs/certificates.md)，课件字段见 [docs/courseware.md](docs/courseware.md)。

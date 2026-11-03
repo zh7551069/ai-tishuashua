@@ -97,6 +97,17 @@ export type {
   AdminWrongBookSummary,
 } from './admin-wrong-book';
 export {
+  ADMIN_COURSEWARE_STAGE_LABELS,
+  ADMIN_COURSEWARE_STATUS_LABELS,
+  ADMIN_COURSEWARE_UNREADABLE_FILE,
+} from './admin-courseware';
+export type {
+  AdminCoursewareDetail,
+  AdminCoursewareError,
+  AdminCoursewareList,
+  AdminCoursewareSummary,
+} from './admin-courseware';
+export {
   COURSEWARE_EXTENSIONS,
   EXTRACT_JOB_STATUSES,
   EXTRACT_STAGES,

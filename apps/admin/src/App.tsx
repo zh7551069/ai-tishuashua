@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from './layout/AdminLayout';
 import { CatalogPage } from './pages/CatalogPage';
+import { CoursewarePage } from './pages/CoursewarePage';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
@@ -23,16 +24,7 @@ export function App() {
             />
           }
         />
-        <Route
-          path="/courseware"
-          element={
-            <PlaceholderPage
-              title="课件"
-              moduleName="courseware"
-              description="课件、封面与导出走对象存储。单文件上限 50MB。提炼任务在 worker。"
-            />
-          }
-        />
+        <Route path="/courseware" element={<CoursewarePage />} />
         <Route
           path="/quiz"
           element={
