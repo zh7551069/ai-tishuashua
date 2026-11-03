@@ -25,7 +25,7 @@
 
 出题会写入 `quiz_sessions`、`paper_questions`，并读取 `wrong_items`、`prompt_templates`，见 [出题](quiz.md)。课件上传和提炼使用 `user_uploads`、`extract_jobs`，见 [课件](courseware.md)。
 
-`GET /api/certificates` 仍是占位。后管登录见 [admin-login.md](admin-login.md)。后管写目录不在本切片，本地靠种子数据。
+`GET /api/certificates` 仍是证书查询占位，不是这份目录。后管登录见 [admin-login.md](admin-login.md)。后管可以维护官方目录，见 [后管改目录](admin-catalog.md)。种子仍会在启动时写入，已有 `code` 不会被覆盖。
 
 ## 种子
 
@@ -39,7 +39,7 @@
 
 「综合素质」下有一条下架知识点「教学评价」，以及分组节点「综合素质章节」。树上能看到分组下的「逻辑思维」，看不到分组本身和下架知识点。
 
-手动把一张证书下架，用来看首页置灰：
+后管在「目录」里把证书改成下架，效果和下面的 SQL 一样。手动改库：
 
 ```sql
 UPDATE certificates

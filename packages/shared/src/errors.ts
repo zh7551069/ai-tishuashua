@@ -4,6 +4,8 @@ export const ApiErrorCode = {
   NOT_FOUND: 'NOT_FOUND',
   /** 关联证书已下架。刷题包只可删除，不可修改或出题。 */
   PACK_UNAVAILABLE: 'PACK_UNAVAILABLE',
+  /** 目录项仍被证书、刷题包、错题或用户课件引用，不能删除。可以改为下架。 */
+  CATALOG_IN_USE: 'CATALOG_IN_USE',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   /** 超过 API 限流窗口。HTTP 429。规则见 docs/rate-limit.md。 */
   RATE_LIMITED: 'RATE_LIMITED',
