@@ -243,16 +243,18 @@ pnpm --filter @tishuashua/mini build:weapp
 - 管理后台是独立 Web，帐密登录，不走微信。
 - 明确不做：短信登录、RAG / 向量库、计费大盘、K8s 多副本、微信云开发。
 
-## 后续实现优先级
+## 已接通
 
-1. 微信登录已接通：小程序 `code` → API 换会话 → Redis，并 upsert 用户表。设置页已可用 `getPhoneNumber` 的 `code` 绑定手机号，只保存脱敏号码。这不是短信登录。
-2. 目录和刷题包已接通：上架领域 / 证书 / 教材知识点树，以及建包、切换、重命名、删除。证书下架后包只可删除。后管可以改官方目录，变更对 `/api/catalog/*` 可见。种子仍会写入，但不会覆盖已有 `code`。
-3. 课件上传和提炼已接通：直传登记、进度、取消、mock 或真模型提炼，勾选后进入当前证书的「我的课件」。后管可以只读分页查看全站上传和提炼任务，见 [docs/admin-courseware.md](docs/admin-courseware.md)。会员提炼配额还没有做。
-4. `quiz.generate` 已接通：设置页、进度、取消、mock 或真模型成卷、拉卷、保存选择、交卷判分和解析。
-5. 错题本已接通：交卷写入、列表、详情和消灭。出题时仍只带未消灭错题。后管可以只读分页查看全站错题，见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)。后管不能消灭或删除。
-6. 小程序成绩列表已接通：首页「成绩」打开 `/pages/score/index`，读取 `GET /api/quiz/sessions` 的已交卷摘要（分数、时间、证书、刷题包等），再进入 `/pages/quiz/paper/index` 看解析。没有 `GET /api/certificates/scores`。后管全站已交卷见 [docs/admin-certificates.md](docs/admin-certificates.md)。
-7. 小程序证书查询已接通：首页「证书」打开 `/pages/certificate/index`，读取 `GET /api/certificates`。只列出当前用户有刷题包、错题、课件或能对上的已交卷记录的证书，含下架。它和小程序目录 `/api/catalog`、后管目录 `/api/admin/catalog`、成绩列表、后管「证书与成绩」都不是同一个接口。后管那一页只读查看全站已交卷，不改目录、不删证书、不改成绩，见 [docs/admin-certificates.md](docs/admin-certificates.md)。
-8. 管理后台帐密登录已接通：API 用环境变量里的帐号签发 Redis 不透明 token，admin-gateway 拒绝缺少会话、失效会话和微信用户 token。后管目录维护、用户只读、出题会话只读、错题只读、课件上传只读和证书与成绩只读已接通。用户页不封禁。出题会话不含已交卷成绩，见 [docs/admin-users.md](docs/admin-users.md) 和 [docs/admin-quiz-sessions.md](docs/admin-quiz-sessions.md)。
-9. Redis 限流已接通：登录，以及已登录的小程序和后管接口按 IP 与身份在 Redis 里分开计数。没有单独归类的 `/api` 路径按来源 IP 走公开额度。证书查询走已登录小程序额度。超限返回 `429` / `RATE_LIMITED`。开关、阈值，以及没有 Redis 时不拦截的原因见 [docs/rate-limit.md](docs/rate-limit.md)。
+下面是当前已经可用的能力。会员提炼配额、短信登录、账号注销、RAG 和计费仍按架构边界留在本期之外。
+
+1. 微信登录：小程序 `code` → API 换会话 → Redis，并 upsert 用户表。设置页用 `getPhoneNumber` 的 `code` 绑定手机号，只保存脱敏号码。这不是短信登录。「退出登录」只清除本机 token，不调用服务端注销，也不删除账号、刷题记录、错题、课件、成绩或脱敏手机号。账号注销还没有开放。见 [docs/wechat-login.md](docs/wechat-login.md)。
+2. 目录和刷题包：上架领域 / 证书 / 教材知识点树，以及建包、切换、重命名、删除。证书下架后包只可删除。后管可以改官方目录，变更对 `/api/catalog/*` 可见。种子仍会写入，但不会覆盖已有 `code`。
+3. 课件上传和提炼：直传登记、进度、取消、mock 或真模型提炼，勾选后进入当前证书的「我的课件」。后管只读分页查看全站上传和提炼任务，见 [docs/admin-courseware.md](docs/admin-courseware.md)。会员提炼配额还没有做。
+4. `quiz.generate`：出题设置（`/pages/quiz/index`）、进度、取消、mock 或真模型成卷、拉卷、保存选择、交卷判分和解析。出题设置和账号设置页（`/pages/settings/index`）是两个页面。
+5. 错题本：交卷写入、列表、详情和消灭。出题时仍只带未消灭错题。后管只读分页查看全站错题，见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)。后管不能消灭或删除。
+6. 小程序成绩列表：首页「成绩」打开 `/pages/score/index`，读取 `GET /api/quiz/sessions` 的已交卷摘要（分数、时间、证书、刷题包等），再进入 `/pages/quiz/paper/index` 看解析。没有 `GET /api/certificates/scores`。后管全站已交卷见 [docs/admin-certificates.md](docs/admin-certificates.md)。
+7. 小程序证书查询：首页「证书」打开 `/pages/certificate/index`，读取 `GET /api/certificates`。只列出当前用户有刷题包、错题、课件或能对上的已交卷记录的证书，含下架。它和小程序目录 `/api/catalog`、后管目录 `/api/admin/catalog`、成绩列表、后管「证书与成绩」都不是同一个接口。后管那一页只读查看全站已交卷，不改目录、不删证书、不改成绩，见 [docs/admin-certificates.md](docs/admin-certificates.md)。
+8. 管理后台帐密登录：API 用环境变量里的帐号签发 Redis 不透明 token，admin-gateway 拒绝缺少会话、失效会话和微信用户 token。后管目录维护、用户只读、出题会话只读、错题只读、课件上传只读和证书与成绩只读都已接通。用户页只读，不能封禁，也不能改手机号；手机号绑定和退出登录在小程序设置页。出题会话只读未交卷记录，不含题目、答案和已交卷成绩，见 [docs/admin-users.md](docs/admin-users.md) 和 [docs/admin-quiz-sessions.md](docs/admin-quiz-sessions.md)。
+9. Redis 限流：登录，以及已登录的小程序和后管接口按 IP 与身份在 Redis 里分开计数。没有单独归类的 `/api` 路径按来源 IP 走公开额度。证书查询走已登录小程序额度。超限返回 `429` / `RATE_LIMITED`。`GET /api/certificates/scores` 已删除，请求它是 `404`，不计数。开关、阈值，以及没有 Redis 时不拦截的原因见 [docs/rate-limit.md](docs/rate-limit.md)。
 
 后管登录字段见 [docs/admin-login.md](docs/admin-login.md)，目录维护见 [docs/admin-catalog.md](docs/admin-catalog.md)，后管用户见 [docs/admin-users.md](docs/admin-users.md)，后管错题见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)，后管课件见 [docs/admin-courseware.md](docs/admin-courseware.md)，后管出题会话见 [docs/admin-quiz-sessions.md](docs/admin-quiz-sessions.md)，后管证书与成绩见 [docs/admin-certificates.md](docs/admin-certificates.md)。微信登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题、交卷、成绩列表和错题本字段见 [docs/quiz.md](docs/quiz.md)，证书查询字段见 [docs/certificates.md](docs/certificates.md)，课件字段见 [docs/courseware.md](docs/courseware.md)。

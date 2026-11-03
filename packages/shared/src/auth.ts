@@ -51,7 +51,7 @@ export interface AdminSummary {
 
 /**
  * 后管登录成功的响应。
- * 占位时期的 `implemented: false` 不是契约；这是本切片定下的形状。
+ * 字段是 token、签发时的到期时间和用户名。响应里没有 `implemented`。
  */
 export interface AdminLoginResponse {
   token: string;

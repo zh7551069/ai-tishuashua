@@ -1,6 +1,6 @@
 -- 配置表与学习表，对齐架构 v0.2 §6。
--- 本切片 API 只实现 Catalog 与 Pack。Session / PaperQuestion / WrongItem /
--- PromptTemplate / UserUpload / ExtractJob 只建表，没有业务接口。
+-- 目录、刷题包，以及出题、错题、Prompt、课件上传和提炼任务都在这里建表。
+-- 出题进度、交卷和课件字段由 004–006 补上。这些表已有 API。
 -- Knowledge 没有 weight。只有 kind = knowledge_point 的行可以进入刷题包。
 
 CREATE TABLE IF NOT EXISTS domains (
@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS pack_knowledge_points (
   CONSTRAINT pack_knowledge_points_position_check CHECK (position >= 1)
 );
 
--- 以下表本切片没有 API。
+-- 出题会话、试卷题、错题、Prompt、课件上传和提炼任务。API 已接通。
 CREATE TABLE IF NOT EXISTS quiz_sessions (
   id uuid PRIMARY KEY,
   user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,

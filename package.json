@@ -2,7 +2,7 @@
   "name": "tishuashua",
   "version": "0.0.0",
   "private": true,
-  "description": "题刷刷 monorepo 脚手架",
+  "description": "题刷刷 monorepo：微信小程序、NestJS API、BullMQ Worker 与管理后台。",
   "packageManager": "pnpm@10.33.4",
   "engines": {
     "node": ">=20"

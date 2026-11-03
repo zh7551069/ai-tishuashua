@@ -1,6 +1,6 @@
 # 后管证书与成绩
 
-登录后的管理后台可以只读查看全站已交卷成绩。接口在 `admin-gateway` 下，和帐密登录、目录维护、错题只读、课件只读共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用小程序的 `GET /api/quiz/sessions` 或 `GET /api/certificates`。
+登录后的管理后台可以只读查看全站已交卷成绩。接口在 `admin-gateway` 下，和帐密登录、目录维护、用户只读、出题会话只读、错题只读、课件只读共用 `AdminSessionGuard`。微信用户 token 返回 `401` / `UNAUTHORIZED`。后管 token 也不能调用小程序的 `GET /api/quiz/sessions` 或 `GET /api/certificates`。
 
 这一页不是下面任何一条：
 
@@ -78,7 +78,7 @@ pnpm dev:admin
 3. 点「查看」打开当时的分数、选择和答案。关闭后回到列表。
 4. 请求失败时留在页面上，可以重试。会话失效会回到登录页。
 
-错题页只读查看全站记录，见 [后管错题](admin-wrong-book.md)。课件页只读查看全站上传，见 [后管课件](admin-courseware.md)。
+用户页只读查看脱敏摘要，见 [后管用户](admin-users.md)。未交卷的出题会话只读查看，见 [后管出题会话](admin-quiz-sessions.md)。错题页只读查看全站记录，见 [后管错题](admin-wrong-book.md)。课件页只读查看全站上传，见 [后管课件](admin-courseware.md)。
 
 ## 测试
 
