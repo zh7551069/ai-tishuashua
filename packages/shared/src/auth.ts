@@ -27,8 +27,35 @@ export interface WechatLoginResponse {
   user: UserSummary;
 }
 
-/** 管理后台帐密登录。与微信登录分开。 */
+/** 管理后台帐密登录。与微信登录分开。口令只出现在请求里。 */
 export interface AdminLoginRequest {
   username: string;
   password: string;
+}
+
+/** 后管会话里的操作者。没有微信 openId，也没有用户表 id。 */
+export interface AdminSummary {
+  username: string;
+}
+
+/**
+ * 后管登录成功的响应。
+ * 占位时期的 `implemented: false` 不是契约；这是本切片定下的形状。
+ */
+export interface AdminLoginResponse {
+  token: string;
+  /** 签发时的到期时间。之后每次带后管 token 的请求会把 Redis TTL 顺延。 */
+  expiresAt: string;
+  admin: AdminSummary;
+}
+
+/** GET /api/admin/ping。需要后管会话，微信 token 不行。 */
+export interface AdminPingResponse {
+  ok: true;
+  admin: AdminSummary;
+}
+
+/** POST /api/admin/logout。只删除当前后管 token。 */
+export interface AdminLogoutResponse {
+  ok: true;
 }

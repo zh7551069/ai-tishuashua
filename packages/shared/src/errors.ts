@@ -10,6 +10,8 @@ export const ApiErrorCode = {
   INTERNAL: 'INTERNAL',
   /** 未配置 WECHAT_APP_ID / WECHAT_APP_SECRET，且未显式打开登录 mock。 */
   WECHAT_NOT_CONFIGURED: 'WECHAT_NOT_CONFIGURED',
+  /** 未配置 ADMIN_USERNAME / ADMIN_PASSWORD。代码里没有默认帐号。 */
+  ADMIN_NOT_CONFIGURED: 'ADMIN_NOT_CONFIGURED',
   /** code 无效、已使用，或 mock 约定的失败码。 */
   WECHAT_AUTH_FAILED: 'WECHAT_AUTH_FAILED',
   /** 微信 jscode2session 超时、网络失败或返回非预期错误。 */

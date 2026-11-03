@@ -2,13 +2,13 @@
   "name": "@tishuashua/api",
   "version": "0.0.0",
   "private": true,
-  "description": "题刷刷 NestJS API（无状态）。微信登录会话在 Redis，用户在 PostgreSQL。",
+    "description": "题刷刷 NestJS API（无状态）。微信登录和后管会话在 Redis，用户在 PostgreSQL。",
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "node --import tsx --test --test-reporter=spec src/auth/*.test.ts src/common/*.test.ts src/session/*.test.ts src/config/*.test.ts src/catalog/*.test.ts src/pack/*.test.ts src/quiz/*.test.ts src/courseware/*.test.ts"
+    "test": "node --import tsx --test --test-reporter=spec src/auth/*.test.ts src/common/*.test.ts src/session/*.test.ts src/config/*.test.ts src/catalog/*.test.ts src/pack/*.test.ts src/quiz/*.test.ts src/courseware/*.test.ts src/admin-gateway/*.test.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.8",

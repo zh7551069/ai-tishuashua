@@ -76,6 +76,11 @@ button:disabled {
   cursor: wait;
 }
 
+.form-error {
+  color: #9b2c2c;
+  margin: 0 0 14px;
+}
+
 pre {
   margin: 16px 0 0;
   padding: 12px;
@@ -116,6 +121,24 @@ pre {
 
 .sider a.active,
 .sider a:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.account {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  color: #c9e6d8;
+}
+
+.sider button.logout {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  padding: 8px 10px;
+}
+
+.sider button.logout:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 

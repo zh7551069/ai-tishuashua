@@ -1,6 +1,6 @@
 # 题刷刷
 
-AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通（`code` → 用户 upsert → Redis 会话）。目录和刷题包也可以用：选领域、证书、知识点后保存，首页显示当前包。出题、交卷判分、解析、错题本、成绩列表和课件提炼已经接通。登录见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包见 [docs/packs.md](docs/packs.md)，出题与交卷见 [docs/quiz.md](docs/quiz.md)，课件见 [docs/courseware.md](docs/courseware.md)。
+AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通（`code` → 用户 upsert → Redis 会话）。目录和刷题包也可以用：选领域、证书、知识点后保存，首页显示当前包。出题、交卷判分、解析、错题本、成绩列表和课件提炼已经接通。管理后台用独立帐密登录。登录见 [docs/wechat-login.md](docs/wechat-login.md)，后管见 [docs/admin-login.md](docs/admin-login.md)，刷题包见 [docs/packs.md](docs/packs.md)，出题与交卷见 [docs/quiz.md](docs/quiz.md)，课件见 [docs/courseware.md](docs/courseware.md)。
 
 技术栈按架构 v0.2：Taro 微信小程序、无状态 NestJS API、BullMQ Worker、PostgreSQL、Redis、对象存储（COS/OSS）、国内 LLM（DeepSeek / 通义）。本期不是微信云开发，小程序通过 HTTP 访问自建 API。
 
@@ -9,9 +9,9 @@ AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通�
 | 目录              | 职责                                                                                                                                                                                                                                                                    |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/mini`       | 微信小程序。Taro + React + TypeScript。落地页用 `Taro.login` 的 `code` 换会话并进入首页；协议和隐私是可打开的正文。首页按有无刷题包进入选领域或当前包，证书下架时包置灰且不能开始刷题。出题、答题交卷、成绩解析、成绩列表、错题本和课件提炼已接通。证书查询仍是页面壳。 |
-| `apps/api`        | 无状态 NestJS API。微信登录、当前用户、目录、刷题包、出题、交卷判分、错题本和课件提炼已实现，会话在 Redis，数据在 PostgreSQL。后管登录仍是壳。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。                                          |
+| `apps/api`        | 无状态 NestJS API。微信登录、当前用户、目录、刷题包、出题、交卷判分、错题本和课件提炼已实现，会话在 Redis，数据在 PostgreSQL。后管帐密登录已实现。`GET /api/health` 做存活检查，`GET /api/health/ready` 检查 PostgreSQL 与 Redis。                                      |
 | `apps/worker`     | 独立部署的队列消费者。`quiz.generate` 会读会话、调用 mock 或国内 LLM，并写入试卷。`courseware.extract` 读取课件并提炼知识点草稿。                                                                                                                                       |
-| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页是帐密表单占位，和微信登录分开。                                                                                                         |
+| `apps/admin`      | 管理后台 SPA。Vite + React + TypeScript。选它是因为小程序已经是 React，后台不必再换一套视图库；这是独立 Web，不需要 SSR。登录页用帐密换 Redis 会话后进入后台，和微信登录分开。                                                                                          |
 | `packages/shared` | 出题设置、错题配额、分值归一化、Prompt 选择、mock 题目、课件 50MB 上限、API 错误码、登录与刷题包类型、队列名。成卷在 `@tishuashua/shared/generation`，提炼在 `@tishuashua/shared/courseware`，避免小程序打进 Node 依赖。                                                |
 | `packages/config` | 共享 `tsconfig`。ESLint / Prettier 放在仓库根目录。                                                                                                                                                                                                                     |
 
@@ -75,7 +75,7 @@ cp .env.example .env
 
 未提供应用目录 `.env` 时，API 和 Worker 会再读仓库根目录 `.env`。
 
-`docker-compose.yml` 与示例里的数据库口令 `tishuashua` 只给本机开发用，不要带到生产。
+`docker-compose.yml` 与示例里的数据库口令 `tishuashua` 只给本机开发用，不要带到生产。示例里的 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 也只给本机。生产要换成强口令。两项都空着时后管登录返回 `ADMIN_NOT_CONFIGURED`，代码里没有默认帐号。详见 [docs/admin-login.md](docs/admin-login.md)。
 
 小程序环境只保留 `TARO_APP_API_BASE` 和可选的 `TARO_APP_ID`。不要把 `WECHAT_APP_SECRET` 或 `WECHAT_LOGIN_MOCK` 写进 `apps/mini`。
 
@@ -105,9 +105,9 @@ pnpm dev:api
 
 - 存活：<http://127.0.0.1:3000/api/health>
 - 就绪（需先起 Docker）：<http://127.0.0.1:3000/api/health/ready>
-- OpenAPI 壳：<http://127.0.0.1:3000/api/docs>
+- OpenAPI 壳：<http://127.0.0.1:3000/api/docs>。`pnpm dev:api` 使用 tsx，不会写出装饰器类型元数据，文档生成失败时只打警告，接口仍会监听。`pnpm build` 后的 `node dist/main.js` 会挂上这份文档。
 
-健康检查、微信登录、当前用户、目录、刷题包、出题、交卷、错题本和课件提炼会返回真实结果。`GET /api/certificates` 仍返回 `implemented: false`。例如：
+健康检查、微信登录、当前用户、目录、刷题包、出题、交卷、错题本、课件提炼和后管登录会返回真实结果。`GET /api/certificates` 仍返回 `implemented: false`。例如：
 
 ```bash
 curl http://127.0.0.1:3000/api/health
@@ -117,6 +117,8 @@ curl -X POST http://127.0.0.1:3000/api/auth/wechat/login \
 ```
 
 上面这条登录请求在未配置微信、且 `WECHAT_LOGIN_MOCK` 不是 `true` 时返回 `503` / `WECHAT_NOT_CONFIGURED`。打开 mock 并且 Postgres、Redis 可用时返回 `token` 和用户摘要。完整命令见 [docs/wechat-login.md](docs/wechat-login.md)。
+
+后管登录需要 API 环境里的 `ADMIN_USERNAME` / `ADMIN_PASSWORD`，以及 Redis。未配置帐号时返回 `503` / `ADMIN_NOT_CONFIGURED`。完整命令见 [docs/admin-login.md](docs/admin-login.md)。
 
 路由：
 
@@ -146,10 +148,11 @@ curl -X POST http://127.0.0.1:3000/api/auth/wechat/login \
 | GET                | `/api/courseware/jobs/:id`                                | 提炼进度                     |
 | POST               | `/api/courseware/jobs/:id/cancel`                         | 取消提炼                     |
 | POST               | `/api/courseware/jobs/:id/commit`                         | 勾选知识点回树，可并进刷题包 |
-| POST               | `/api/admin/login`                                        | 后台帐密登录（占位）         |
-| GET                | `/api/admin/ping`                                         | 后台连通性（占位）           |
+| POST               | `/api/admin/login`                                        | 后台帐密登录（已实现）       |
+| POST               | `/api/admin/logout`                                       | 注销后管会话（需后管会话）   |
+| GET                | `/api/admin/ping`                                         | 后管连通性（需后管会话）     |
 
-没有 Redis 时 API 仍能启动，登录、出题和课件提炼入队会返回 `REDIS_UNAVAILABLE`。出题创建成功后投递 `quiz.generate`，课件上传成功后投递 `courseware.extract`。迁移在 API 启动时执行。失败只记日志，不阻止进程监听。目录种子见 [docs/packs.md](docs/packs.md)，出题见 [docs/quiz.md](docs/quiz.md)，课件见 [docs/courseware.md](docs/courseware.md)。
+没有 Redis 时 API 仍能启动。微信登录、帐号正确的后管登录、出题和课件提炼入队会返回 `REDIS_UNAVAILABLE`。出题创建成功后投递 `quiz.generate`，课件上传成功后投递 `courseware.extract`。迁移在 API 启动时执行。失败只记日志，不阻止进程监听。目录种子见 [docs/packs.md](docs/packs.md)，出题见 [docs/quiz.md](docs/quiz.md)，课件见 [docs/courseware.md](docs/courseware.md)，后管登录见 [docs/admin-login.md](docs/admin-login.md)。
 
 ## 启动 Worker
 
@@ -173,7 +176,7 @@ pnpm dev:worker
 pnpm dev:admin
 ```
 
-打开 <http://127.0.0.1:5173>。布局可以直接看。登录页会把帐密 POST 到 API 的占位接口，并显示返回 JSON，不会创建会话。
+打开 <http://127.0.0.1:5173>。没有会话时停在登录页。错误帐密留在页面上并提示；正确帐密进入概览，并带着会话访问 `GET /api/admin/ping`。目录、课件、证书和错题页仍是空壳。步骤见 [docs/admin-login.md](docs/admin-login.md)。
 
 ## 启动小程序
 
@@ -194,24 +197,24 @@ pnpm --filter @tishuashua/mini build:weapp
 
 ## 常用脚本
 
-| 命令                              | 作用                                                   |
-| --------------------------------- | ------------------------------------------------------ |
-| `pnpm deps:up` / `pnpm deps:down` | 起停 PostgreSQL 与 Redis                               |
-| `pnpm dev:api`                    | API 热重载，端口 3000                                  |
-| `pnpm dev:worker`                 | Worker 热重载，端口 3001                               |
-| `pnpm dev:admin`                  | 管理后台，端口 5173                                    |
-| `pnpm dev:mini`                   | 监听编译微信小程序                                     |
-| `pnpm typecheck`                  | 各包 TypeScript 检查                                   |
-| `pnpm lint`                       | ESLint（不含小程序目录，小程序以 `tsc` 为准）          |
-| `pnpm test`                       | API 单元测试；Postgres 与 Redis 可连接时跑登录集成测试 |
-| `pnpm build`                      | 构建 shared、api、worker、admin，并编译小程序          |
+| 命令                              | 作用                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------ |
+| `pnpm deps:up` / `pnpm deps:down` | 起停 PostgreSQL 与 Redis                                                                   |
+| `pnpm dev:api`                    | API 热重载，端口 3000                                                                      |
+| `pnpm dev:worker`                 | Worker 热重载，端口 3001                                                                   |
+| `pnpm dev:admin`                  | 管理后台，端口 5173                                                                        |
+| `pnpm dev:mini`                   | 监听编译微信小程序                                                                         |
+| `pnpm typecheck`                  | 各包 TypeScript 检查                                                                       |
+| `pnpm lint`                       | ESLint（不含小程序目录，小程序以 `tsc` 为准）                                              |
+| `pnpm test`                       | API 单元测试；Postgres 与 Redis 可连接时跑微信等集成测试，Redis 可连接时跑后管登录集成测试 |
+| `pnpm build`                      | 构建 shared、api、worker、admin，并编译小程序                                              |
 
 根脚本走 Turborepo，会先构建 `@tishuashua/shared`。
 
 ## 架构对应
 
-- 客户端鉴权只有微信登录。短信登录不在本期。登录态是 Redis 里的不透明 token，不是 JWT。
-- API 无状态。登录会话已经写入 Redis。进度、限流还没有做。健康检查和 Worker 仍使用 Redis。
+- 小程序鉴权只有微信登录。短信登录不在本期。登录态是 Redis 里的不透明 token，不是 JWT。后管使用另一套不透明 token，键前缀不同。
+- API 无状态。微信登录和后管登录的会话已经写入 Redis。进度、限流还没有做。健康检查和 Worker 仍使用 Redis。
 - 用户、目录、刷题包、出题会话和课件提炼用 `pg` 迁移，没有 ORM。知识点没有 weight。用户提炼的知识点带 `owner_user_id`，只出现在本人的证书树里。
 - 课件走对象存储。未配齐 `OSS_ENDPOINT`、`OSS_BUCKET`、`OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET` 时写本地目录，不访问云厂商。配齐后走 S3 兼容接口，默认 path-style，可接 MinIO。共享常量 `COURSEWARE_MAX_BYTES` 为 50MB。
 - 出题和课件提炼走 Worker，按需调用国内 LLM。`WRONG_QUESTION_RATIO_MAX` 为 `0.5`。没有 Key 且未打开 `LLM_MOCK` 时拒绝出题和上传提炼。免费终身 1 次提炼配额本期不做门禁。
@@ -226,7 +229,7 @@ pnpm --filter @tishuashua/mini build:weapp
 4. `quiz.generate` 已接通：设置页、进度、取消、mock 或真模型成卷、拉卷、保存选择、交卷判分和解析。
 5. 错题本已接通：交卷写入、列表、详情和消灭。出题时仍只带未消灭错题。后管错题页仍是壳。
 6. 小程序成绩列表已接通：首页「成绩」打开 `/pages/score/index`，读取 `GET /api/quiz/sessions` 的已交卷摘要（分数、时间、证书、刷题包等），再进入 `/pages/quiz/paper/index` 看解析。后管证书维护和 `GET /api/certificates` 仍是占位，和小程序用的 `/api/catalog` 不是同一个接口。`GET /api/certificates/scores` 也不是这份成绩。
-7. 管理后台帐密登录，以及 admin-gateway 的访问控制。
+7. 管理后台帐密登录已接通：API 用环境变量里的帐号签发 Redis 不透明 token，admin-gateway 拒绝缺少会话、失效会话和微信用户 token。后管改目录、证书维护、错题页和上传列表仍未做。
 8. Redis 限流。
 
-后管登录的返回值还不能当成契约冻结。登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题、交卷、成绩列表和错题本字段见 [docs/quiz.md](docs/quiz.md)，课件字段见 [docs/courseware.md](docs/courseware.md)。
+后管登录字段见 [docs/admin-login.md](docs/admin-login.md)。本切片替换了占位响应，此前没有冻结契约。微信登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题、交卷、成绩列表和错题本字段见 [docs/quiz.md](docs/quiz.md)，课件字段见 [docs/courseware.md](docs/courseware.md)。

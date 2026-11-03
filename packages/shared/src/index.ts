@@ -143,6 +143,10 @@ export {
 export type { CheckState } from './selection';
 export type {
   AdminLoginRequest,
+  AdminLoginResponse,
+  AdminLogoutResponse,
+  AdminPingResponse,
+  AdminSummary,
   UserStatus,
   UserSummary,
   WechatLoginRequest,
