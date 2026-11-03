@@ -34,7 +34,7 @@ export class AdminCertificateController {
   @ApiOperation({
     summary: '后管证书与成绩列表',
     description:
-      '只读。需要后管会话，微信用户 token 返回 UNAUTHORIZED。只含已交卷的 quiz_sessions，按交卷时间从新到旧分页。可按 userId、certId、mode 筛选。不改成绩、不删证书、不消灭错题。不是 GET /api/certificates，也不是 GET /api/certificates/scores。',
+      '只读。需要后管会话，微信用户 token 返回 UNAUTHORIZED。只含已交卷的 quiz_sessions，按交卷时间从新到旧分页。可按 userId、certId、mode 筛选。不改成绩、不删证书、不消灭错题。不是 GET /api/certificates，也不是 GET /api/quiz/sessions。',
   })
   @ApiQuery({ name: 'mode', required: false, enum: ['all', ...QUIZ_MODES] })
   @ApiQuery({ name: 'userId', required: false })

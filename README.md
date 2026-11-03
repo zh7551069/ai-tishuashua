@@ -107,7 +107,7 @@ pnpm dev:api
 - 就绪（需先起 Docker）：<http://127.0.0.1:3000/api/health/ready>
 - OpenAPI 壳：<http://127.0.0.1:3000/api/docs>。`pnpm dev:api` 使用 tsx，不会写出装饰器类型元数据，文档生成失败时只打警告，接口仍会监听。`pnpm build` 后的 `node dist/main.js` 会挂上这份文档。
 
-健康检查、微信登录、当前用户、目录、刷题包、出题、交卷、错题本、证书查询、课件提炼和后管登录会返回真实结果。`GET /api/certificates/scores` 仍返回 `implemented: false`。例如：
+健康检查、微信登录、当前用户、目录、刷题包、出题、交卷、错题本、证书查询、课件提炼和后管登录会返回真实结果。例如：
 
 ```bash
 curl http://127.0.0.1:3000/api/health
@@ -144,7 +144,6 @@ curl -X POST http://127.0.0.1:3000/api/auth/wechat/login \
 | GET                | `/api/wrong-book/:id`                                       | 错题详情                               |
 | POST               | `/api/wrong-book/:id/clear`                                 | 消灭错题                               |
 | GET                | `/api/certificates`                                         | 当前用户的证书查询（需登录）           |
-| GET                | `/api/certificates/scores`                                  | 成绩占位，不是交卷成绩                 |
 | POST               | `/api/courseware/uploads`                                   | 上传课件并登记提炼                     |
 | GET                | `/api/courseware/jobs/:id`                                  | 提炼进度                               |
 | POST               | `/api/courseware/jobs/:id/cancel`                           | 取消提炼                               |
@@ -247,9 +246,9 @@ pnpm --filter @tishuashua/mini build:weapp
 3. 课件上传和提炼已接通：直传登记、进度、取消、mock 或真模型提炼，勾选后进入当前证书的「我的课件」。后管可以只读分页查看全站上传和提炼任务，见 [docs/admin-courseware.md](docs/admin-courseware.md)。会员提炼配额还没有做。
 4. `quiz.generate` 已接通：设置页、进度、取消、mock 或真模型成卷、拉卷、保存选择、交卷判分和解析。
 5. 错题本已接通：交卷写入、列表、详情和消灭。出题时仍只带未消灭错题。后管可以只读分页查看全站错题，见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)。后管不能消灭或删除。
-6. 小程序成绩列表已接通：首页「成绩」打开 `/pages/score/index`，读取 `GET /api/quiz/sessions` 的已交卷摘要（分数、时间、证书、刷题包等），再进入 `/pages/quiz/paper/index` 看解析。`GET /api/certificates/scores` 仍是占位，不是这份成绩，也不是后管页。后管全站已交卷见 [docs/admin-certificates.md](docs/admin-certificates.md)。
+6. 小程序成绩列表已接通：首页「成绩」打开 `/pages/score/index`，读取 `GET /api/quiz/sessions` 的已交卷摘要（分数、时间、证书、刷题包等），再进入 `/pages/quiz/paper/index` 看解析。没有 `GET /api/certificates/scores`。后管全站已交卷见 [docs/admin-certificates.md](docs/admin-certificates.md)。
 7. 小程序证书查询已接通：首页「证书」打开 `/pages/certificate/index`，读取 `GET /api/certificates`。只列出当前用户有刷题包、错题、课件或能对上的已交卷记录的证书，含下架。它和小程序目录 `/api/catalog`、后管目录 `/api/admin/catalog`、成绩列表、后管「证书与成绩」都不是同一个接口。后管那一页只读查看全站已交卷，不改目录、不删证书、不改成绩，见 [docs/admin-certificates.md](docs/admin-certificates.md)。
 8. 管理后台帐密登录已接通：API 用环境变量里的帐号签发 Redis 不透明 token，admin-gateway 拒绝缺少会话、失效会话和微信用户 token。后管目录维护、错题只读、课件上传只读和证书与成绩只读已接通。
-9. Redis 限流已接通：登录、成绩占位 `GET /api/certificates/scores`，以及已登录的小程序和后管接口按 IP 与身份在 Redis 里分开计数。证书查询走已登录小程序额度。超限返回 `429` / `RATE_LIMITED`。开关、阈值，以及没有 Redis 时不拦截的原因见 [docs/rate-limit.md](docs/rate-limit.md)。
+9. Redis 限流已接通：登录，以及已登录的小程序和后管接口按 IP 与身份在 Redis 里分开计数。没有单独归类的 `/api` 路径按来源 IP 走公开额度。证书查询走已登录小程序额度。超限返回 `429` / `RATE_LIMITED`。开关、阈值，以及没有 Redis 时不拦截的原因见 [docs/rate-limit.md](docs/rate-limit.md)。
 
 后管登录字段见 [docs/admin-login.md](docs/admin-login.md)，目录维护见 [docs/admin-catalog.md](docs/admin-catalog.md)，后管错题见 [docs/admin-wrong-book.md](docs/admin-wrong-book.md)，后管课件见 [docs/admin-courseware.md](docs/admin-courseware.md)，后管证书与成绩见 [docs/admin-certificates.md](docs/admin-certificates.md)。微信登录字段见 [docs/wechat-login.md](docs/wechat-login.md)，刷题包字段见 [docs/packs.md](docs/packs.md)，出题、交卷、成绩列表和错题本字段见 [docs/quiz.md](docs/quiz.md)，证书查询字段见 [docs/certificates.md](docs/certificates.md)，课件字段见 [docs/courseware.md](docs/courseware.md)。

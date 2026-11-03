@@ -15,7 +15,7 @@ export const RATE_LIMIT_DEFAULTS = {
   adminApiMax: 120,
   /** 已通过后管会话的接口，按来源 IP。 */
   adminIpMax: 240,
-  /** 成绩占位 GET /api/certificates/scores，以及没有单独归类的 /api 路径。按来源 IP。 */
+  /** 没有单独归类的 /api 路径。按来源 IP。 */
   publicMax: 120,
   /** POST /api/quiz/sessions。交卷、保存答案和成绩列表不走这档。 */
   quizCreateMax: 60,
@@ -188,9 +188,6 @@ export function classifyRoute(url: string, method: string): RateRoute {
   }
   if (path === '/admin' || path.startsWith('/admin/')) {
     return { kind: 'admin-api', expensive: null };
-  }
-  if (path === '/certificates/scores') {
-    return { kind: 'public', expensive: null };
   }
   if (path === '/certificates' || path.startsWith('/certificates/')) {
     return { kind: 'wechat-api', expensive: null };

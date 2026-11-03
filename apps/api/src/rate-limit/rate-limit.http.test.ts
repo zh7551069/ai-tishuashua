@@ -101,10 +101,8 @@ describe('rate limit http', { concurrency: 1 }, () => {
 
       const wechatIp = '203.0.113.21';
       const otherIp = '203.0.113.22';
-      const publicIp = '203.0.113.23';
       const adminIp = '203.0.113.24';
       const wechatKey = seedKey(settings, 'wechat-login', `ip:${wechatIp}`);
-      const publicKey = seedKey(settings, 'public', `ip:${publicIp}`);
       const account = accountSubject('SprayUser');
       if (!account) {
         throw new Error('帐号键为空');
@@ -116,7 +114,6 @@ describe('rate limit http', { concurrency: 1 }, () => {
       }
       keys.push(
         wechatKey,
-        publicKey,
         accountKey,
         seedKey(settings, 'wechat-login', `ip:${otherIp}`),
         seedKey(settings, 'admin-login', `ip:${wechatIp}`),
@@ -125,7 +122,6 @@ describe('rate limit http', { concurrency: 1 }, () => {
       );
 
       await redis.set(wechatKey, String(settings.wechatLoginMax), 'EX', settings.windowSeconds);
-      await redis.set(publicKey, String(settings.publicMax), 'EX', settings.windowSeconds);
       await redis.set(accountKey, String(settings.adminLoginMax), 'EX', settings.windowSeconds);
 
       const limited = await request(booted.base, '/auth/wechat/login', {
@@ -160,18 +156,13 @@ describe('rate limit http', { concurrency: 1 }, () => {
       assert.equal(health.status, 200);
       assert.equal(health.body.status, 'ok');
 
-      const certificates = await request(booted.base, '/certificates/scores', {
+      const removedScores = await request(booted.base, '/certificates/scores', {
         method: 'GET',
-        ip: publicIp,
+        ip: wechatIp,
       });
-      assert.equal(certificates.status, 429, JSON.stringify(certificates.body));
-      assert.equal(certificates.body.code, ApiErrorCode.RATE_LIMITED);
-
-      const healthWhilePublicLimited = await request(booted.base, '/health', {
-        method: 'GET',
-        ip: publicIp,
-      });
-      assert.equal(healthWhilePublicLimited.status, 200);
+      assert.equal(removedScores.status, 404, JSON.stringify(removedScores.body));
+      assert.equal(removedScores.body.code, ApiErrorCode.NOT_FOUND);
+      assert.equal('implemented' in removedScores.body, false);
 
       const sprayed = await request(booted.base, '/admin/login', {
         method: 'POST',

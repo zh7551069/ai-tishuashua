@@ -126,9 +126,10 @@ describe('wechat login http', { concurrency: 1 }, () => {
       assert.equal(certificatesBody.implemented, undefined);
 
       const scores = await fetch(`${booted.base}/certificates/scores`);
-      const scoresBody = (await scores.json()) as { implemented?: boolean };
-      assert.equal(scores.status, 200);
-      assert.equal(scoresBody.implemented, false);
+      const scoresBody = (await scores.json()) as { code?: string; implemented?: boolean };
+      assert.equal(scores.status, 404);
+      assert.equal(scoresBody.code, ApiErrorCode.NOT_FOUND);
+      assert.equal(scoresBody.implemented, undefined);
 
       const wrongBook = await fetch(`${booted.base}/wrong-book`);
       const wrongBookBody = (await wrongBook.json()) as { code?: string };

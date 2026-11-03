@@ -143,7 +143,7 @@ describe('certificate query', { concurrency: 1 }, () => {
     ctx.redis?.disconnect();
   });
 
-  test('未登录不能查证书，成绩占位仍不是交卷列表', async (t) => {
+  test('未登录不能查证书，证书路径下没有成绩路由', async (t) => {
     if (!ready(t)) {
       return;
     }
@@ -153,10 +153,9 @@ describe('certificate query', { concurrency: 1 }, () => {
     assert.equal('implemented' in anonymous.body, false);
 
     const scores = await call('/certificates/scores', ctx.tokenA);
-    assert.equal(scores.status, 200);
-    assert.equal(scores.body.implemented, false);
-    assert.equal(scores.body.module, 'certificate');
-    assert.equal(scores.body.action, 'scores');
+    assert.equal(scores.status, 404);
+    assert.equal(scores.body.code, ApiErrorCode.NOT_FOUND);
+    assert.equal('implemented' in scores.body, false);
   });
 
   test('只返回当前用户关联过的证书，最近分数来自已落库快照', async (t) => {

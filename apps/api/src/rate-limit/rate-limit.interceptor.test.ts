@@ -114,4 +114,35 @@ describe('RateLimitInterceptor', () => {
       ['admin-api:ip:198.51.100.11', 'admin-api:admin:ops'],
     );
   });
+
+  test('未归类路径按来源 IP 走公开额度', async () => {
+    const seen: RateBucket[][] = [];
+    const rates = {
+      async consume(buckets: RateBucket[]) {
+        seen.push(buckets);
+        return { action: 'limited', retryAfterSeconds: 3 } satisfies ConsumeResult;
+      },
+    } as unknown as RateLimitService;
+    const interceptor = new RateLimitInterceptor(rates, config());
+    const headers: Record<string, string> = {};
+    const observable = await interceptor.intercept(
+      contextFor({ originalUrl: '/api/not-a-module', method: 'GET', ip: '203.0.113.9' }, headers),
+      { handle: () => of({ ok: true }) },
+    );
+
+    await assert.rejects(lastValueFrom(observable), (error: unknown) => {
+      assert.ok(error instanceof ApiException);
+      assert.equal(error.getStatus(), 429);
+      assert.deepEqual(error.getResponse(), {
+        code: ApiErrorCode.RATE_LIMITED,
+        message: RATE_LIMIT_MESSAGE,
+      });
+      return true;
+    });
+    assert.equal(headers['Retry-After'], '3');
+    assert.deepEqual(
+      seen[0]?.map((bucket) => `${bucket.scope}:${bucket.subject}`),
+      ['public:ip:203.0.113.9'],
+    );
+  });
 });

@@ -10,7 +10,7 @@
 | 看自己关联过哪些证书       | `GET /api/certificates`                                                   |
 | 后管只读看全站已交卷成绩   | `GET /api/admin/certificates`，见 [后管证书与成绩](admin-certificates.md) |
 
-`GET /api/certificates/scores` 仍是脚手架占位，响应里 `implemented` 为 `false`。它不是上面的成绩列表，也不把成绩再按证书汇总成另一套接口，更不是后管「证书与成绩」页。后管那一页用 `GET /api/admin/certificates`，见 [后管证书与成绩](admin-certificates.md)。证书页上的「最近一次」只是这一行里的摘要，点进去仍打开已有的试卷解析页。
+没有 `GET /api/certificates/scores`。逐次成绩用上面的 `GET /api/quiz/sessions`，不在证书路径下再挂一份，也不按证书把成绩汇总成另一套接口。后管「证书与成绩」用 `GET /api/admin/certificates`，见 [后管证书与成绩](admin-certificates.md)。证书页上的「最近一次」只是这一行里的摘要，点进去仍打开已有的试卷解析页。
 
 ## 哪些证书会出现
 
@@ -66,12 +66,6 @@ curl -sS http://127.0.0.1:3000/api/certificates \
 
 还没建过包、交过卷、留过错题或传过课件时，结果是 `{ "items": [] }`。响应里没有 `implemented`。
 
-成绩占位不需要登录，内容不变：
-
-```bash
-curl -sS http://127.0.0.1:3000/api/certificates/scores
-```
-
 ## 小程序
 
 首页在刷题包加载完成后有「证书」，进入 `/pages/certificate/index`。
@@ -86,6 +80,4 @@ curl -sS http://127.0.0.1:3000/api/certificates/scores
 
 ## 限流
 
-`GET /api/certificates` 现在和其它已登录小程序接口一样，按来源 IP 和 `userId` 计数。没有会话时先返回 401，这次不计数。
-
-`GET /api/certificates/scores` 仍没有登录守卫，继续走公开额度，按来源 IP。本地要把公开额度打满时，打这个占位，不要再打证书列表。见 [限流](rate-limit.md)。
+`GET /api/certificates` 和其它已登录小程序接口一样，按来源 IP 和 `userId` 计数。没有会话时先返回 401，这次不计数。见 [限流](rate-limit.md)。
