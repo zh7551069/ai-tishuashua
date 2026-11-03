@@ -75,8 +75,9 @@ describe('rate limit routes', () => {
     assert.equal(classifyRoute('/api/admin/login', 'POST').kind, 'admin-login');
     assert.equal(classifyRoute('/api/admin/ping', 'GET').kind, 'admin-api');
     assert.equal(classifyRoute('/api/certificates', 'GET').kind, 'wechat-api');
-    assert.equal(classifyRoute('/api/certificates/scores', 'GET').kind, 'public');
-    assert.equal(classifyRoute('/api/certificates/scores/', 'GET').kind, 'public');
+    assert.equal(classifyRoute('/api/certificates/scores', 'GET').kind, 'wechat-api');
+    assert.equal(classifyRoute('/api/certificates/scores/', 'GET').kind, 'wechat-api');
+    assert.equal(classifyRoute('/api/not-a-module', 'GET').kind, 'public');
     assert.equal(classifyRoute('/api/users/me', 'GET').kind, 'wechat-api');
     assert.equal(classifyRoute('/api/users/me/phone', 'POST').kind, 'wechat-api');
   });
@@ -149,6 +150,15 @@ describe('rate limit routes', () => {
       buildBuckets({ route: classifyRoute('/api/health', 'GET'), ip: '1.1.1.1', limits }).length,
       0,
     );
+
+    const publicRoute = buildBuckets({
+      route: classifyRoute('/api/not-a-module', 'GET'),
+      ip: '203.0.113.9',
+      limits,
+    });
+    assert.deepEqual(publicRoute, [
+      { scope: 'public', subject: 'ip:203.0.113.9', limit: limits.publicMax },
+    ]);
   });
 });
 

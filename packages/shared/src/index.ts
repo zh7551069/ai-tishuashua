@@ -10,8 +10,6 @@ export type { LlmProvider } from './constants';
 export { ApiErrorCode } from './errors';
 export type { ApiErrorBody, ApiErrorCode as ApiErrorCodeValue } from './errors';
 export type { HealthStatus } from './health';
-export { scaffoldPlaceholder } from './scaffold';
-export type { ScaffoldPlaceholder } from './scaffold';
 export { parseRedisUrl } from './redis';
 export type { RedisEndpoint } from './redis';
 export {

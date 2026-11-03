@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { scaffoldPlaceholder, type UserSummary } from '@tishuashua/shared';
+import { type UserSummary } from '@tishuashua/shared';
 import { CurrentUser } from '../common/current-user';
 import { SessionAuthGuard } from '../session/session-auth.guard';
 import { CertificateService } from './certificate.service';
@@ -22,15 +22,5 @@ export class CertificateController {
   @ApiOkResponse({ type: CertificateQueryListDto })
   list(@CurrentUser() user: UserSummary) {
     return this.certificates.listForUser(user.id);
-  }
-
-  @Get('scores')
-  @ApiOperation({
-    summary: '成绩列表（占位）',
-    description:
-      '仍是脚手架占位。已交卷的逐次成绩在 GET /api/quiz/sessions，小程序成绩页读那个接口。这里不重复那份列表，也不做证书维度的另一套成绩。',
-  })
-  scores() {
-    return scaffoldPlaceholder('certificate', 'scores');
   }
 }

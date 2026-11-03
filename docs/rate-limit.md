@@ -8,7 +8,7 @@ API 用 Redis 固定窗口计数。超限返回 `429`，响应体是 `{ "code": 
 
 ## 谁被计数
 
-鉴权守卫先于限流。没有会话、会话失效时仍是 `401` / `UNAUTHORIZED`，这次失败不计数。登录接口和成绩占位 `GET /api/certificates/scores` 没有这层守卫，每次都会计数。证书查询 `GET /api/certificates` 有微信登录守卫，未登录时是 401，不会计入公开额度。
+鉴权守卫先于限流。没有会话、会话失效时仍是 `401` / `UNAUTHORIZED`，这次失败不计数。登录接口没有这层守卫，每次都会计数。证书查询 `GET /api/certificates` 有微信登录守卫，未登录时是 401，不会计数。没有匹配到路由的请求（例如已经删除的路径）直接是 `404`，也不计数。
 
 `OPTIONS` 预检、`GET /api/health`、`GET /api/health/ready` 和 `/api/docs` 不计。
 
@@ -20,13 +20,13 @@ API 用 Redis 固定窗口计数。超限返回 `429`，响应体是 `{ "code": 
 | `POST /api/quiz/sessions`                                    | 在上面之外，再按 `userId` 计一档  | 60               |
 | `POST /api/courseware/uploads`                               | 在上面之外，再按 `userId` 计一档  | 40               |
 | 已登录的 `/api/admin/*`（不含登录）                          | 来源 IP，以及后管用户名，各算一份 | IP 240，用户 120 |
-| `GET /api/certificates/scores`，以及其他未单列的 `/api` 路径 | 来源 IP                           | 120              |
+| 没有单独归类的 `/api` 路径                                   | 来源 IP                           | 120              |
 
 微信路径和后管路径的钥匙不同。刷微信登录不会占后管登录的额度，反过来也一样。
 
 后管登录的帐号钥匙是用户名去掉首尾空白、取前 64 个字符之后的 SHA-256 前 24 位十六进制，键里没有用户名原文，也没有口令。空用户名只按 IP 计。
 
-`POST /api/quiz/sessions` 只包括创建出题。`GET /api/quiz/sessions`（成绩列表）、保存答案、交卷、取消，以及 `GET /api/certificates` 都不在这档，只走已登录小程序的通用额度。课件的进度、取消和勾选同样只走通用额度。后管 `GET /api/admin/courseware` 走已登录后管额度，不占用上传这一档。后管 `GET /api/admin/certificates` 同样走已登录后管额度，不占用公开的成绩占位。证书查询不再走公开 IP 额度。
+`POST /api/quiz/sessions` 只包括创建出题。`GET /api/quiz/sessions`（成绩列表）、保存答案、交卷、取消，以及 `GET /api/certificates` 都不在这档，只走已登录小程序的通用额度。课件的进度、取消和勾选同样只走通用额度。后管 `GET /api/admin/courseware` 走已登录后管额度，不占用上传这一档。后管 `GET /api/admin/certificates` 同样走已登录后管额度。证书查询走已登录小程序额度。这两条都不占用公开额度。
 
 任一档超限即拒绝。`Retry-After` 取已超限的那些档里剩余时间最长的一秒，至少为 1。
 
@@ -44,7 +44,7 @@ API 用 Redis 固定窗口计数。超限返回 `429`，响应体是 `{ "code": 
 | Redis 可用且未超限                | 放行，后面的错误码保持原样                                                            |
 | Redis 可用且超限                  | `429` / `RATE_LIMITED`                                                                |
 
-不在这里返回 `REDIS_UNAVAILABLE`。否则 Redis 不在时，参数错误、微信未配置、错误口令、成绩占位都会变成同一个 503。需要 Redis 才能做完的事仍按原来的码返回：签发或读取会话、出题入队、课件入队是 `503` / `REDIS_UNAVAILABLE`。健康检查的存活接口仍然不访问 Redis。
+不在这里返回 `REDIS_UNAVAILABLE`。否则 Redis 不在时，参数错误、微信未配置、错误口令都会变成同一个 503。需要 Redis 才能做完的事仍按原来的码返回：签发或读取会话、出题入队、课件入队是 `503` / `REDIS_UNAVAILABLE`。健康检查的存活接口仍然不访问 Redis。
 
 超限发生在控制器之前。已经超限时，不会先返回 `VALIDATION_ERROR` 再返回限流。还没超限时，参数、帐号和微信的错误码不变。
 
@@ -62,7 +62,7 @@ API 用 Redis 固定窗口计数。超限返回 `429`，响应体是 `{ "code": 
 | `RATE_LIMIT_WECHAT_IP_MAX`         | 600                     | 已登录小程序接口，按 IP                      |
 | `RATE_LIMIT_ADMIN_API_MAX`         | 120                     | 已登录后管接口，按用户名                     |
 | `RATE_LIMIT_ADMIN_IP_MAX`          | 240                     | 已登录后管接口，按 IP                        |
-| `RATE_LIMIT_PUBLIC_MAX`            | 120                     | 成绩占位和其他未单列路径，按 IP              |
+| `RATE_LIMIT_PUBLIC_MAX`            | 120                     | 未单独归类的路径，按 IP                      |
 | `RATE_LIMIT_QUIZ_CREATE_MAX`       | 60                      | 创建出题，按 `userId`                        |
 | `RATE_LIMIT_COURSEWARE_UPLOAD_MAX` | 40                      | 课件上传，按 `userId`                        |
 | `RATE_LIMIT_KEY_PREFIX`            | `tishuashua:ratelimit:` | 可选。只接受字母、数字、冒号、下划线和连字符 |
@@ -76,29 +76,23 @@ API 用 Redis 固定窗口计数。超限返回 `429`，响应体是 `{ "code": 
 
 ```bash
 pnpm deps:up
-RATE_LIMIT_PUBLIC_MAX=2 RATE_LIMIT_WECHAT_LOGIN_MAX=2 pnpm dev:api
+RATE_LIMIT_WECHAT_LOGIN_MAX=2 pnpm dev:api
 ```
 
-成绩占位仍按公开 IP 计数。证书查询要登录，未登录是 401，不会把这一档打满。第 3 次打占位应是 429：
+现在没有单独的公开业务路由。公开额度留给还没归类的 `/api` 路径。`GET /api/certificates/scores` 已经删除，打它是 `404`，这次不计数。证书查询要登录，未登录是 401，也不计数。
+
+微信登录没有会话守卫，每次都会计数。下面这条在未配置微信时，前两次仍是原来的 `WECHAT_NOT_CONFIGURED` 或参数错误，第三次才是 `RATE_LIMITED`：
 
 ```bash
-curl -sS -D - http://127.0.0.1:3000/api/certificates/scores -o /tmp/rate-body.txt
-curl -sS -D - http://127.0.0.1:3000/api/certificates/scores -o /tmp/rate-body.txt
-curl -sS -D - http://127.0.0.1:3000/api/certificates/scores -o /tmp/rate-body.txt
+curl -sS -D - -X POST http://127.0.0.1:3000/api/auth/wechat/login \
+  -H 'content-type: application/json' \
+  -d '{"code":"demo"}'
 ```
 
 第三次的状态是 `429`，正文是 `RATE_LIMITED`，响应头有 `Retry-After`。同一时刻健康检查仍是 200：
 
 ```bash
 curl -sS -D - http://127.0.0.1:3000/api/health -o /tmp/health-body.txt
-```
-
-微信登录单独计数。下面这条在未配置微信时，前两次仍是原来的 `WECHAT_NOT_CONFIGURED` 或参数错误，第三次才是 `RATE_LIMITED`：
-
-```bash
-curl -sS -D - -X POST http://127.0.0.1:3000/api/auth/wechat/login \
-  -H 'content-type: application/json' \
-  -d '{"code":"demo"}'
 ```
 
 后管登录用另一把钥匙。微信登录已经超限时，后管登录不会因此变成 429。

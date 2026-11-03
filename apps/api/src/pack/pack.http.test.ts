@@ -241,8 +241,9 @@ describe('catalog and packs', { concurrency: 1 }, () => {
     assert.equal(certificates.body.code, ApiErrorCode.UNAUTHORIZED);
 
     const scores = await call('/certificates/scores');
-    assert.equal(scores.status, 200);
-    assert.equal((scores.body as { implemented?: boolean }).implemented, false);
+    assert.equal(scores.status, 404);
+    assert.equal(scores.body.code, ApiErrorCode.NOT_FOUND);
+    assert.equal('implemented' in scores.body, false);
 
     const tables = await ctx.pool?.query<{
       quiz_sessions: string | null;

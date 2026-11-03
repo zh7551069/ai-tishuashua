@@ -4,17 +4,16 @@
 
 这一页不是下面任何一条：
 
-| 想做的事                   | 用哪个接口                                                             |
-| -------------------------- | ---------------------------------------------------------------------- |
-| 小程序看自己关联过哪些证书 | `GET /api/certificates`，见 [证书查询](certificates.md)                |
-| 小程序看自己每一次交卷     | `GET /api/quiz/sessions`，见 [出题与交卷](quiz.md)                     |
-| 后管维护领域、证书和知识点 | `/api/admin/catalog/*`，见 [后管改目录](admin-catalog.md)              |
-| 脚手架成绩占位             | `GET /api/certificates/scores`，`implemented` 仍是 `false`，不是这一页 |
-| 后管只读看全站已交卷       | `GET /api/admin/certificates`                                          |
+| 想做的事                   | 用哪个接口                                                |
+| -------------------------- | --------------------------------------------------------- |
+| 小程序看自己关联过哪些证书 | `GET /api/certificates`，见 [证书查询](certificates.md)   |
+| 小程序看自己每一次交卷     | `GET /api/quiz/sessions`，见 [出题与交卷](quiz.md)        |
+| 后管维护领域、证书和知识点 | `/api/admin/catalog/*`，见 [后管改目录](admin-catalog.md) |
+| 后管只读看全站已交卷       | `GET /api/admin/certificates`                             |
 
-后管这一页不改分数、不删证书、不消灭错题、不取消出题。仓库里没有这些写操作的要求，所以没有写接口。未交卷的出题会话仍不在这一页，导航里的「出题会话」还是空壳。
+后管这一页不改分数、不删证书、不消灭错题、不取消出题。仓库里没有这些写操作的要求，所以没有写接口。未交卷的出题会话仍不在这一页，导航里的「出题会话」还是空壳。没有 `GET /api/certificates/scores`。
 
-已登录的 `/api/admin/certificates` 走后管额度，不占用公开的 `GET /api/certificates/scores`。见 [限流](rate-limit.md)。
+已登录的 `/api/admin/certificates` 走后管额度。见 [限流](rate-limit.md)。
 
 ## 假设
 
@@ -64,7 +63,7 @@ curl -sS "http://127.0.0.1:3000/api/admin/certificates/会话uuid" \
 
 没有符合条件的记录时 `items` 为空，`total` 为 0。页码超出已有记录时 `items` 为空，`total` 仍是符合筛选的条数。成绩不存在，或会话还没交卷，返回 `404` / `NOT_FOUND`。
 
-`POST /api/admin/certificates/:id/score` 没有这条路由。`GET /api/certificates/scores` 仍是占位，响应里 `implemented` 为 `false`。
+`POST /api/admin/certificates/:id/score` 没有这条路由。`GET /api/certificates/scores` 也没有。小程序逐次成绩是 `GET /api/quiz/sessions`。
 
 ## 管理后台
 
