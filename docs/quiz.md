@@ -207,14 +207,15 @@ curl -sS -X POST http://127.0.0.1:3000/api/wrong-book/错题id/clear \
 
 小程序路径：
 
-| 页面                          | 路径                                    |
-| ----------------------------- | --------------------------------------- |
-| 出题设置                      | `/pages/quiz/index?packId=`             |
-| 出题中，约 1.5 秒轮询，可取消 | `/pages/quiz/progress/index?sessionId=` |
-| 答题、交卷后的成绩和解析      | `/pages/quiz/paper/index?sessionId=`    |
-| 错题本                        | `/pages/wrong-book/index`               |
-| 错题详情                      | `/pages/wrong-book/detail/index?id=`    |
-| 成绩列表                      | `/pages/score/index`                    |
+| 页面                          | 路径                                                                |
+| ----------------------------- | ------------------------------------------------------------------- |
+| 出题设置                      | `/pages/quiz/index?packId=`                                         |
+| 复练同类出题设置              | `/pages/quiz/index?from=retrainSimilar&wrongItemId=&packId=&kpIds=` |
+| 出题中，约 1.5 秒轮询，可取消 | `/pages/quiz/progress/index?sessionId=`                             |
+| 答题、交卷后的成绩和解析      | `/pages/quiz/paper/index?sessionId=`                                |
+| 错题本                        | `/pages/wrong-book/index`                                           |
+| 错题详情                      | `/pages/wrong-book/detail/index?id=`                                |
+| 成绩列表                      | `/pages/score/index`                                                |
 
 ## 复练同类
 
@@ -245,7 +246,13 @@ Prompt 沿用证书 > 领域 > 全局 > 代码内置。变异读 `prompt_templat
 
 失败的会话不能重新拉起来出题。重试要再 `POST` 一次，拿新的会话 id。交卷后这场会出现在成绩列表里，`source` 为 `variant`。答对只按题干指纹处理，不会把 `wrong_item_id` 指向的原错题标成已消灭。用户仍可在错题详情里手动标记已消灭。
 
-小程序入口还没接。详情底栏和预填页要等 UI 评审通过后再改 `apps/mini`，约束见 [复练 UI 约束](delivery/retrain-C-ui-constraints-v0.1.0-C.md)。
+小程序页面已接上（页面代码只改 `apps/mini`）：
+
+- 错题详情底栏恢复「复练同类」「题型变异」。空知识点、证书下架或没有同证书可用包时两钮禁用，并写明原因。未消灭时，正文区仍可点「标记已消灭」。
+- 复练同类进入出题设置（`from=retrainSimilar`），预填本题知识点，可删减。删光后「AI 开始出题」不可点。提交 `source=retrain_similar` 和 `knowledgePointIds`，不改刷题包。
+- 题型变异在详情直接创建会话（`source=variant`、`count=1`、`mode=practice`），再进入进度页。进度页若露出出题设置底衬，整页不能改题量、模式或题型。失败可「重新生成」（新会话）或「返回详情」。加载文案含「答对不消灭原错题」。
+
+约束见 [复练 UI 约束](delivery/retrain-C-ui-constraints-v0.1.0-C.md)。
 
 ## 还没做
 
