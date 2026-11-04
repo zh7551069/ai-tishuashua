@@ -1,19 +1,28 @@
-import { Button, Input, Navigator, Text, View } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
-import type { UserSummary, WechatLoginRequest } from '@tishuashua/shared';
+import type { UserSummary } from '@tishuashua/shared';
 import { useRef, useState } from 'react';
-import { MiniPage } from '../../components/MiniPage';
 import { AuthApiError, fetchCurrentUser, loginWithWechatCode } from '../../services/auth-api';
 import { clearToken, readToken, saveToken } from '../../services/session';
 import { requestWechatLoginCode } from '../../services/wechat-auth';
+import './index.css';
+import { buildProfile } from './profile';
+import { LoginChecking, LoginLanding, LoginProfile } from './ui';
 
-type Phase = 'checking' | 'landing' | 'authorizing' | 'ready';
+type Phase = 'checking' | 'landing' | 'authorizing' | 'filling' | 'ready';
+
+function readStatusBarHeight(): number {
+  try {
+    return Taro.getSystemInfoSync().statusBarHeight ?? 0;
+  } catch {
+    return 0;
+  }
+}
 
 export default function LoginPage() {
   const [phase, setPhase] = useState<Phase>('checking');
-  const [nick, setNick] = useState('');
   const [user, setUser] = useState<UserSummary | null>(null);
   const [error, setError] = useState('');
+  const [inset] = useState(readStatusBarHeight);
   const phaseRef = useRef<Phase>('checking');
 
   const setCurrentPhase = (next: Phase) => {
@@ -22,7 +31,11 @@ export default function LoginPage() {
   };
 
   useDidShow(() => {
-    if (phaseRef.current === 'authorizing') {
+    void Taro.setNavigationBarColor({
+      frontColor: '#000000',
+      backgroundColor: '#eff6ff',
+    }).catch(() => undefined);
+    if (phaseRef.current === 'authorizing' || phaseRef.current === 'filling') {
       return;
     }
     if (phaseRef.current === 'ready') {
@@ -35,6 +48,7 @@ export default function LoginPage() {
   const refreshReadyUser = async () => {
     const token = readToken();
     if (!token) {
+      setUser(null);
       setCurrentPhase('landing');
       return;
     }
@@ -43,6 +57,7 @@ export default function LoginPage() {
     } catch (caught) {
       if (caught instanceof AuthApiError && (caught.status === 401 || caught.status === 403)) {
         clearToken();
+        setUser(null);
         setCurrentPhase('landing');
       }
     }
@@ -67,16 +82,16 @@ export default function LoginPage() {
   };
 
   const onLogin = async () => {
+    if (phaseRef.current === 'authorizing' || phaseRef.current === 'filling') {
+      return;
+    }
     setError('');
+    setUser(null);
     setCurrentPhase('authorizing');
     try {
       const code = await requestWechatLoginCode();
-      const payload: WechatLoginRequest = { code };
-      const trimmed = nick.trim();
-      if (trimmed) {
-        payload.nick = trimmed;
-      }
-      const result = await loginWithWechatCode(payload);
+      setCurrentPhase('filling');
+      const result = await loginWithWechatCode({ code });
       saveToken(result.token);
       setUser(result.user);
       setCurrentPhase('ready');
@@ -96,60 +111,25 @@ export default function LoginPage() {
   };
 
   if (phase === 'checking') {
-    return <MiniPage title="微信登录" hint="正在确认登录状态。" />;
+    return <LoginChecking inset={inset} />;
   }
 
-  if (phase === 'ready' && user) {
+  if (phase === 'filling' || (phase === 'ready' && user)) {
     return (
-      <MiniPage title="登录成功" hint="登录已完成。手机号可以稍后在设置里用微信授权补全。">
-        <Text className="hint">昵称 {user.nick || '未填写'}</Text>
-        <Text className="hint">
-          手机号 {user.phoneBound ? user.phoneMasked || '已绑定' : '未授权，可在设置中补全'}
-        </Text>
-        <Button
-          className="ghost"
-          onClick={() => void Taro.navigateTo({ url: '/pages/settings/index' })}
-        >
-          设置
-        </Button>
-        <Button className="primary" onClick={onStart}>
-          开始备考
-        </Button>
-      </MiniPage>
+      <LoginProfile
+        inset={inset}
+        model={buildProfile(user, phase === 'filling')}
+        onStart={onStart}
+      />
     );
   }
 
   return (
-    <MiniPage title="微信登录" hint="只用微信登录。没有游客，也没有手机号验证码。">
-      <Text className="label">昵称（可选）</Text>
-      <Input
-        className="field"
-        type="text"
-        maxlength={64}
-        placeholder="不填则显示为微信用户"
-        value={nick}
-        onInput={(event) => setNick(event.detail.value)}
-      />
-      <Text className="hint">只在这次登录保存。设置页不能修改。</Text>
-      <Button
-        className="primary"
-        loading={phase === 'authorizing'}
-        disabled={phase === 'authorizing'}
-        onClick={() => void onLogin()}
-      >
-        {phase === 'authorizing' ? '授权中' : '微信一键登录'}
-      </Button>
-      {error ? <Text className="error">{error}</Text> : null}
-      <View className="agree">
-        <Text className="hint">登录即表示同意</Text>
-        <Navigator className="link" url="/pages/legal/terms/index">
-          《用户协议》
-        </Navigator>
-        <Text className="hint">与</Text>
-        <Navigator className="link" url="/pages/legal/privacy/index">
-          《隐私政策》
-        </Navigator>
-      </View>
-    </MiniPage>
+    <LoginLanding
+      inset={inset}
+      error={error}
+      authorizing={phase === 'authorizing'}
+      onLogin={() => void onLogin()}
+    />
   );
 }

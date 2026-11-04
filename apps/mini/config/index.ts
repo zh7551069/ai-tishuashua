@@ -28,6 +28,10 @@ export default defineConfig<'webpack5'>(async (merge) => {
       enable: false,
     },
     mini: {
+      // 小于 2KB 的 PNG 默认会内联成 base64。微信 image 不渲染 data URI，登录图标必须落成文件。
+      imageUrlLoaderOption: {
+        limit: true,
+      },
       postcss: {
         pxtransform: {
           enable: true,
