@@ -21,8 +21,15 @@ export const QUIZ_SESSION_STATUSES = [
 ] as const;
 export type QuizSessionStatus = (typeof QUIZ_SESSION_STATUSES)[number];
 
-export const QUESTION_SOURCES = ['ai', 'wrong_carry'] as const;
+/** 会话来源。wrongSet 只预留，本切片创建时必须拒绝。 */
+export const QUIZ_SESSION_SOURCES = ['normal', 'retrain_similar', 'variant', 'wrongSet'] as const;
+export type QuizSessionSource = (typeof QUIZ_SESSION_SOURCES)[number];
+
+export const QUESTION_SOURCES = ['ai', 'wrong_carry', 'ai_variant'] as const;
 export type QuestionSource = (typeof QUESTION_SOURCES)[number];
+
+/** 题型变异固定 1 道，不进入普通题量枚举。 */
+export const VARIANT_QUIZ_COUNT = 1;
 
 export const DEFAULT_QUIZ_COUNT: QuizCount = 20;
 export const DEFAULT_QUIZ_DIFFICULTY: QuizDifficulty = 'medium';
@@ -89,7 +96,8 @@ export interface QuizTimerPerQuestion {
 export type QuizTimer = QuizTimerOff | QuizTimerPaper | QuizTimerPerQuestion;
 
 export interface QuizSettings {
-  count: QuizCount;
+  /** 普通出题为 10|20|30|50；题型变异会话固定为 1。 */
+  count: QuizCount | typeof VARIANT_QUIZ_COUNT;
   difficulty: QuizDifficulty;
   types: QuizTypeCode[];
   timer: QuizTimer;
@@ -98,6 +106,12 @@ export interface QuizSettings {
 
 export interface CreateQuizSessionRequest extends QuizSettings {
   packId: string;
+  /** 缺省按 normal。wrongSet 预留，创建时拒绝。 */
+  source?: QuizSessionSource;
+  /** 会话级知识点覆盖。不写回刷题包。variant 忽略此字段。 */
+  knowledgePointIds?: string[];
+  /** 仅 source=variant 时必填。 */
+  wrongItemId?: string;
 }
 
 export interface QuizProgress {
@@ -157,6 +171,7 @@ export interface QuizResultView {
 export interface QuizScoreSummary {
   id: string;
   mode: QuizMode;
+  source: QuizSessionSource;
   certName: string;
   packName: string;
   earnedScore: number;
@@ -190,6 +205,7 @@ export interface QuizSessionView {
   id: string;
   packId: string | null;
   mode: QuizMode;
+  source: QuizSessionSource;
   status: QuizSessionStatus;
   progress: QuizProgress;
   settings: QuizSettings;

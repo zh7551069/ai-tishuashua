@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { WRONG_ITEM_STATUSES, type WrongBookItem, type WrongBookList } from '@tishuashua/shared';
 
 export class WrongBookItemDto implements WrongBookItem {
@@ -34,6 +34,12 @@ export class WrongBookItemDto implements WrongBookItem {
 
   @ApiProperty()
   score!: number;
+
+  @ApiProperty({ type: [String], description: 'wrong_items.kp_ids。没有则为空数组。' })
+  kpIds!: string[];
+
+  @ApiPropertyOptional({ type: [String], description: '与 kpIds 对齐的展示名。缺失时为空串。' })
+  kpNames?: string[];
 
   @ApiProperty()
   updatedAt!: string;

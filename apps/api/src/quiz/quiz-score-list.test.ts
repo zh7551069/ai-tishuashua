@@ -47,6 +47,7 @@ function score(id: string): QuizScoreSummary {
   return {
     id,
     mode: 'practice',
+    source: 'normal',
     certName: '证书',
     packName: '刷题包',
     earnedScore: 80,

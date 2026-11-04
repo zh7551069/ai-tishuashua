@@ -1,10 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  QUESTION_SOURCES,
   QUIZ_DIFFICULTIES,
   QUIZ_MODES,
   QUIZ_SCORE_LIST_LIMIT,
+  QUIZ_SESSION_SOURCES,
   QUIZ_SUBMIT_REASONS,
   QUIZ_TYPES,
+  VARIANT_QUIZ_COUNT,
   examDeadlineAt,
   gradeSelection,
   normalizeSelection,
@@ -15,6 +18,7 @@ import {
   type QuizQuestionView,
   type QuizResultView,
   type QuizScoreSummary,
+  type QuizSessionSource,
   type QuizSessionStatus,
   type QuizSessionView,
   type QuizSettings,
@@ -45,6 +49,7 @@ interface SessionRow {
   id: string;
   pack_id: string | null;
   mode: string;
+  source: string;
   status: string;
   settings: unknown;
   question_count: number;
@@ -180,6 +185,54 @@ export class QuizRepository {
     }
   }
 
+  async findOwnedWrongItem(
+    db: Queryable,
+    userId: string,
+    itemId: string,
+  ): Promise<{ id: string; certId: string; kpIds: string[] } | null> {
+    const result = await db.query<{ id: string; cert_id: string; kp_ids: string[] | null }>(
+      `
+        SELECT id::text AS id, cert_id::text AS cert_id, kp_ids
+        FROM wrong_items
+        WHERE id = $1 AND user_id = $2
+      `,
+      [itemId, userId],
+    );
+    const row = result.rows[0];
+    if (!row) {
+      return null;
+    }
+    return {
+      id: row.id,
+      certId: row.cert_id,
+      kpIds: (row.kp_ids ?? []).map((id) => id.toLowerCase()),
+    };
+  }
+
+  /** 只返回该包内、kind=knowledge_point 且 online 的 id。不写包。 */
+  async usablePackKnowledgePointIds(
+    db: Queryable,
+    packId: string,
+    ids: readonly string[],
+  ): Promise<string[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const result = await db.query<{ id: string }>(
+      `
+        SELECT kp.id::text AS id
+        FROM pack_knowledge_points pkp
+        JOIN knowledge_points kp ON kp.id = pkp.knowledge_point_id
+        WHERE pkp.pack_id = $1
+          AND kp.id = ANY($2::uuid[])
+          AND kp.kind = 'knowledge_point'
+          AND kp.status = 'online'
+      `,
+      [packId, ids],
+    );
+    return result.rows.map((row) => row.id.toLowerCase());
+  }
+
   async insertSession(
     db: Queryable,
     input: {
@@ -187,6 +240,9 @@ export class QuizRepository {
       userId: string;
       pack: QuizPackRecord;
       settings: QuizSettings;
+      source: Exclude<QuizSessionSource, 'wrongSet'>;
+      knowledgePointIds: string[] | null;
+      wrongItemId: string | null;
     },
   ): Promise<void> {
     const snapshot = {
@@ -202,9 +258,12 @@ export class QuizRepository {
     await db.query(
       `
         INSERT INTO quiz_sessions (
-          id, user_id, pack_id, pack_snapshot, mode, settings, status, source, question_count, generated_count
+          id, user_id, pack_id, pack_snapshot, mode, settings, status, source,
+          question_count, generated_count, knowledge_point_ids, wrong_item_id
         )
-        VALUES ($1, $2, $3, $4::jsonb, $5, $6::jsonb, 'pending', 'normal', $7, 0)
+        VALUES (
+          $1, $2, $3, $4::jsonb, $5, $6::jsonb, 'pending', $7, $8, 0, $9::uuid[], $10
+        )
       `,
       [
         input.id,
@@ -213,7 +272,10 @@ export class QuizRepository {
         JSON.stringify(snapshot),
         input.settings.mode,
         JSON.stringify(input.settings),
+        input.source,
         input.settings.count,
+        input.knowledgePointIds,
+        input.wrongItemId,
       ],
     );
   }
@@ -237,7 +299,7 @@ export class QuizRepository {
       const result = await pool.query<SessionRow>(
         `
           SELECT
-            id, pack_id, mode, status, settings, question_count, generated_count,
+            id, pack_id, mode, source, status, settings, question_count, generated_count,
             error_code, error_message, pack_snapshot, started_at, submitted_at,
             pass_snapshot, submit_reason
           FROM quiz_sessions
@@ -451,6 +513,7 @@ export class QuizRepository {
           SELECT
             id,
             mode,
+            source,
             pack_snapshot,
             pass_snapshot,
             submit_reason,
@@ -521,7 +584,7 @@ export class QuizRepository {
     );
     const questions: QuizQuestionView[] = [];
     for (const row of result.rows) {
-      if (!isQuizType(row.type_code) || (row.source !== 'ai' && row.source !== 'wrong_carry')) {
+      if (!isQuizType(row.type_code) || !isQuestionSource(row.source)) {
         continue;
       }
       const selected = parseStringArray(row.selected);
@@ -564,6 +627,7 @@ function mapSession(row: SessionRow, questions: QuizQuestionView[]): QuizSession
     id: row.id,
     packId: row.pack_id,
     mode,
+    source: asSessionSource(row.source),
     status: isStatus(row.status) ? row.status : 'failed',
     progress: {
       generated: Number(row.generated_count) || 0,
@@ -608,7 +672,11 @@ function parseSettings(value: unknown): QuizSettings {
   const mode = body.mode;
   const types = Array.isArray(body.types) ? body.types.filter(isQuizType) : [];
   if (
-    (count !== 10 && count !== 20 && count !== 30 && count !== 50) ||
+    (count !== VARIANT_QUIZ_COUNT &&
+      count !== 10 &&
+      count !== 20 &&
+      count !== 30 &&
+      count !== 50) ||
     !isDifficulty(difficulty) ||
     !isMode(mode) ||
     types.length === 0
@@ -726,6 +794,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 interface ScoreRow {
   id: string;
   mode: string;
+  source: string;
   pack_snapshot: unknown;
   pass_snapshot: unknown;
   submit_reason: string | null;
@@ -879,6 +948,11 @@ async function loadPassScore(client: Queryable, certId: string | null): Promise<
   return Number.isFinite(score) ? score : null;
 }
 
+/**
+ * 按题干指纹写入或消灭错题。
+ * 答对只清除指纹相同的记录，不按 quiz_sessions.wrong_item_id 做同源清除。
+ * 因此答对变异题不会消灭原错题，除非变异题与原题指纹完全一致。
+ */
 async function syncWrongItems(
   client: Queryable,
   userId: string,
@@ -1059,6 +1133,7 @@ function mapScore(row: ScoreRow): QuizScoreSummary | null {
   return {
     id: row.id,
     mode: isMode(row.mode) ? row.mode : 'practice',
+    source: asSessionSource(row.source),
     certName: snapshot.certName,
     packName: snapshot.name,
     earnedScore: stored.earnedScore,
@@ -1155,6 +1230,16 @@ function isUuid(value: string): boolean {
 
 function isSubmitReason(value: unknown): value is QuizSubmitReason {
   return typeof value === 'string' && (QUIZ_SUBMIT_REASONS as readonly string[]).includes(value);
+}
+
+function asSessionSource(value: string): QuizSessionSource {
+  return (QUIZ_SESSION_SOURCES as readonly string[]).includes(value)
+    ? (value as QuizSessionSource)
+    : 'normal';
+}
+
+function isQuestionSource(value: string): value is QuizQuestionView['source'] {
+  return (QUESTION_SOURCES as readonly string[]).includes(value);
 }
 
 function isStatus(value: string): value is QuizSessionStatus {

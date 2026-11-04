@@ -4,17 +4,34 @@ import { ApiErrorCode } from './errors';
 import { LlmCallError, requestAiQuestions } from './quiz-llm';
 import {
   BUILTIN_QUIZ_PROMPT,
+  BUILTIN_QUIZ_VARIANT_PROMPT,
   buildPromptVariables,
+  buildVariantPromptVariables,
   mockAiQuestions,
+  mockVariantQuestion,
   normalizeQuestionScores,
   parseAiQuestions,
   pickPublishedPrompt,
+  pickPublishedVariantPrompt,
+  preferVariantTypes,
   renderPrompt,
+  sealVariantPrompt,
   takeWrongCarry,
   type PaperDraft,
   type PromptCandidate,
 } from './quiz-engine';
-import { QUIZ_DIFFICULTIES, QUIZ_TYPES, type QuizDifficulty, type QuizTypeCode } from './quiz';
+import {
+  QUIZ_DIFFICULTIES,
+  QUIZ_MODES,
+  QUIZ_SESSION_SOURCES,
+  QUIZ_TYPES,
+  VARIANT_QUIZ_COUNT,
+  type QuizDifficulty,
+  type QuizMode,
+  type QuizOption,
+  type QuizSessionSource,
+  type QuizTypeCode,
+} from './quiz';
 
 interface QueryResultLike {
   rows: unknown[];
@@ -89,6 +106,15 @@ interface GenerationContext {
   questionCount: number;
   difficulty: QuizDifficulty;
   types: QuizTypeCode[];
+  mode: QuizMode;
+  source: QuizSessionSource;
+  wrongItemId: string | null;
+  /**
+   * null：普通出题，使用整包上架知识点。
+   * 数组：会话覆盖。空数组也不得回退整包。
+   */
+  knowledgePointOverride: string[] | null;
+  enabledTypes: QuizTypeCode[];
   certId: string;
   certStatus: string;
   totalScore: number;
@@ -148,13 +174,22 @@ export async function runQuizGeneration(
         '关联证书已下架，不能出题',
       );
     }
+    if (context.source === 'wrongSet') {
+      return await failSession(
+        db,
+        sessionId,
+        claim.token,
+        ApiErrorCode.QUIZ_GENERATION_FAILED,
+        '错题再练暂未开放',
+      );
+    }
     if (context.knowledgePoints.length === 0) {
       return await failSession(
         db,
         sessionId,
         claim.token,
         ApiErrorCode.QUIZ_GENERATION_FAILED,
-        '刷题包没有可用知识点',
+        context.knowledgePointOverride ? '没有可用的知识点，无法出题' : '刷题包没有可用知识点',
       );
     }
 
@@ -201,6 +236,12 @@ async function buildDrafts(
   context: GenerationContext,
   options: Exclude<GenerationOptions, { mode: 'unconfigured' }>,
 ): Promise<PaperDraft[]> {
+  if (context.source === 'variant') {
+    if (context.mode !== 'practice' || context.questionCount !== VARIANT_QUIZ_COUNT) {
+      throw new Error('题型变异只能练习且只有 1 题');
+    }
+    return [await requestVariantQuestion(db, sessionId, context, options)];
+  }
   const wrongItems = await loadWrongItems(db, context.userId, context.certId);
   const carry = takeWrongCarry(
     wrongItems,
@@ -296,6 +337,100 @@ async function requestOriginalQuestions(
   return parsed.questions;
 }
 
+/**
+ * 题型变异。输入只有错题快照（不含标准答案）和知识点名称。
+ * VARIANT_PATH_START
+ * 不读课件、不读向量、不带 wrong_carry。
+ */
+async function requestVariantQuestion(
+  db: SqlExecutor,
+  sessionId: string,
+  context: GenerationContext,
+  options: Exclude<GenerationOptions, { mode: 'unconfigured' }>,
+): Promise<PaperDraft> {
+  const wrong = await loadVariantSource(db, context.userId, context.wrongItemId);
+  if (!wrong) {
+    throw new Error('错题不存在，不能变异');
+  }
+  const allowed = preferVariantTypes(
+    intersectTypes(context.types, context.enabledTypes),
+    wrong.type,
+  );
+  if (allowed.length === 0) {
+    throw new Error('没有可用题型');
+  }
+  const prompts = await loadPrompts(db, context.certId, context.domainId);
+  const template = sealVariantPrompt(
+    pickPublishedVariantPrompt(prompts, {
+      certificateId: context.certId,
+      domainId: context.domainId,
+    }) ?? BUILTIN_QUIZ_VARIANT_PROMPT,
+  );
+  const rendered = renderPrompt(
+    template,
+    buildVariantPromptVariables({
+      domainName: context.domainName,
+      certificateName: context.certName,
+      totalScore: context.totalScore,
+      difficulty: context.difficulty,
+      types: allowed,
+      count: VARIANT_QUIZ_COUNT,
+      knowledgePoints: context.knowledgePoints,
+      extraConstraint: context.extraConstraint,
+      originalType: wrong.type ? wrong.type : '未知',
+      originalStem: wrong.stem,
+      originalOptions: wrong.optionsText,
+    }),
+  );
+  const raw =
+    options.mode === 'mock'
+      ? {
+          questions: [
+            mockVariantQuestion({
+              sessionId,
+              originalStem: wrong.stem,
+              originalType: wrong.type,
+              types: allowed,
+              difficulty: context.difficulty,
+              knowledgePoints: context.knowledgePoints,
+            }),
+          ],
+        }
+      : options.completeAi
+        ? await options.completeAi(rendered)
+        : await requestAiQuestions({
+            provider: options.provider,
+            apiKey: options.apiKey,
+            baseUrl: options.baseUrl,
+            system: rendered.system,
+            user: rendered.user,
+            fetchImpl: options.fetchImpl,
+          });
+  const parsed = parseAiQuestions(raw, {
+    count: VARIANT_QUIZ_COUNT,
+    types: allowed,
+    knowledgePointIds: context.knowledgePoints.map((item) => item.id),
+  });
+  if (!parsed.ok) {
+    throw new LlmCallError(ApiErrorCode.LLM_INVALID_OUTPUT, parsed.message);
+  }
+  const question = parsed.questions[0];
+  if (!question || question.stem.trim() === wrong.stem.trim()) {
+    throw new LlmCallError(ApiErrorCode.LLM_INVALID_OUTPUT, '题干不得与原题相同');
+  }
+  return {
+    type: question.type,
+    stem: question.stem,
+    options: question.options,
+    answer: question.answer,
+    analysis: question.analysis,
+    score: question.score,
+    knowledgePointIds: question.knowledgePointId ? [question.knowledgePointId] : [],
+    source: 'ai_variant',
+  };
+}
+// VARIANT_PATH_END
+
 async function claimSession(
   db: SqlExecutor,
   sessionId: string,
@@ -355,10 +490,15 @@ async function loadContext(db: SqlQueryable, sessionId: string): Promise<Generat
         s.pack_id,
         s.question_count,
         s.settings,
+        s.mode,
+        s.source,
+        s.wrong_item_id,
+        s.knowledge_point_ids,
         c.id AS cert_id,
         c.status AS cert_status,
         c.total_score,
         c.extra_constraint,
+        c.enabled_question_type_codes,
         c.name AS cert_name,
         d.id AS domain_id,
         d.name AS domain_name
@@ -376,10 +516,15 @@ async function loadContext(db: SqlQueryable, sessionId: string): Promise<Generat
         pack_id: string | null;
         question_count: number;
         settings: unknown;
+        mode: string | null;
+        source: string | null;
+        wrong_item_id: string | null;
+        knowledge_point_ids: string[] | null;
         cert_id: string | null;
         cert_status: string | null;
         total_score: number | string | null;
         extra_constraint: string | null;
+        enabled_question_type_codes: string[] | null;
         cert_name: string | null;
         domain_id: string | null;
         domain_name: string | null;
@@ -392,6 +537,18 @@ async function loadContext(db: SqlQueryable, sessionId: string): Promise<Generat
   if (!settings) {
     return null;
   }
+  const source = readStoredSource(row.source);
+  const mode = readStoredMode(row.mode);
+  if (!mode) {
+    return null;
+  }
+  // retrain_similar / variant 即使列为 null，也用空覆盖集，禁止回退整包。
+  const knowledgePointOverride =
+    source === 'retrain_similar' || source === 'variant'
+      ? (normalizeIdList(row.knowledge_point_ids) ?? [])
+      : source === 'normal'
+        ? normalizeIdList(row.knowledge_point_ids)
+        : [];
   const knowledge = await db.query(
     `
       SELECT kp.id, kp.name, kp.prompt_hint
@@ -400,9 +557,10 @@ async function loadContext(db: SqlQueryable, sessionId: string): Promise<Generat
       WHERE pkp.pack_id = $1
         AND kp.kind = 'knowledge_point'
         AND kp.status = 'online'
+        AND ($2::uuid[] IS NULL OR kp.id = ANY($2::uuid[]))
       ORDER BY pkp.position
     `,
-    [row.pack_id],
+    [row.pack_id, knowledgePointOverride],
   );
   return {
     userId: row.user_id,
@@ -410,6 +568,11 @@ async function loadContext(db: SqlQueryable, sessionId: string): Promise<Generat
     questionCount: Number(row.question_count),
     difficulty: settings.difficulty,
     types: settings.types,
+    mode,
+    source,
+    wrongItemId: row.wrong_item_id,
+    knowledgePointOverride,
+    enabledTypes: (row.enabled_question_type_codes ?? []).filter(isQuizType),
     certId: row.cert_id,
     certStatus: row.cert_status ?? 'offline',
     totalScore: Number(row.total_score),
@@ -422,6 +585,33 @@ async function loadContext(db: SqlQueryable, sessionId: string): Promise<Generat
       return { id: point.id, name: point.name, promptHint: point.prompt_hint };
     }),
   };
+}
+
+/**
+ * 变异输入只取错题快照的题型、题干和选项。不选取 answer / analysis。
+ * 不连接课件或向量表。
+ */
+async function loadVariantSource(
+  db: SqlQueryable,
+  userId: string,
+  wrongItemId: string | null,
+): Promise<{ type: QuizTypeCode | null; stem: string; optionsText: string } | null> {
+  if (!wrongItemId) {
+    return null;
+  }
+  const result = await db.query(
+    `
+      SELECT question_snapshot
+      FROM wrong_items
+      WHERE id = $1 AND user_id = $2
+    `,
+    [wrongItemId, userId],
+  );
+  const row = result.rows[0] as { question_snapshot: unknown } | undefined;
+  if (!row) {
+    return null;
+  }
+  return readVariantSnapshot(row.question_snapshot);
 }
 
 async function loadPrompts(
@@ -671,6 +861,68 @@ async function lockSession(db: SqlQueryable, sessionId: string): Promise<Session
 
 async function deleteQuestions(db: SqlQueryable, sessionId: string): Promise<void> {
   await db.query(`DELETE FROM paper_questions WHERE session_id = $1`, [sessionId]);
+}
+
+function intersectTypes(
+  requested: readonly QuizTypeCode[],
+  enabled: readonly QuizTypeCode[],
+): QuizTypeCode[] {
+  if (enabled.length === 0) {
+    return [...requested];
+  }
+  const open = new Set(enabled);
+  return requested.filter((type) => open.has(type));
+}
+
+function readStoredSource(value: string | null): QuizSessionSource {
+  return typeof value === 'string' && (QUIZ_SESSION_SOURCES as readonly string[]).includes(value)
+    ? (value as QuizSessionSource)
+    : 'normal';
+}
+
+function readStoredMode(value: string | null): QuizMode | null {
+  return typeof value === 'string' && (QUIZ_MODES as readonly string[]).includes(value)
+    ? (value as QuizMode)
+    : null;
+}
+
+function normalizeIdList(value: string[] | null): string[] | null {
+  if (!value) {
+    return null;
+  }
+  return value.map((id) => id.toLowerCase());
+}
+
+function readVariantSnapshot(value: unknown): {
+  type: QuizTypeCode | null;
+  stem: string;
+  optionsText: string;
+} {
+  if (!value || typeof value !== 'object') {
+    return { type: null, stem: '', optionsText: '（无）' };
+  }
+  const body = value as { type?: unknown; stem?: unknown; options?: unknown };
+  const type = isQuizType(body.type) ? body.type : null;
+  const stem = typeof body.stem === 'string' ? body.stem.trim() : '';
+  return { type, stem, optionsText: formatOptions(body.options) };
+}
+
+function formatOptions(value: unknown): string {
+  if (!Array.isArray(value) || value.length === 0) {
+    return '（无）';
+  }
+  const lines: string[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== 'object') {
+      continue;
+    }
+    const option = item as Partial<QuizOption>;
+    if (typeof option.id !== 'string' || typeof option.text !== 'string') {
+      continue;
+    }
+    lines.push(`${option.id}. ${option.text}`);
+  }
+  return lines.length > 0 ? lines.join('\n') : '（无）';
 }
 
 function readSettings(

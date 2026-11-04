@@ -9,6 +9,10 @@ import type { GenerateQuizJobPayload } from '@tishuashua/shared';
 import type { Job } from 'bullmq';
 import type { Pool } from 'pg';
 
+/**
+ * 仍只消费 quiz.generate。复练同类与题型变异在 runQuizGeneration 里按会话 source 分支。
+ * 变异不新建队列，不读课件，不做向量检索。
+ */
 export async function handleGenerateQuiz(
   job: Job<GenerateQuizJobPayload>,
   pool: Pool,

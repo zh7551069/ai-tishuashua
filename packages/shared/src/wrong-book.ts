@@ -20,6 +20,10 @@ export interface WrongBookItem {
   answer: string[];
   analysis: string;
   score: number;
+  /** 来自 wrong_items.kp_ids。没有则为空数组。 */
+  kpIds: string[];
+  /** 与 kpIds 对齐的展示名。缺失时该项为空串。旧客户端可忽略。 */
+  kpNames?: string[];
   updatedAt: string;
 }
 

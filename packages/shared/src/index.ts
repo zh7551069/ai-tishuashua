@@ -16,18 +16,26 @@ export { parseRedisUrl } from './redis';
 export type { RedisEndpoint } from './redis';
 export {
   BUILTIN_QUIZ_PROMPT,
+  BUILTIN_QUIZ_VARIANT_PROMPT,
   buildPromptVariables,
+  buildVariantPromptVariables,
   mockAiQuestions,
+  mockVariantQuestion,
   normalizeQuestionScores,
   normalizeQuizRequest,
   normalizeSelection,
   parseAiQuestions,
+  parseCreateQuizSessionRequest,
   pickPublishedPrompt,
+  pickPublishedVariantPrompt,
+  preferVariantTypes,
   renderPrompt,
+  sealVariantPrompt,
   takeWrongCarry,
   wrongCarryQuota,
 } from './quiz-engine';
 export type {
+  AcceptedQuizSessionRequest,
   AiQuestionDraft,
   PaperDraft,
   PromptCandidate,
@@ -51,12 +59,14 @@ export {
   QUIZ_MODE_LABELS,
   QUIZ_OUTCOMES,
   QUIZ_OUTCOME_LABELS,
+  QUIZ_SESSION_SOURCES,
   QUIZ_SESSION_STATUSES,
   QUIZ_SUBMIT_REASONS,
   QUIZ_SUBMIT_REASON_LABELS,
   QUIZ_TYPE_LABELS,
   QUIZ_TYPES,
   QUESTION_SOURCES,
+  VARIANT_QUIZ_COUNT,
 } from './quiz';
 export type {
   CreateQuizSessionRequest,
@@ -86,6 +96,7 @@ export type {
   QuizTimerPerQuestion,
   QuizTypeCode,
   QuestionSource,
+  QuizSessionSource,
   SaveQuizAnswerRequest,
   SubmitQuizRequest,
 } from './quiz';

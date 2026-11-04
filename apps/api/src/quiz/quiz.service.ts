@@ -1,11 +1,13 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import {
   ApiErrorCode,
-  normalizeQuizRequest,
+  QUIZ_TYPES,
+  parseCreateQuizSessionRequest,
   readProcessLlmEnv,
   resolveLlmMode,
   type QuizAnswerResult,
   type QuizSessionView,
+  type QuizTypeCode,
 } from '@tishuashua/shared';
 import { randomUUID } from 'node:crypto';
 import { ApiException } from '../common/api.exception';
@@ -26,7 +28,7 @@ export class QuizService {
       packId: string;
       count: number;
       difficulty: string;
-      types: readonly string[];
+      types?: readonly string[];
       timer: {
         enabled: boolean;
         kind?: string;
@@ -34,6 +36,10 @@ export class QuizService {
         perQuestionSeconds?: number;
       };
       mode: string;
+      source?: string;
+      intent?: string;
+      knowledgePointIds?: readonly string[];
+      wrongItemId?: string;
     },
   ): Promise<QuizSessionView> {
     const decision = resolveLlmMode(readProcessLlmEnv());
@@ -44,13 +50,9 @@ export class QuizService {
         decision.message,
       );
     }
-    const normalized = normalizeQuizRequest(input);
-    if (!normalized.ok) {
-      throw new ApiException(
-        HttpStatus.BAD_REQUEST,
-        ApiErrorCode.VALIDATION_ERROR,
-        normalized.message,
-      );
+    const parsed = parseCreateQuizSessionRequest(input);
+    if (!parsed.ok) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, parsed.message);
     }
 
     const sessionId = await this.quizzes.transaction(async (client) => {
@@ -62,19 +64,89 @@ export class QuizService {
         throw unavailable();
       }
       const allowed = new Set(pack.enabledQuestionTypeCodes);
-      if (normalized.settings.types.some((type) => !allowed.has(type))) {
+      let types = parsed.request.settings.types;
+      if (parsed.request.source === 'variant' && parsed.request.typesOmitted) {
+        types = pack.enabledQuestionTypeCodes.filter(isQuizTypeCode);
+        if (types.length === 0) {
+          throw new ApiException(
+            HttpStatus.BAD_REQUEST,
+            ApiErrorCode.VALIDATION_ERROR,
+            '该证书没有可用题型',
+          );
+        }
+      } else if (types.some((type) => !allowed.has(type))) {
         throw new ApiException(
           HttpStatus.BAD_REQUEST,
           ApiErrorCode.VALIDATION_ERROR,
           '题型不在该证书范围内',
         );
       }
+
+      let knowledgePointIds: string[] | null = null;
+      let wrongItemId: string | null = null;
+      if (parsed.request.source === 'variant') {
+        const itemId = parsed.request.wrongItemId;
+        if (!itemId) {
+          throw new ApiException(
+            HttpStatus.BAD_REQUEST,
+            ApiErrorCode.VALIDATION_ERROR,
+            '请指定要变异的错题',
+          );
+        }
+        const item = await this.quizzes.findOwnedWrongItem(client, userId, itemId);
+        if (!item) {
+          throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '错题不存在');
+        }
+        if (item.certId.toLowerCase() !== pack.certId.toLowerCase()) {
+          throw new ApiException(
+            HttpStatus.BAD_REQUEST,
+            ApiErrorCode.VALIDATION_ERROR,
+            '刷题包与错题不属同一证书',
+          );
+        }
+        const usable = new Set(
+          await this.quizzes.usablePackKnowledgePointIds(client, pack.id, item.kpIds),
+        );
+        const ordered: string[] = [];
+        for (const id of item.kpIds) {
+          const key = id.toLowerCase();
+          if (usable.has(key) && !ordered.includes(key)) {
+            ordered.push(key);
+          }
+        }
+        if (ordered.length === 0) {
+          throw new ApiException(
+            HttpStatus.BAD_REQUEST,
+            ApiErrorCode.VALIDATION_ERROR,
+            '没有可用的知识点，无法题型变异',
+          );
+        }
+        knowledgePointIds = ordered;
+        wrongItemId = item.id;
+      } else if (parsed.request.knowledgePointIds) {
+        const requested = parsed.request.knowledgePointIds;
+        const usable = new Set(
+          await this.quizzes.usablePackKnowledgePointIds(client, pack.id, requested),
+        );
+        if (requested.some((id) => !usable.has(id.toLowerCase()))) {
+          throw new ApiException(
+            HttpStatus.BAD_REQUEST,
+            ApiErrorCode.VALIDATION_ERROR,
+            '没有可用的知识点，无法复练同类',
+          );
+        }
+        knowledgePointIds = requested;
+      }
+
       const id = randomUUID();
       await this.quizzes.insertSession(client, {
         id,
         userId,
         pack,
-        settings: normalized.settings,
+        settings: { ...parsed.request.settings, types },
+        source: parsed.request.source,
+        knowledgePointIds,
+        wrongItemId,
       });
       return id;
     });
@@ -176,6 +248,10 @@ export class QuizService {
     }
     return session;
   }
+}
+
+function isQuizTypeCode(value: string): value is QuizTypeCode {
+  return (QUIZ_TYPES as readonly string[]).includes(value);
 }
 
 function unavailable(): ApiException {
