@@ -3,14 +3,15 @@ import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import {
   QUIZ_MODE_LABELS,
   QUIZ_OUTCOME_LABELS,
-  QUIZ_SUBMIT_REASON_LABELS,
   QUIZ_TYPE_LABELS,
   type QuizQuestionView,
   type QuizSessionView,
   type QuizSubmitReason,
 } from '@tishuashua/shared';
 import { useEffect, useRef, useState } from 'react';
-import { MiniPage } from '../../../components/MiniPage';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { Screen } from '../../../components/Screen';
+import { ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { formatSubmittedAt } from '../../../services/format';
 import { isAuthFailure, withAuth } from '../../../services/guard';
 import { HttpError } from '../../../services/http';
@@ -21,12 +22,18 @@ import {
   startQuizSession,
   submitQuizSession,
 } from '../../../services/quiz-api';
+import { bandHeadline, scoreBand } from '../../../ui/score-band';
 
 export default function QuizPaperPage() {
   const sessionId = queryValue(useRouter().params.sessionId);
   const [session, setSession] = useState<QuizSessionView | null>(null);
   const [error, setError] = useState('');
+  const [index, setIndex] = useState(0);
+  const [board, setBoard] = useState(false);
+  const [review, setReview] = useState(false);
+  const [openAnalysis, setOpenAnalysis] = useState<Record<string, boolean>>({});
   const [leftSeconds, setLeftSeconds] = useState<number | null>(null);
+  const [dialog, setDialog] = useState<'submit' | 'leave' | null>(null);
   const submitting = useRef(false);
   const timeoutSent = useRef(false);
   const handInRef = useRef<(reason: QuizSubmitReason) => Promise<void>>(async () => undefined);
@@ -131,6 +138,8 @@ export default function QuizPaperPage() {
       const next = await withAuth((token) => submitQuizSession(token, sessionId, { reason }));
       if (next) {
         setSession(next);
+        setBoard(false);
+        setReview(false);
       }
     } catch (caught) {
       submitting.current = false;
@@ -149,167 +158,434 @@ export default function QuizPaperPage() {
   };
   handInRef.current = handIn;
 
-  const confirmSubmit = async () => {
-    const result = await Taro.showModal({
-      title: '交卷',
-      content: '交卷后不能再改答案，并会显示成绩和解析。',
-      confirmText: '交卷',
-    });
-    if (!result.confirm) {
+  const paper = session?.paper;
+  const questions = paper?.questions ?? [];
+  const submitted = session?.status === 'submitted';
+  const current = questions[Math.min(index, Math.max(questions.length - 1, 0))];
+  const unanswered = questions.filter((item) => item.selected.length === 0).length;
+
+  const leave = () => {
+    if (submitted) {
+      void Taro.navigateBack({
+        fail: () => {
+          void Taro.reLaunch({ url: '/pages/home/index' });
+        },
+      });
       return;
     }
-    await handIn('manual');
+    setDialog('leave');
   };
 
-  const paper = session?.paper;
-  const timer = session?.settings.timer;
-  const submitted = session?.status === 'submitted';
   return (
-    <MiniPage
-      title={submitted ? '成绩' : session ? `${QUIZ_MODE_LABELS[session.mode]}答题` : '答题'}
-      hint={
-        submitted
-          ? '下面是得分、正确答案和解析。答错的题已经写入错题本。'
-          : '选完后可以交卷。未交卷不会看到正确答案。'
+    <Screen
+      back
+      onBack={leave}
+      centerTitle={Boolean(submitted)}
+      title={submitted ? (review ? '错题回顾' : '答题结果') : '答题'}
+      right={
+        submitted && review ? (
+          <Text className="u-mode">{wrongQuestions(questions).length} 题</Text>
+        ) : session ? (
+          <Text className={submitted ? 'u-mode u-mode-brand' : 'u-mode'}>
+            {QUIZ_MODE_LABELS[session.mode]}
+          </Text>
+        ) : null
       }
+      footer={footer({
+        submitted,
+        review,
+        session,
+        index,
+        total: questions.length,
+        onPrev: () => setIndex((value) => Math.max(0, value - 1)),
+        onNext: () => setIndex((value) => Math.min(questions.length - 1, value + 1)),
+        onBoard: () => setBoard(true),
+        onSubmit: () => setDialog('submit'),
+        onHome: () => void Taro.reLaunch({ url: '/pages/home/index' }),
+        onReview: () => setReview(true),
+        onBackResult: () => setReview(false),
+      })}
     >
-      {error ? <Text className="error">{error}</Text> : null}
-      {!session && !error ? <Text className="hint">正在加载试卷。</Text> : null}
-      {session && !paper ? <Text className="error">试卷还没准备好。</Text> : null}
-      {session && paper ? (
-        <View>
-          {session.result ? <ResultCard session={session} /> : null}
-          <View className="card">
-            <Text className="tree-name">
-              {session.context.certName || session.context.packName}
-            </Text>
-            <Text className="meta">
-              {paper.questions.length} 题 · 总分 {paper.totalScore}
-            </Text>
-            {!submitted && session.mode === 'exam' && session.deadlineAt ? (
-              <Text className={leftSeconds === 0 ? 'error' : 'meta'}>
-                {leftSeconds === 0
-                  ? '时间到，正在收卷。'
-                  : `${timer?.enabled && timer.kind === 'per_question' ? '考试' : '整卷'}剩余 ${formatClock(leftSeconds ?? 0)}`}
-              </Text>
-            ) : null}
-            {!submitted &&
-            session.mode === 'practice' &&
-            timer?.enabled &&
-            timer.kind === 'paper' ? (
-              <Text className="meta">
-                {leftSeconds === 0
-                  ? '时间到。练习模式仍可继续作答。'
-                  : `整卷剩余 ${formatClock(leftSeconds ?? 0)}`}
-              </Text>
-            ) : null}
-            {!submitted &&
-            timer?.enabled &&
-            timer.kind === 'per_question' &&
-            session.mode === 'practice' ? (
-              <Text className="meta">
-                每题限时 {timer.perQuestionSeconds} 秒。练习模式不强制收卷。
-              </Text>
-            ) : null}
-            {!submitted && !timer?.enabled ? <Text className="meta">不限时</Text> : null}
-          </View>
-          {paper.questions.map((question) => (
-            <View key={question.id} className="card">
-              <Text className="meta">
-                {question.ordinal}. {QUIZ_TYPE_LABELS[question.type]} · {question.score} 分
-                {question.source === 'wrong_carry' ? ' · 错题' : ''}
-                {question.review ? ` · ${QUIZ_OUTCOME_LABELS[question.review.outcome]}` : ''}
-                {question.review ? ` · 得 ${question.review.earnedScore} 分` : ''}
-              </Text>
-              <Text className="tree-name">{question.stem}</Text>
-              {question.options.map((option) => {
-                const selected = question.selected.includes(option.id);
+      <View className="u-pad">
+        {error ? <ErrorBlock detail={error} onRetry={() => void load()} onBack={leave} /> : null}
+        {!session && !error ? <LoadingBlock label="正在加载试卷" /> : null}
+        {session && !paper ? <ErrorBlock title="试卷还没准备好" onRetry={() => void load()} /> : null}
+        {session && paper && submitted && !review ? (
+          <ResultView session={session} onReview={() => setReview(true)} />
+        ) : null}
+        {session && paper && submitted && review ? (
+          <ReviewView
+            session={session}
+            open={openAnalysis}
+            onToggle={(id) => setOpenAnalysis((currentMap) => ({ ...currentMap, [id]: !currentMap[id] }))}
+          />
+        ) : null}
+        {session && paper && !submitted && current ? (
+          <QuestionView
+            session={session}
+            question={current}
+            index={index}
+            total={questions.length}
+            leftSeconds={leftSeconds}
+            onChoose={(optionId) => void choose(current, optionId)}
+          />
+        ) : null}
+      </View>
+      {board && !submitted ? (
+        <View className="u-sheet-mask" onClick={() => setBoard(false)}>
+          <View className="u-sheet" onClick={(event) => event.stopPropagation()}>
+            <Text className="u-sheet-title">题号跳转</Text>
+            <View className="u-board">
+              {questions.map((question, questionIndex) => {
+                const done = question.selected.length > 0;
+                const on = questionIndex === index;
                 return (
-                  <View
-                    key={option.id}
-                    className={optionClass(question, option.id)}
-                    onClick={() => void choose(question, option.id)}
+                  <Text
+                    key={question.id}
+                    className={on ? 'u-board-cell u-board-on' : done ? 'u-board-cell u-board-done' : 'u-board-cell'}
+                    onClick={() => {
+                      setIndex(questionIndex);
+                      setBoard(false);
+                    }}
                   >
-                    <Text className={selected ? 'option-text option-text-on' : 'option-text'}>
-                      {option.id}. {option.text}
-                      {question.review?.answer.includes(option.id) ? ' · 正确答案' : ''}
-                    </Text>
-                  </View>
+                    {question.ordinal}
+                  </Text>
                 );
               })}
-              {question.review ? (
-                <Text className="analysis">{question.review.analysis || '这道题没有解析。'}</Text>
-              ) : null}
             </View>
-          ))}
-          {submitted ? (
-            <Button
-              className="primary"
-              onClick={() => void Taro.navigateTo({ url: '/pages/wrong-book/index' })}
-            >
-              查看错题本
-            </Button>
-          ) : (
-            <Button className="primary" onClick={() => void confirmSubmit()}>
+            <Button className="u-btn" style={{ marginTop: '15px' }} onClick={() => setDialog('submit')}>
               交卷
             </Button>
-          )}
-          <Button className="ghost" onClick={() => void Taro.navigateBack()}>
-            返回
-          </Button>
+          </View>
         </View>
       ) : null}
-      {error ? (
-        <Button className="primary" onClick={() => void load()}>
-          重试
-        </Button>
+      {dialog === 'submit' ? (
+        <ConfirmDialog
+          title="交卷"
+          body={
+            unanswered > 0
+              ? `还有 ${unanswered} 题未作答。交卷后不能再改答案，并会显示成绩和解析。`
+              : '题目已答完。交卷后不能再改答案，并会显示成绩和解析。'
+          }
+          confirmText="确认交卷"
+          cancelText="继续作答"
+          onCancel={() => setDialog(null)}
+          onConfirm={() => {
+            setDialog(null);
+            void handIn('manual');
+          }}
+        />
       ) : null}
-    </MiniPage>
+      {dialog === 'leave' ? (
+        <ConfirmDialog
+          title={session?.mode === 'exam' ? '离开考试' : '离开练习'}
+          body="返回后本次作答会保留在未交卷记录里，再次进入可以继续。"
+          confirmText="返回"
+          cancelText="继续答题"
+          onCancel={() => setDialog(null)}
+          onConfirm={() => {
+            setDialog(null);
+            void Taro.navigateBack({
+              fail: () => {
+                void Taro.reLaunch({ url: '/pages/home/index' });
+              },
+            });
+          }}
+        />
+      ) : null}
+    </Screen>
   );
 }
 
-function ResultCard(props: { session: QuizSessionView }) {
-  const result = props.session.result;
-  if (!result) {
+function footer(props: {
+  submitted: boolean;
+  review: boolean;
+  session: QuizSessionView | null;
+  index: number;
+  total: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onBoard: () => void;
+  onSubmit: () => void;
+  onHome: () => void;
+  onReview: () => void;
+  onBackResult: () => void;
+}) {
+  if (!props.session?.paper) {
     return null;
   }
-  const passed = result.passed === null ? '未设及格线' : result.passed ? '及格' : '未及格';
+  if (props.submitted && props.review) {
+    return (
+      <Button className="u-btn-ghost" onClick={props.onBackResult}>
+        返回结果
+      </Button>
+    );
+  }
+  if (props.submitted) {
+    return (
+      <View className="u-foot-row">
+        <Button className="u-btn-ghost" onClick={props.onHome}>
+          回首页
+        </Button>
+        <View className="u-foot-gap" />
+        <Button className="u-btn-danger" onClick={props.onReview}>
+          错题回顾
+        </Button>
+      </View>
+    );
+  }
   return (
-    <View className="card">
-      <Text className="score-num">
-        {result.earnedScore}
-        <Text className="score-total"> / {result.totalScore}</Text>
-      </Text>
-      <Text className="meta">
-        {passed}
-        {result.passScore === null ? '' : ` · 及格线 ${result.passScore}`}
-      </Text>
-      <Text className="meta">
-        正确率 {percent(result.accuracy)} · 得分率 {percent(result.scoreRate)}
-      </Text>
-      <Text className="meta">
-        正确 {result.correctCount} · 少选 {result.partialCount} · 答错 {result.wrongCount} · 未作答{' '}
-        {result.unansweredCount}
-      </Text>
-      <Text className="meta">
-        {QUIZ_SUBMIT_REASON_LABELS[result.reason]} · {formatSubmittedAt(result.submittedAt)}
-      </Text>
+    <View className="u-foot-row">
+      <Button className="u-btn-ghost" disabled={props.index === 0} onClick={props.onPrev}>
+        上一题
+      </Button>
+      <View className="u-foot-gap" />
+      {props.index < props.total - 1 ? (
+        <Button className="u-btn" onClick={props.onNext}>
+          下一题
+        </Button>
+      ) : (
+        <Button className="u-btn" onClick={props.onSubmit}>
+          交卷
+        </Button>
+      )}
+      <View className="u-foot-gap" />
+      <Button className="u-btn-ghost" onClick={props.onBoard}>
+        题板
+      </Button>
     </View>
   );
 }
 
-function optionClass(question: QuizQuestionView, optionId: string): string {
-  const selected = question.selected.includes(optionId);
-  if (!question.review) {
-    return selected ? 'option option-on' : 'option';
+function QuestionView(props: {
+  session: QuizSessionView;
+  question: QuizQuestionView;
+  index: number;
+  total: number;
+  leftSeconds: number | null;
+  onChoose: (optionId: string) => void;
+}) {
+  const timer = props.session.settings.timer;
+  const progress = props.total > 0 ? Math.round(((props.index + 1) / props.total) * 100) : 0;
+  return (
+    <View>
+      <View className="u-panel">
+        <View className="u-q-head">
+          <View>
+            <Text className="u-note">
+              {timer.enabled && timer.kind === 'paper'
+                ? '整卷倒计时'
+                : timer.enabled
+                  ? '每题限时'
+                  : '不限时'}
+            </Text>
+            {props.leftSeconds !== null ? (
+              <Text className="u-clock">{formatClock(props.leftSeconds)}</Text>
+            ) : (
+              <Text className="u-clock">不限时</Text>
+            )}
+          </View>
+          <Text className="u-meta">
+            第 {props.index + 1} / {props.total} 题
+          </Text>
+        </View>
+        <View className="u-bar">
+          <View className="u-bar-fill" style={{ width: `${progress}%` }} />
+        </View>
+      </View>
+      <Text className="u-tag u-tag-blue">{QUIZ_TYPE_LABELS[props.question.type]}</Text>
+      <Text className="u-stem">{props.question.stem}</Text>
+      {props.question.options.map((option) => {
+        const selected = props.question.selected.includes(option.id);
+        return (
+          <View
+            key={option.id}
+            className={selected ? 'u-option u-option-on' : 'u-option'}
+            onClick={() => props.onChoose(option.id)}
+          >
+            <Text className={selected ? 'u-letter u-letter-on' : 'u-letter'}>{option.id}</Text>
+            <Text className="u-option-text">{option.text}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function ResultView(props: { session: QuizSessionView; onReview: () => void }) {
+  const result = props.session.result;
+  const questions = props.session.paper?.questions ?? [];
+  const wrong = wrongQuestions(questions);
+  if (!result) {
+    return <Text className="u-meta">这次交卷没有可用的分数。</Text>;
   }
-  if (question.review.answer.includes(optionId)) {
-    return 'option option-right';
+  const band = scoreBand({
+    mode: props.session.mode,
+    passed: result.passed,
+    scoreRate: result.scoreRate,
+  });
+  const rate = Math.round(result.scoreRate * 100);
+  const duration = elapsed(props.session);
+  return (
+    <View>
+      <Text className={`u-banner u-banner-${band}`}>{bandHeadline(band, props.session.mode)}</Text>
+      <View className="u-panel">
+        <Text className="u-kicker">刷题包</Text>
+        <Text className="u-card-title">
+          {props.session.context.certName || props.session.context.packName}
+        </Text>
+      </View>
+      <View className="u-hero">
+        <View className="u-ring" style={{ background: ringColor(band, rate) }}>
+          <View className="u-ring-hole">
+            <Text className={`u-ring-num u-band-${band}`}>{rate}%</Text>
+            <Text className="u-ring-sub">
+              {result.correctCount}/{result.questionCount} 题
+            </Text>
+          </View>
+        </View>
+        <View className="u-card-copy">
+          <Text className="u-meta">
+            得分 {result.earnedScore}/{result.totalScore}
+          </Text>
+          <Text className="u-meta">
+            正确 {result.correctCount} · 错误 {result.wrongCount + result.partialCount}
+          </Text>
+          <Text className="u-note">
+            {result.passScore === null ? '未设及格线' : `及格线 ${result.passScore}`} ·{' '}
+            {formatSubmittedAt(result.submittedAt)}
+          </Text>
+        </View>
+      </View>
+      {wrong.length > 0 ? (
+        <View className="u-wrong-entry" onClick={props.onReview}>
+          <View className="u-danger-dot">!</View>
+          <View className="u-card-copy">
+            <Text className="u-card-title" style={{ color: '#dc2626' }}>
+              错题回顾
+            </Text>
+            <Text className="u-card-sub">{wrong.length} 道错题 · 含解析</Text>
+          </View>
+          <Text className="u-chev" style={{ color: '#dc2626' }}>
+            ›
+          </Text>
+        </View>
+      ) : (
+        <Text className="u-meta">本卷没有错题。</Text>
+      )}
+      {duration ? (
+        <View className="u-panel" style={{ marginTop: '23px' }}>
+          <Text className="u-note">用时</Text>
+          <Text className="u-clock">{duration.label}</Text>
+          {duration.limit ? <Text className="u-note">/ {duration.limit}</Text> : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function ReviewView(props: {
+  session: QuizSessionView;
+  open: Record<string, boolean>;
+  onToggle: (id: string) => void;
+}) {
+  const questions = wrongQuestions(props.session.paper?.questions ?? []);
+  return (
+    <View>
+      <View className="u-panel">
+        <Text className="u-kicker">来自本卷</Text>
+        <Text className="u-card-title">
+          {props.session.context.certName || props.session.context.packName} ·{' '}
+          {QUIZ_MODE_LABELS[props.session.mode]}模式
+        </Text>
+      </View>
+      {questions.length === 0 ? <Text className="u-meta">本卷没有错题。</Text> : null}
+      {questions.map((question) => (
+        <View key={question.id} className="u-panel">
+          <View className="u-q-head">
+            <View className="u-chips">
+              <Text className="u-tag u-tag-gray">第 {question.ordinal} 题</Text>
+              <Text className={typeTag(question.type)}>{QUIZ_TYPE_LABELS[question.type]}</Text>
+            </View>
+            {question.review ? (
+              <Text className="u-note">{QUIZ_OUTCOME_LABELS[question.review.outcome]}</Text>
+            ) : null}
+          </View>
+          <Text className="u-stem">{question.stem}</Text>
+          <View className="u-compare">
+            <Text className="u-compare-label u-mine">你的答案</Text>
+            <Text className="u-compare-value u-mine">{answerLine(question, question.selected)}</Text>
+            <Text className="u-compare-label u-right" style={{ marginTop: '15px' }}>
+              正确答案
+            </Text>
+            <Text className="u-compare-value u-right">
+              {answerLine(question, question.review?.answer ?? [])}
+            </Text>
+          </View>
+          <View className="u-parse-btn" onClick={() => props.onToggle(question.id)}>
+            <Text>{props.open[question.id] ? '收起解析' : '查看解析'}</Text>
+            <Text>{props.open[question.id] ? '▾' : '›'}</Text>
+          </View>
+          {props.open[question.id] ? (
+            <View className="u-analysis">
+              <View className="u-analysis-bar" />
+              <View className="u-analysis-copy">
+                <Text className="u-analysis-title">解析</Text>
+                <Text className="u-analysis-body">{question.review?.analysis || '这道题没有解析。'}</Text>
+              </View>
+            </View>
+          ) : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function wrongQuestions(questions: QuizQuestionView[]): QuizQuestionView[] {
+  return questions.filter((question) => question.review && question.review.outcome !== 'correct');
+}
+
+function answerLine(question: QuizQuestionView, ids: string[]): string {
+  if (ids.length === 0) {
+    return '未作答';
   }
-  if (selected) {
-    return 'option option-wrong';
+  return ids
+    .map((id) => {
+      const option = question.options.find((item) => item.id === id);
+      return option ? `${id} · ${option.text}` : id;
+    })
+    .join('  ');
+}
+
+function typeTag(type: QuizQuestionView['type']): string {
+  if (type === 'multi') {
+    return 'u-tag u-tag-violet';
   }
-  return 'option';
+  if (type === 'judge') {
+    return 'u-tag u-tag-orange';
+  }
+  return 'u-tag u-tag-blue';
+}
+
+function ringColor(band: ReturnType<typeof scoreBand>, rate: number): string {
+  const color =
+    band === 'high' ? '#16a34a' : band === 'fail' ? '#dc2626' : band === 'low' ? '#ea580c' : '#2563eb';
+  return `conic-gradient(${color} ${rate * 3.6}deg, #e5e7eb 0deg)`;
+}
+
+function elapsed(session: QuizSessionView): { label: string; limit: string | null } | null {
+  if (!session.startedAt || !session.result) {
+    return null;
+  }
+  const start = Date.parse(session.startedAt);
+  const end = Date.parse(session.result.submittedAt);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+    return null;
+  }
+  const timer = session.settings.timer;
+  const limit =
+    timer.enabled && timer.kind === 'paper' ? formatClock(timer.paperMinutes * 60) : null;
+  return { label: formatClock(Math.round((end - start) / 1000)), limit };
 }
 
 function replaceSelection(
@@ -333,12 +609,7 @@ function replaceSelection(
 
 function practiceEndsAt(session: QuizSessionView): number | null {
   const timer = session.settings.timer;
-  if (
-    session.mode !== 'practice' ||
-    !timer.enabled ||
-    timer.kind !== 'paper' ||
-    !session.startedAt
-  ) {
+  if (session.mode !== 'practice' || !timer.enabled || timer.kind !== 'paper' || !session.startedAt) {
     return null;
   }
   const start = Date.parse(session.startedAt);
@@ -352,8 +623,4 @@ function formatClock(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
-}
-
-function percent(value: number): string {
-  return `${Math.round(value * 100)}%`;
 }

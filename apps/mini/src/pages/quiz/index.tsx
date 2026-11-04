@@ -1,4 +1,4 @@
-import { Button, Input, Text, View } from '@tarojs/components';
+import { Button, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import {
   DEFAULT_PAPER_MINUTES,
@@ -20,8 +20,8 @@ import {
   type QuizTypeCode,
 } from '@tishuashua/shared';
 import { useState } from 'react';
-import { PackContextCard } from '../../components/PackContextCard';
-import { MiniPage } from '../../components/MiniPage';
+import { Screen } from '../../components/Screen';
+import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
 import { isAuthFailure, withAuth } from '../../services/guard';
 import { fetchPack } from '../../services/pack-api';
 import { queryValue } from '../../services/query';
@@ -59,11 +59,7 @@ export default function QuizSettingsPage() {
       }
       setPack(data);
       if (!typesTouched) {
-        setTypes(
-          data.enabledQuestionTypeCodes.filter((code): code is QuizTypeCode =>
-            KNOWN_TYPES.has(code),
-          ),
-        );
+        setTypes(data.enabledQuestionTypeCodes.filter((code): code is QuizTypeCode => KNOWN_TYPES.has(code)));
       }
       setReady(true);
     } catch (caught) {
@@ -85,6 +81,9 @@ export default function QuizSettingsPage() {
     (!Number.isInteger(perQuestionSeconds) || perQuestionSeconds < 1 || perQuestionSeconds > 600);
   const typeMissing = types.length === 0;
   const blocked = !pack || pack.unavailable || typeMissing || secondsInvalid || busy;
+  const enabledTypes = (pack?.enabledQuestionTypeCodes ?? []).filter((code): code is QuizTypeCode =>
+    KNOWN_TYPES.has(code),
+  );
 
   const toggleType = (type: QuizTypeCode) => {
     setTypesTouched(true);
@@ -130,129 +129,150 @@ export default function QuizSettingsPage() {
     }
   };
 
-  const enabledTypes = (pack?.enabledQuestionTypeCodes ?? []).filter((code): code is QuizTypeCode =>
-    KNOWN_TYPES.has(code),
-  );
-
   return (
-    <MiniPage title="出题设置" hint="确认题量、难度和题型后，AI 会按当前刷题包出一份新卷。">
-      {error ? <Text className="error">{error}</Text> : null}
-      {!ready && !error ? <Text className="hint">正在加载刷题包。</Text> : null}
-      {pack ? <PackContextCard pack={pack} /> : null}
-      {pack && !pack.unavailable ? (
-        <View>
-          <Text className="label">题量</Text>
-          <View className="chips">
-            {QUIZ_COUNTS.map((item) => (
-              <Text
-                key={item}
-                className={item === count ? 'chip chip-on' : 'chip'}
-                onClick={() => setCount(item)}
-              >
-                {item}
-              </Text>
-            ))}
-          </View>
-          <Text className="label">难度</Text>
-          <View className="chips">
-            {QUIZ_DIFFICULTIES.map((item) => (
-              <Text
-                key={item}
-                className={item === difficulty ? 'chip chip-on' : 'chip'}
-                onClick={() => setDifficulty(item)}
-              >
-                {QUIZ_DIFFICULTY_LABELS[item]}
-              </Text>
-            ))}
-          </View>
-          <Text className="label">题型</Text>
-          <View className="chips">
-            {enabledTypes.map((item) => (
-              <Text
-                key={item}
-                className={types.includes(item) ? 'chip chip-on' : 'chip'}
-                onClick={() => toggleType(item)}
-              >
-                {QUIZ_TYPE_LABELS[item]}
-              </Text>
-            ))}
-          </View>
-          {typeMissing ? <Text className="error">请至少选择一种题型</Text> : null}
-          <Text className="label">计时</Text>
-          <View className="chips">
-            <Text className={timerOn ? 'chip' : 'chip chip-on'} onClick={() => setTimerOn(false)}>
-              关
-            </Text>
-            <Text className={timerOn ? 'chip chip-on' : 'chip'} onClick={() => setTimerOn(true)}>
-              开
-            </Text>
-          </View>
-          {timerOn ? (
-            <View>
-              <View className="chips">
-                <Text
-                  className={timerKind === 'paper' ? 'chip chip-on' : 'chip'}
-                  onClick={() => setTimerKind('paper')}
-                >
-                  整卷倒计时
-                </Text>
-                <Text
-                  className={timerKind === 'per_question' ? 'chip chip-on' : 'chip'}
-                  onClick={() => setTimerKind('per_question')}
-                >
-                  每题限时
-                </Text>
-              </View>
-              {timerKind === 'paper' ? (
-                <View className="chips">
-                  {[15, 30, 45, 60].map((minutes) => (
-                    <Text
-                      key={minutes}
-                      className={paperMinutes === minutes ? 'chip chip-on' : 'chip'}
-                      onClick={() => setPaperMinutes(minutes)}
-                    >
-                      {minutes} 分钟
-                    </Text>
-                  ))}
-                </View>
-              ) : (
-                <View>
-                  <Text className="meta">每题限时（秒）</Text>
-                  <Input
-                    className="field"
-                    type="number"
-                    value={String(perQuestionSeconds)}
-                    onInput={(event) => setPerQuestionSeconds(Number(event.detail.value))}
-                  />
-                  {secondsInvalid ? <Text className="error">每题限时须为 1 到 600 秒</Text> : null}
-                </View>
-              )}
-            </View>
-          ) : (
-            <Text className="meta">关闭后不限时</Text>
-          )}
-          <Text className="label">模式</Text>
-          <View className="chips">
-            {QUIZ_MODES.map((item) => (
-              <Text
-                key={item}
-                className={item === mode ? 'chip chip-on' : 'chip'}
-                onClick={() => setMode(item)}
-              >
-                {QUIZ_MODE_LABELS[item]}
-              </Text>
-            ))}
-          </View>
-          <Button className="primary" disabled={blocked} onClick={() => void start()}>
+    <Screen
+      back
+      title="出题设置"
+      footer={
+        pack && !pack.unavailable ? (
+          <Button className="u-btn" disabled={blocked} loading={busy} onClick={() => void start()}>
             AI 开始出题
           </Button>
-        </View>
-      ) : null}
-      {error ? (
-        <Button className="primary" onClick={() => void load()}>
-          重试
-        </Button>
-      ) : null}
-    </MiniPage>
+        ) : null
+      }
+    >
+      <View className="u-pad">
+        {!ready && !error ? <LoadingBlock /> : null}
+        {error ? <ErrorBlock detail={error} onRetry={() => void load()} onBack={() => void Taro.navigateBack()} /> : null}
+        {pack ? (
+          <View className="u-panel">
+            <Text className="u-kicker">当前刷题包</Text>
+            <Text className="u-h1" style={{ marginTop: '6px', fontSize: '27px', lineHeight: '42px' }}>
+              {pack.certName || pack.name} · {pack.knowledgePointCount} 知识点
+            </Text>
+            {pack.unavailable ? <Text className="u-meta">关联证书已下架，不能出题</Text> : null}
+          </View>
+        ) : null}
+        {pack && !pack.unavailable ? (
+          <View className="u-panel">
+            <Text className="u-label">题量</Text>
+            <View className="u-pills">
+              {QUIZ_COUNTS.map((item) => (
+                <Text key={item} className={item === count ? 'u-pill u-pill-on' : 'u-pill'} onClick={() => setCount(item)}>
+                  {item}
+                </Text>
+              ))}
+            </View>
+            <View className="u-rule" />
+            <Text className="u-label">难度</Text>
+            <View className="u-pills">
+              {QUIZ_DIFFICULTIES.map((item) => (
+                <Text
+                  key={item}
+                  className={item === difficulty ? 'u-pill u-pill-on' : 'u-pill'}
+                  onClick={() => setDifficulty(item)}
+                >
+                  {QUIZ_DIFFICULTY_LABELS[item]}
+                </Text>
+              ))}
+            </View>
+            <Text className="u-note">影响题干复杂度与干扰项强度</Text>
+            <View className="u-rule" />
+            <View className="u-label-row">
+              <Text className="u-label">题型</Text>
+              <Text className="u-label-note">可多选</Text>
+            </View>
+            <View className="u-pills">
+              {enabledTypes.map((item) => (
+                <Text
+                  key={item}
+                  className={types.includes(item) ? 'u-pill u-pill-on' : 'u-pill'}
+                  onClick={() => toggleType(item)}
+                >
+                  {QUIZ_TYPE_LABELS[item]}
+                </Text>
+              ))}
+            </View>
+            {typeMissing ? <Text className="u-state-sub">请至少选择一种题型</Text> : null}
+            <View className="u-rule" />
+            <View className="u-switch-row" onClick={() => setTimerOn((value) => !value)}>
+              <Text className="u-label">计时</Text>
+              <View className={timerOn ? 'u-toggle u-toggle-on' : 'u-toggle'}>
+                <View className="u-toggle-knob" />
+              </View>
+            </View>
+            {timerOn ? (
+              <View>
+                <Text className="u-note" style={{ marginTop: '15px' }}>
+                  计时方式
+                </Text>
+                <View className="u-seg">
+                  <Text
+                    className={timerKind === 'paper' ? 'u-seg-item u-seg-on' : 'u-seg-item'}
+                    onClick={() => setTimerKind('paper')}
+                  >
+                    整卷倒计时
+                  </Text>
+                  <Text
+                    className={timerKind === 'per_question' ? 'u-seg-item u-seg-on' : 'u-seg-item'}
+                    onClick={() => setTimerKind('per_question')}
+                  >
+                    每题限时
+                  </Text>
+                </View>
+                <View className="u-between">
+                  <Text className="u-note">
+                    {timerKind === 'paper' ? '总时长（分钟）' : '每题限时（秒）'}
+                  </Text>
+                  {timerKind === 'paper' ? (
+                    <Stepper
+                      value={paperMinutes}
+                      onChange={(next) => setPaperMinutes(clamp(next, 1, 180))}
+                    />
+                  ) : (
+                    <Stepper
+                      value={perQuestionSeconds}
+                      step={10}
+                      onChange={(next) => setPerQuestionSeconds(clamp(next, 1, 600))}
+                    />
+                  )}
+                </View>
+                {secondsInvalid ? <Text className="u-state-sub">每题限时须为 1 到 600 秒</Text> : null}
+              </View>
+            ) : (
+              <Text className="u-note">关闭后不限时</Text>
+            )}
+            <View className="u-rule" />
+            <Text className="u-label">模式</Text>
+            <View className="u-pills">
+              {QUIZ_MODES.map((item) => (
+                <Text key={item} className={item === mode ? 'u-pill u-pill-on' : 'u-pill'} onClick={() => setMode(item)}>
+                  {QUIZ_MODE_LABELS[item]}
+                </Text>
+              ))}
+            </View>
+          </View>
+        ) : null}
+      </View>
+    </Screen>
   );
+}
+
+function Stepper(props: { value: number; step?: number; onChange: (next: number) => void }) {
+  const step = props.step ?? 5;
+  return (
+    <View className="u-stepper">
+      <Text className="u-stepper-btn" onClick={() => props.onChange(props.value - step)}>
+        −
+      </Text>
+      <Text className="u-stepper-val">{props.value}</Text>
+      <Text className="u-stepper-btn" onClick={() => props.onChange(props.value + step)}>
+        +
+      </Text>
+    </View>
+  );
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

@@ -1,3 +1,5 @@
 export default definePageConfig({
-  navigationBarTitleText: '上传教材',
+  navigationStyle: 'custom',
+  navigationBarTitleText: '上传课件或书籍',
+  backgroundColor: '#f8f9fb',
 });

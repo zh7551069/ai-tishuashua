@@ -1,8 +1,10 @@
 import { Button, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
-import { QUIZ_TYPE_LABELS, WRONG_ITEM_STATUS_LABELS, type WrongBookItem } from '@tishuashua/shared';
+import { QUIZ_TYPE_LABELS, type WrongBookItem } from '@tishuashua/shared';
 import { useState } from 'react';
-import { MiniPage } from '../../../components/MiniPage';
+import { Screen } from '../../../components/Screen';
+import { ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
+import { formatSubmittedAt } from '../../../services/format';
 import { isAuthFailure, withAuth } from '../../../services/guard';
 import { queryValue } from '../../../services/query';
 import { clearWrongItem, fetchWrongItem } from '../../../services/wrong-book-api';
@@ -60,50 +62,76 @@ export default function WrongBookDetailPage() {
     }
   };
 
+  const pending = item?.status === 'pending';
+
   return (
-    <MiniPage
+    <Screen
+      back
+      centerTitle
       title="错题详情"
-      hint="这里有正确答案和解析。消灭后，这道题不会再占用新试卷的错题名额。"
+      right={
+        item ? (
+          <Text className={pending ? 'u-tag u-tag-orange' : 'u-tag u-tag-green'}>
+            {pending ? '未消灭' : '已消灭'}
+          </Text>
+        ) : null
+      }
+      footer={
+        pending ? (
+          <Button className="u-btn" disabled={busy} loading={busy} onClick={() => void clear()}>
+            标记已消灭
+          </Button>
+        ) : null
+      }
     >
-      {error ? <Text className="error">{error}</Text> : null}
-      {!item && !error ? <Text className="hint">正在加载错题。</Text> : null}
-      {item ? (
-        <View>
-          <View className="card">
-            <Text className="meta">
-              {item.type ? QUIZ_TYPE_LABELS[item.type] : '题目'} · {item.certName}
+      <View className="u-pad">
+        {!item && !error ? <LoadingBlock label="正在加载错题" /> : null}
+        {error ? <ErrorBlock detail={error} onRetry={() => void load()} onBack={() => void Taro.navigateBack()} /> : null}
+        {item ? (
+          <View>
+            <Text className="u-note">
+              {item.certName} · {formatSubmittedAt(item.updatedAt)}
             </Text>
-            <Text className="meta">
-              {WRONG_ITEM_STATUS_LABELS[item.status]} · 错过 {item.wrongCount} 次
-            </Text>
-            <Text className="tree-name">{item.stem}</Text>
+            <View className="u-chips" style={{ marginTop: '15px' }}>
+              <Text className={typeClass(item.type)}>{item.type ? QUIZ_TYPE_LABELS[item.type] : '题目'}</Text>
+              <Text className="u-tag u-tag-red">错过 {item.wrongCount} 次</Text>
+            </View>
+            <Text className="u-stem">{item.stem}</Text>
             {item.options.map((option) => {
               const right = item.answer.includes(option.id);
               return (
-                <View key={option.id} className={right ? 'option option-right' : 'option'}>
-                  <Text className="option-text">
-                    {option.id}. {option.text}
-                    {right ? ' · 正确答案' : ''}
-                  </Text>
+                <View key={option.id} className={right ? 'u-option u-option-right' : 'u-option'}>
+                  <Text className={right ? 'u-letter u-letter-right' : 'u-letter'}>{option.id}</Text>
+                  <View className="u-card-copy">
+                    <Text className="u-option-text" style={{ color: right ? '#16a34a' : '#111827' }}>
+                      {option.text}
+                    </Text>
+                    {right ? <Text className="u-note u-right">正确答案</Text> : null}
+                  </View>
                 </View>
               );
             })}
-            <Text className="analysis">{item.analysis || '这道题没有解析。'}</Text>
+            <View className="u-analysis">
+              <View className="u-analysis-bar" />
+              <View className="u-analysis-copy">
+                <Text className="u-analysis-title">解析</Text>
+                <Text className="u-analysis-body">{item.analysis || '这道题没有解析。'}</Text>
+              </View>
+            </View>
+            {!pending ? <Text className="u-meta">这道题已经消灭。</Text> : null}
           </View>
-          {item.status === 'pending' ? (
-            <Button className="primary" disabled={busy} onClick={() => void clear()}>
-              标记已消灭
-            </Button>
-          ) : (
-            <Text className="meta">这道题已经消灭。</Text>
-          )}
-        </View>
-      ) : null}
-      {error ? (
-        <Button className="primary" onClick={() => void load()}>
-          重试
-        </Button>
-      ) : null}
-    </MiniPage>
+        ) : null}
+      </View>
+    </Screen>
   );
+}
+
+function typeClass(type: WrongBookItem['type']): string {
+  if (type === 'multi') {
+    return 'u-tag u-tag-violet';
+  }
+  if (type === 'judge') {
+    return 'u-tag u-tag-orange';
+  }
+  return 'u-tag u-tag-blue';
 }

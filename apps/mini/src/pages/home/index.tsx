@@ -2,8 +2,10 @@ import { Button, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import type { PackList, PackView, UserSummary } from '@tishuashua/shared';
 import { useRef, useState } from 'react';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { PackSheet } from '../../components/PackSheet';
-import { MiniPage } from '../../components/MiniPage';
+import { Screen } from '../../components/Screen';
+import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../components/StateBlock';
 import { fetchCurrentUser } from '../../services/auth-api';
 import { isAuthFailure, withAuth } from '../../services/guard';
 import { activatePack, deletePack, fetchPacks, updatePack } from '../../services/pack-api';
@@ -19,6 +21,7 @@ export default function HomePage() {
   const [ready, setReady] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<PackView | null>(null);
 
   const load = async () => {
     setError('');
@@ -51,6 +54,7 @@ export default function HomePage() {
   });
 
   const current = packs?.items.find((item) => item.id === packs.activePackId) ?? null;
+  const nick = user?.nick?.trim() || '备考人';
 
   const run = async (task: (token: string) => Promise<void>) => {
     const token = readToken();
@@ -84,50 +88,57 @@ export default function HomePage() {
   };
 
   return (
-    <MiniPage
-      title="开始备考"
-      hint={user ? `${user.nick || '微信用户'}，继续今天的刷题包。` : '正在确认登录状态。'}
+    <Screen
+      bare
+      footer={
+        ready && current ? (
+          <Button className="u-btn" disabled={current.unavailable || busy} onClick={() => openQuiz(current)}>
+            {current.unavailable ? '开始刷题（不可用）' : '开始刷题'}
+          </Button>
+        ) : null
+      }
     >
-      {error ? <Text className="error">{error}</Text> : null}
-      {!ready && !error ? <Text className="hint">正在加载刷题包。</Text> : null}
-      {ready && !current ? (
-        <EmptyPack onCreate={() => void Taro.navigateTo({ url: '/pages/pack/domain/index' })} />
-      ) : null}
-      {ready && current ? (
-        <PackHome
-          pack={current}
-          busy={busy}
-          onSwitchPoints={() => {
-            void Taro.navigateTo({
-              url: `/pages/pack/knowledge/index?domainId=${current.domainId}&certId=${current.certId}&packId=${current.id}`,
-            });
-          }}
-          onReselect={() => {
-            void Taro.navigateTo({ url: '/pages/pack/domain/index' });
-          }}
-          onOpenSheet={() => setSheetOpen(true)}
-          onStart={() => {
-            void Taro.navigateTo({ url: `/pages/quiz/index?packId=${current.id}` });
-          }}
-          onCreate={() => {
-            void Taro.navigateTo({ url: '/pages/pack/domain/index' });
-          }}
-          onDelete={() => {
-            void confirmDelete(current).catch((caught: unknown) => {
-              void Taro.showToast({
-                title: caught instanceof Error ? caught.message : '删除失败',
-                icon: 'none',
-              });
-            });
-          }}
-        />
-      ) : null}
-      {ready ? <StudyLinks /> : null}
-      {error ? (
-        <Button className="primary" onClick={() => void load()}>
-          重试
-        </Button>
-      ) : null}
+      <View className="u-greet">
+        <View className="u-greet-copy">
+          <Text className="u-greet-title">你好，{nick}</Text>
+          <Text className="u-greet-sub">
+            {ready && !current
+              ? '还没有刷题包'
+              : current?.unavailable
+                ? '当前刷题包不可用，请删除或新建'
+                : '继续你的刷题包，或切换已保存的知识点'}
+          </Text>
+        </View>
+        <View className="u-avatar-wrap" onClick={() => void Taro.navigateTo({ url: '/pages/settings/index' })}>
+          <View className="u-avatar">
+            <Text className="u-avatar-text">{nick.slice(0, 1)}</Text>
+          </View>
+          <Text className="u-avatar-label">我</Text>
+        </View>
+      </View>
+      <View className="u-pad">
+        {!ready && !error ? <LoadingBlock label="正在加载刷题包" /> : null}
+        {error ? (
+          <ErrorBlock detail={error} onRetry={() => void load()} />
+        ) : null}
+        {ready && !current ? (
+          <EmptyBlock
+            title="暂无刷题包"
+            detail="选择领域与证书，创建你的第一个刷题包"
+            action="去选包"
+            onAction={() => void Taro.navigateTo({ url: '/pages/pack/domain/index' })}
+          />
+        ) : null}
+        {ready && current ? (
+          <PackHome
+            pack={current}
+            busy={busy}
+            onOpenSheet={() => setSheetOpen(true)}
+            onDelete={() => setPendingDelete(current)}
+            onCreate={() => void Taro.navigateTo({ url: '/pages/pack/domain/index' })}
+          />
+        ) : null}
+      </View>
       {sheetOpen && packs && packs.items.length > 0 ? (
         <PackSheet
           items={packs.items}
@@ -157,20 +168,37 @@ export default function HomePage() {
           onDelete={(id) => removePack(id)}
         />
       ) : null}
-    </MiniPage>
+      {pendingDelete ? (
+        <ConfirmDialog
+          title="删除刷题包"
+          body={`确定删除「${pendingDelete.name}」？删除后不可恢复。`}
+          confirmText="删除"
+          danger
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            const pack = pendingDelete;
+            setPendingDelete(null);
+            void deleteCurrent(pack).catch((caught: unknown) => {
+              void Taro.showToast({
+                title: caught instanceof Error ? caught.message : '删除失败',
+                icon: 'none',
+              });
+            });
+          }}
+        />
+      ) : null}
+    </Screen>
   );
 }
 
-async function confirmDelete(pack: PackView): Promise<void> {
-  const result = await Taro.showModal({
-    title: '删除刷题包',
-    content: `确定删除「${pack.name}」？删除后不可恢复。`,
-    confirmText: '删除',
-    confirmColor: '#b42318',
-  });
-  if (!result.confirm) {
+function openQuiz(pack: PackView): void {
+  if (pack.unavailable) {
     return;
   }
+  void Taro.navigateTo({ url: `/pages/quiz/index?packId=${pack.id}` });
+}
+
+async function deleteCurrent(pack: PackView): Promise<void> {
   const token = readToken();
   if (!token) {
     await Taro.reLaunch({ url: '/pages/login/index' });
@@ -180,118 +208,68 @@ async function confirmDelete(pack: PackView): Promise<void> {
   await Taro.reLaunch({ url: '/pages/home/index' });
 }
 
-function StudyLinks() {
-  return (
-    <View>
-      <Button
-        className="ghost"
-        onClick={() => void Taro.navigateTo({ url: '/pages/wrong-book/index' })}
-      >
-        错题本
-      </Button>
-      <Button className="ghost" onClick={() => void Taro.navigateTo({ url: '/pages/score/index' })}>
-        成绩
-      </Button>
-      <Button
-        className="ghost"
-        onClick={() => void Taro.navigateTo({ url: '/pages/settings/index' })}
-      >
-        设置
-      </Button>
-      <Button
-        className="ghost"
-        onClick={() => void Taro.navigateTo({ url: '/pages/certificate/index' })}
-      >
-        证书
-      </Button>
-    </View>
-  );
-}
-
-function EmptyPack(props: { onCreate: () => void }) {
-  return (
-    <View>
-      <View className="card">
-        <Text className="tree-name">还没有刷题包</Text>
-        <Text className="meta">选领域、证书和知识点后，就可以在这里开始刷题。</Text>
-      </View>
-      <Button className="primary" onClick={props.onCreate}>
-        选择领域
-      </Button>
-    </View>
-  );
-}
-
 function PackHome(props: {
   pack: PackView;
   busy: boolean;
-  onSwitchPoints: () => void;
-  onReselect: () => void;
   onOpenSheet: () => void;
-  onStart: () => void;
-  onCreate: () => void;
   onDelete: () => void;
+  onCreate: () => void;
 }) {
   const pack = props.pack;
-  const chips = pack.knowledgePoints.slice(0, 8);
+  const chips = pack.knowledgePoints.slice(0, 2);
   const extra = pack.knowledgePointCount - chips.length;
   return (
     <View>
-      <View className={pack.unavailable ? 'card card-off' : 'card'}>
-        <View className="card-head">
-          <Text className="tree-name">{pack.certName}</Text>
-          {pack.unavailable ? <Text className="badge">不可用</Text> : null}
+      <View className={pack.unavailable ? 'u-pack u-pack-off' : 'u-pack'}>
+        <View className="u-pack-accent" />
+        <View className="u-pack-label-row">
+          <Text className="u-kicker">当前刷题包</Text>
+          <Text className="u-link" onClick={props.onOpenSheet}>
+            切换
+          </Text>
         </View>
-        <Text className="meta">
-          {pack.knowledgePointCount} 个知识点 · {pack.domainName}
+        <Text className="u-h1">{pack.certName || pack.name}</Text>
+        <Text className="u-meta">
+          {pack.domainName} · {pack.knowledgePointCount} 个知识点
         </Text>
         {pack.unavailable ? (
           <View>
-            <Text className="meta">关联证书已下架</Text>
-            <Text className="meta">此包仅可删除，不可修改或继续刷题</Text>
+            <Text className="u-meta">关联证书已下架</Text>
+            <Text className="u-meta">此包仅可删除，不可修改或继续刷题</Text>
           </View>
         ) : (
-          <View className="chips">
+          <View className="u-chips">
             {chips.map((item) => (
-              <Text key={item.id} className="chip">
+              <Text key={item.id} className="u-chip">
                 {item.name}
               </Text>
             ))}
-            {extra > 0 ? <Text className="chip">+{extra}</Text> : null}
+            {extra > 0 ? <Text className="u-chip">+{extra}</Text> : null}
           </View>
         )}
       </View>
       {pack.unavailable ? (
         <View>
-          <Button className="primary" disabled>
-            开始刷题（不可用）
-          </Button>
-          <Button className="danger" disabled={props.busy} onClick={props.onDelete}>
+          <Button className="u-btn-danger" style={{ marginTop: '23px' }} disabled={props.busy} onClick={props.onDelete}>
             删除此刷题包
           </Button>
-          <Button className="ghost" onClick={props.onCreate}>
+          <Button className="u-btn-ghost" style={{ marginTop: '15px' }} onClick={props.onCreate}>
             新建刷题包
-          </Button>
-          <Button className="ghost" onClick={props.onReselect}>
-            重新选择领域
           </Button>
         </View>
       ) : (
-        <View>
-          <Button className="primary" onClick={props.onStart}>
-            开始刷题
-          </Button>
-          <Button className="ghost" onClick={props.onSwitchPoints}>
-            切换知识点
-          </Button>
-          <Button className="ghost" onClick={props.onReselect}>
-            重新选择领域
-          </Button>
-        </View>
+        <Button
+          className="u-btn-ghost"
+          style={{ marginTop: '23px' }}
+          onClick={() =>
+            void Taro.navigateTo({
+              url: `/pages/pack/knowledge/index?domainId=${pack.domainId}&certId=${pack.certId}&packId=${pack.id}`,
+            })
+          }
+        >
+          切换知识点
+        </Button>
       )}
-      <Button className="secondary" onClick={props.onOpenSheet}>
-        切换刷题包
-      </Button>
     </View>
   );
 }

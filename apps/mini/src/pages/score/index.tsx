@@ -1,4 +1,4 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Text, View } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import {
   QUIZ_MODE_LABELS,
@@ -7,11 +7,13 @@ import {
   type QuizScoreSummary,
 } from '@tishuashua/shared';
 import { useState } from 'react';
-import { MiniPage } from '../../components/MiniPage';
+import { Screen } from '../../components/Screen';
+import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../components/StateBlock';
 import { formatSubmittedAt } from '../../services/format';
 import { isAuthFailure } from '../../services/guard';
 import { fetchQuizScores } from '../../services/quiz-api';
 import { clearToken, readToken } from '../../services/session';
+import { bandHeadline, scoreBand } from '../../ui/score-band';
 
 export default function ScorePage() {
   const [items, setItems] = useState<QuizScoreSummary[]>([]);
@@ -59,87 +61,72 @@ export default function ScorePage() {
   });
 
   return (
-    <MiniPage title="成绩" hint="这里是已交卷的成绩。点进去可以看正确答案和解析。">
-      {guest ? <GuestScore /> : null}
-      {!guest && error ? <Text className="error">{error}</Text> : null}
-      {!guest && !ready && !error ? <Text className="hint">正在加载成绩。</Text> : null}
-      {!guest && ready && hasMore ? (
-        <Text className="hint">{QUIZ_SCORE_LIST_TRUNCATED_HINT}</Text>
-      ) : null}
-      {!guest && ready && items.length === 0 && !hasMore ? <EmptyScore /> : null}
-      {!guest && ready
-        ? items.map((item) => {
-            const heading = scoreHeading(item);
-            return (
-              <View
-                key={item.id}
-                className="card"
-                onClick={() =>
-                  void Taro.navigateTo({ url: `/pages/quiz/paper/index?sessionId=${item.id}` })
-                }
-              >
-                <Text className="tree-name">{heading.title}</Text>
-                <Text className="meta">{heading.subtitle}</Text>
-                <Text className="score-num">
-                  {item.earnedScore}
-                  <Text className="score-total"> / {item.totalScore}</Text>
-                </Text>
-                <Text className="meta">
-                  正确率 {percent(item.accuracy)} · 得分率 {percent(item.scoreRate)} · 正确{' '}
-                  {item.correctCount}/{item.questionCount}
-                </Text>
-                <Text className="meta">
-                  {passText(item)} · {QUIZ_SUBMIT_REASON_LABELS[item.reason]}
-                </Text>
-                <Text className="meta">交卷 {formatSubmittedAt(item.submittedAt)}</Text>
-                <Text className="meta">查看解析</Text>
-              </View>
-            );
-          })
-        : null}
-      {!guest && error ? (
-        <Button className="primary" onClick={() => void load()}>
-          重试
-        </Button>
-      ) : null}
-    </MiniPage>
-  );
-}
-
-function GuestScore() {
-  return (
-    <View>
-      <View className="card">
-        <Text className="tree-name">登录后查看成绩</Text>
-        <Text className="meta">已交卷的分数、时间和解析只对当前微信账号可见。</Text>
+    <Screen back centerTitle title="成绩">
+      <View className="u-pad">
+        {guest ? (
+          <EmptyBlock
+            title="登录后查看成绩"
+            detail="已交卷的分数、时间和解析只对当前微信账号可见。"
+            action="去登录"
+            onAction={() => void Taro.reLaunch({ url: '/pages/login/index' })}
+          />
+        ) : null}
+        {!guest && !ready && !error ? <LoadingBlock label="正在加载成绩" /> : null}
+        {!guest && error ? (
+          <ErrorBlock detail={error} onRetry={() => void load()} onBack={() => void Taro.navigateBack()} />
+        ) : null}
+        {!guest && ready && hasMore ? <Text className="u-note">{QUIZ_SCORE_LIST_TRUNCATED_HINT}</Text> : null}
+        {!guest && ready && items.length === 0 && !hasMore ? (
+          <EmptyBlock
+            title="还没有交卷记录"
+            detail="完成一次练习或考试后，成绩会出现在这里。"
+            action="去刷题"
+            onAction={() => {
+              void Taro.navigateBack({
+                fail: () => {
+                  void Taro.reLaunch({ url: '/pages/home/index' });
+                },
+              });
+            }}
+          />
+        ) : null}
+        {!guest && ready
+          ? items.map((item) => {
+              const band = scoreBand({
+                mode: item.mode,
+                passed: item.passed,
+                scoreRate: item.scoreRate,
+              });
+              const heading = scoreHeading(item);
+              return (
+                <View
+                  key={item.id}
+                  className="u-card"
+                  onClick={() =>
+                    void Taro.navigateTo({ url: `/pages/quiz/paper/index?sessionId=${item.id}` })
+                  }
+                >
+                  <View className="u-card-copy">
+                    <Text className={`u-kicker u-band-${band}`}>{bandHeadline(band, item.mode)}</Text>
+                    <Text className="u-card-title">{heading.title}</Text>
+                    <Text className="u-card-sub">{heading.subtitle}</Text>
+                    <Text className="u-clock">
+                      {item.earnedScore}
+                      <Text className="u-note"> / {item.totalScore}</Text>
+                    </Text>
+                    <Text className="u-card-sub">
+                      正确率 {percent(item.accuracy)} · 正确 {item.correctCount}/{item.questionCount} ·{' '}
+                      {passText(item)} · {QUIZ_SUBMIT_REASON_LABELS[item.reason]}
+                    </Text>
+                    <Text className="u-card-sub">交卷 {formatSubmittedAt(item.submittedAt)}</Text>
+                  </View>
+                  <Text className="u-chev">›</Text>
+                </View>
+              );
+            })
+          : null}
       </View>
-      <Button className="primary" onClick={() => void Taro.reLaunch({ url: '/pages/login/index' })}>
-        去登录
-      </Button>
-    </View>
-  );
-}
-
-function EmptyScore() {
-  return (
-    <View>
-      <View className="card">
-        <Text className="tree-name">还没有交卷记录</Text>
-        <Text className="meta">完成一次练习或考试后，成绩会出现在这里。</Text>
-      </View>
-      <Button
-        className="primary"
-        onClick={() => {
-          void Taro.navigateBack({
-            fail: () => {
-              void Taro.reLaunch({ url: '/pages/home/index' });
-            },
-          });
-        }}
-      >
-        去刷题
-      </Button>
-    </View>
+    </Screen>
   );
 }
 

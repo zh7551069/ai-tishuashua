@@ -1,15 +1,17 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Button, Input, Text, View } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { QUIZ_TYPE_LABELS, type CertificateQueryItem, type QuizTypeCode } from '@tishuashua/shared';
-import { useState } from 'react';
-import { MiniPage } from '../../components/MiniPage';
+import { useMemo, useState } from 'react';
+import { Screen } from '../../components/Screen';
+import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../components/StateBlock';
 import { fetchCertificateQuery } from '../../services/certificate-api';
 import { formatSubmittedAt } from '../../services/format';
 import { isAuthFailure } from '../../services/guard';
 import { clearToken, readToken } from '../../services/session';
 
-export default function CertificatePage() {
+export default function CertificateQueryPage() {
   const [items, setItems] = useState<CertificateQueryItem[]>([]);
+  const [query, setQuery] = useState('');
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
   const [guest, setGuest] = useState(false);
@@ -48,113 +50,85 @@ export default function CertificatePage() {
     void load();
   });
 
+  const visible = useMemo(() => {
+    const keyword = query.trim();
+    if (!keyword) {
+      return items;
+    }
+    return items.filter((item) => item.name.includes(keyword) || item.domainName.includes(keyword));
+  }, [items, query]);
+
   return (
-    <MiniPage
-      title="证书"
-      hint="这里是你已经关联过的证书。选领域建包仍走目录，每次交卷的明细在成绩页。"
-    >
-      {guest ? <GuestCertificate /> : null}
-      {!guest && error ? <Text className="error">{error}</Text> : null}
-      {!guest && !ready && !error ? <Text className="hint">正在加载证书。</Text> : null}
-      {!guest && ready && items.length === 0 ? <EmptyCertificate /> : null}
-      {!guest && ready
-        ? items.map((item) => (
-            <View key={item.id}>
-              <View
-                className={item.unavailable ? 'card card-off' : 'card'}
-                onClick={() => openLatest(item)}
-              >
-                <View className="card-head">
-                  <Text className="tree-name">{item.name}</Text>
-                  {item.unavailable ? <Text className="badge">已下架</Text> : null}
-                </View>
-                <Text className="meta">{item.domainName}</Text>
-                <Text className="meta">{scoreLine(item)}</Text>
-                <Text className="meta">题型 {typeLine(item.enabledQuestionTypeCodes)}</Text>
-                {item.extraConstraint ? (
-                  <Text className="meta">附加约束 {item.extraConstraint}</Text>
-                ) : null}
-                <Text className="meta">{relationLine(item)}</Text>
-                {item.unavailable && item.packCount > 0 ? (
-                  <Text className="meta">这张证书已下架，已有刷题包只能删除。</Text>
-                ) : null}
-                {item.latestScore ? (
-                  <View>
-                    <Text className="score-num">
-                      {item.latestScore.earnedScore}
-                      <Text className="score-total"> / {item.latestScore.totalScore}</Text>
-                    </Text>
-                    <Text className="meta">
-                      {passedLine(item)} · 最近交卷{' '}
-                      {formatSubmittedAt(item.latestScore.submittedAt)}
-                    </Text>
-                    <Text className="meta">查看最近一次解析</Text>
+    <Screen back title="证书" subtitle="已关联的证书">
+      <View className="u-pad">
+        <View className="u-search">
+          <Text className="u-search-mark">⌕</Text>
+          <Input
+            className="u-search-input"
+            placeholder="搜索证书"
+            placeholderStyle="color:#9ca3af"
+            value={query}
+            onInput={(event) => setQuery(event.detail.value)}
+          />
+        </View>
+        {guest ? (
+          <EmptyBlock
+            title="登录后查询证书"
+            detail="只显示当前微信账号已关联的证书。"
+            action="去登录"
+            onAction={() => void Taro.reLaunch({ url: '/pages/login/index' })}
+          />
+        ) : null}
+        {!guest && !ready && !error ? <LoadingBlock skeleton /> : null}
+        {!guest && error ? (
+          <ErrorBlock detail={error} onRetry={() => void load()} onBack={() => void Taro.navigateBack()} />
+        ) : null}
+        {!guest && ready && visible.length === 0 ? (
+          <EmptyBlock
+            title="暂无证书"
+            detail="保存刷题包、交卷、留下错题或上传课件后，相关证书会出现在这里。"
+            action="去选包"
+            onAction={() => void Taro.navigateTo({ url: '/pages/pack/domain/index' })}
+          />
+        ) : null}
+        {!guest && ready && visible.length > 0 ? (
+          <Text className="u-section">{visible.length} 个证书</Text>
+        ) : null}
+        {!guest && ready
+          ? visible.map((item) => (
+              <View key={item.id}>
+                <View className="u-card" onClick={() => openLatest(item)}>
+                  <View className="u-card-copy">
+                    <Text className="u-card-title">{item.name}</Text>
+                    <Text className="u-card-sub">{item.domainName}</Text>
+                    <Text className="u-card-sub">{scoreLine(item)}</Text>
+                    <Text className="u-card-sub">{relationLine(item)}</Text>
+                    {item.unavailable ? <Text className="u-badge">已下架</Text> : null}
+                    {item.latestScore ? (
+                      <Text className="u-meta">
+                        {item.latestScore.earnedScore}/{item.latestScore.totalScore} ·{' '}
+                        {passedLine(item)} · {formatSubmittedAt(item.latestScore.submittedAt)}
+                      </Text>
+                    ) : null}
                   </View>
-                ) : null}
-                {!item.latestScore && item.submittedCount > 0 ? (
-                  <Text className="meta">最近一次交卷没有可用的分数。</Text>
+                  <Text className="u-chev">›</Text>
+                </View>
+                {item.activePackId && !item.unavailable ? (
+                  <Button
+                    className="u-btn-ghost"
+                    style={{ marginTop: '-8px', marginBottom: '23px' }}
+                    onClick={() => {
+                      void Taro.navigateTo({ url: `/pages/quiz/index?packId=${item.activePackId}` });
+                    }}
+                  >
+                    继续刷这张证书
+                  </Button>
                 ) : null}
               </View>
-              {item.activePackId && !item.unavailable ? (
-                <Button
-                  className="ghost"
-                  onClick={() => {
-                    void Taro.navigateTo({
-                      url: `/pages/quiz/index?packId=${item.activePackId}`,
-                    });
-                  }}
-                >
-                  继续刷这张证书
-                </Button>
-              ) : null}
-            </View>
-          ))
-        : null}
-      {!guest && ready ? (
-        <Button
-          className="ghost"
-          onClick={() => void Taro.navigateTo({ url: '/pages/score/index' })}
-        >
-          查看成绩明细
-        </Button>
-      ) : null}
-      {!guest && error ? (
-        <Button className="primary" onClick={() => void load()}>
-          重试
-        </Button>
-      ) : null}
-    </MiniPage>
-  );
-}
-
-function GuestCertificate() {
-  return (
-    <View>
-      <View className="card">
-        <Text className="tree-name">登录后查询证书</Text>
-        <Text className="meta">只显示当前微信账号的刷题包、交卷、错题和课件所关联的证书。</Text>
+            ))
+          : null}
       </View>
-      <Button className="primary" onClick={() => void Taro.reLaunch({ url: '/pages/login/index' })}>
-        去登录
-      </Button>
-    </View>
-  );
-}
-
-function EmptyCertificate() {
-  return (
-    <View>
-      <View className="card">
-        <Text className="tree-name">还没有可查询的证书</Text>
-        <Text className="meta">保存刷题包、交卷、留下错题或上传课件后，相关证书会出现在这里。</Text>
-      </View>
-      <Button
-        className="primary"
-        onClick={() => void Taro.navigateTo({ url: '/pages/pack/domain/index' })}
-      >
-        选择领域
-      </Button>
-    </View>
+    </Screen>
   );
 }
 
@@ -162,14 +136,13 @@ function openLatest(item: CertificateQueryItem): void {
   if (!item.latestScore) {
     return;
   }
-  void Taro.navigateTo({
-    url: `/pages/quiz/paper/index?sessionId=${item.latestScore.sessionId}`,
-  });
+  void Taro.navigateTo({ url: `/pages/quiz/paper/index?sessionId=${item.latestScore.sessionId}` });
 }
 
 function scoreLine(item: CertificateQueryItem): string {
   const pass = item.passScore === null ? '未设及格线' : `及格线 ${item.passScore}`;
-  return `总分 ${item.totalScore} · ${pass}`;
+  const types = typeLine(item.enabledQuestionTypeCodes);
+  return `总分 ${item.totalScore} · ${pass} · ${types}`;
 }
 
 function passedLine(item: CertificateQueryItem): string {
@@ -184,12 +157,12 @@ function passedLine(item: CertificateQueryItem): string {
 }
 
 function relationLine(item: CertificateQueryItem): string {
-  return `刷题包 ${item.packCount} 个 · 已交卷 ${item.submittedCount} 次 · 未消灭错题 ${item.pendingWrongCount} · 课件 ${item.uploadCount} 份`;
+  return `刷题包 ${item.packCount} · 已交卷 ${item.submittedCount} · 未消灭错题 ${item.pendingWrongCount} · 课件 ${item.uploadCount}`;
 }
 
 function typeLine(codes: string[]): string {
   if (codes.length === 0) {
-    return '未设置';
+    return '题型未设置';
   }
   return codes.map((code) => (isQuizType(code) ? QUIZ_TYPE_LABELS[code] : code)).join('、');
 }
