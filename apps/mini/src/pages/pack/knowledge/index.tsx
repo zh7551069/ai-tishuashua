@@ -11,7 +11,9 @@ import {
   type KnowledgeTree,
 } from '@tishuashua/shared';
 import { useState } from 'react';
-import { MiniPage } from '../../../components/MiniPage';
+import { Screen } from '../../../components/Screen';
+import { Steps } from '../../../components/Steps';
+import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { fetchKnowledgeTree } from '../../../services/catalog-api';
 import { readCoursewareJob } from '../../../services/courseware-api';
 import { withAuth } from '../../../services/guard';
@@ -73,19 +75,18 @@ export default function KnowledgePage() {
       setError('缺少领域或证书');
       return;
     }
-    const query = [`domainId=${domainId}`, `certId=${certId}`];
+    const next = [`domainId=${domainId}`, `certId=${certId}`];
     if (packId) {
-      query.push(`packId=${packId}`);
+      next.push(`packId=${packId}`);
     }
     if (jobId) {
-      query.push(`jobId=${jobId}`);
+      next.push(`jobId=${jobId}`);
     }
-    void Taro.navigateTo({ url: `/pages/courseware/index?${query.join('&')}` });
+    void Taro.navigateTo({ url: `/pages/courseware/index?${next.join('&')}` });
   };
 
   const save = async () => {
-    if (!tree || selected.length === 0) {
-      setError('请至少选择一个知识点');
+    if (!tree || selected.length === 0 || saving) {
       return;
     }
     setSaving(true);
@@ -111,62 +112,93 @@ export default function KnowledgePage() {
   const originals = new Map(
     (tree?.nodes ?? []).filter((node) => node.kind === 'textbook').map((node) => [node.id, node]),
   );
+  const subtitle = tree ? `${tree.domainName} · ${tree.certificateName}` : undefined;
 
   return (
-    <MiniPage
-      title={tree?.certificateName || '选择知识点'}
-      hint="勾选教材 = 全选其下知识点；半选表示部分已选。"
+    <Screen
+      back
+      title="选择知识点"
+      subtitle={subtitle}
+      footer={
+        ready && !error ? (
+          <View>
+            <Text className="u-note">已选 {selected.length} 个知识点</Text>
+            <Button
+              className="u-btn"
+              style={{ marginTop: '15px' }}
+              disabled={saving || selected.length === 0}
+              loading={saving}
+              onClick={() => void save()}
+            >
+              保存到刷题包
+            </Button>
+          </View>
+        ) : null
+      }
     >
-      <Input
-        className="field"
-        placeholder="搜索教材或知识点"
-        value={query}
-        onInput={(event) => setQuery(event.detail.value)}
-      />
-      <Button className="ghost" onClick={() => openCourseware()}>
-        上传课件或书籍
-      </Button>
-      {extractJobId ? (
-        <Button className="secondary" onClick={() => openCourseware(extractJobId)}>
-          查看课件提炼
-        </Button>
-      ) : null}
-      {error ? <Text className="error">{error}</Text> : null}
-      {!ready && !error ? <Text className="hint">正在加载知识点。</Text> : null}
-      {ready && visible.length === 0 ? (
-        <Text className="hint">没有匹配的教材或知识点。</Text>
-      ) : null}
-      {visible.map((node) => {
-        const original = originals.get(node.id);
-        const checkChildIds =
-          original && original.kind === 'textbook'
-            ? original.children.map((child) => child.id)
-            : [];
-        return (
-          <TreeBlock
-            key={node.id}
-            node={node}
-            checkChildIds={checkChildIds}
-            selected={selected}
-            collapsed={Boolean(collapsed[node.id])}
-            onToggleExpand={() =>
-              setCollapsed((current) => ({ ...current, [node.id]: !current[node.id] }))
-            }
-            onToggleTextbook={() => setSelected(toggleTextbook(selected, checkChildIds))}
-            onTogglePoint={(id) => setSelected(toggleKnowledgePoint(selected, id))}
+      <Steps current={3} />
+      <View className="u-pad">
+        <View className="u-search">
+          <Text className="u-search-mark">⌕</Text>
+          <Input
+            className="u-search-input"
+            placeholder="搜索教材或知识点"
+            placeholderStyle="color:#9ca3af"
+            value={query}
+            onInput={(event) => setQuery(event.detail.value)}
           />
-        );
-      })}
-      <Text className="meta">已选 {selected.length} 个知识点</Text>
-      <Button
-        className="primary"
-        disabled={saving || selected.length === 0}
-        loading={saving}
-        onClick={() => void save()}
-      >
-        保存到刷题包
-      </Button>
-    </MiniPage>
+        </View>
+        <View className="u-tip" style={{ marginTop: '15px' }}>
+          勾选教材 = 全选其下知识点；半选表示部分已选。
+        </View>
+        <View className="u-upload" onClick={() => openCourseware(extractJobId || undefined)}>
+          <View className="u-upload-icon">↑</View>
+          <View className="u-card-copy">
+            <Text className="u-upload-title">
+              {extractJobId ? '查看课件提炼' : '上传课件或书籍'}
+            </Text>
+            <Text className="u-upload-sub">AI 自动提炼知识点 · 支持 PPT / PDF</Text>
+          </View>
+          <Text className="u-chev">›</Text>
+        </View>
+        <View className="u-between">
+          <Text className="u-label">教材与知识点</Text>
+          <Text className="u-link">已选 {selected.length}</Text>
+        </View>
+        {!ready && !error ? <LoadingBlock skeleton /> : null}
+        {error && !ready ? (
+          <ErrorBlock detail={error} onRetry={() => void load()} onBack={() => void Taro.navigateBack()} />
+        ) : null}
+        {error && ready ? <Text className="u-state-sub">{error}</Text> : null}
+        {ready && visible.length === 0 ? (
+          <EmptyBlock
+            title={query ? '没有匹配的知识点' : '暂无知识点'}
+            detail={query ? '换个关键词，或上传课件提炼。' : '可以上传课件，提炼后再加入刷题包。'}
+            action={query ? '清空搜索' : '上传课件'}
+            onAction={() => (query ? setQuery('') : openCourseware())}
+          />
+        ) : null}
+        {visible.map((node) => {
+          const original = originals.get(node.id);
+          const checkChildIds =
+            original && original.kind === 'textbook' ? original.children.map((child) => child.id) : [];
+          return (
+            <TreeBlock
+              key={node.id}
+              node={node}
+              checkChildIds={checkChildIds}
+              selected={selected}
+              collapsed={Boolean(collapsed[node.id])}
+              onToggleExpand={() =>
+                setCollapsed((current) => ({ ...current, [node.id]: !current[node.id] }))
+              }
+              onToggleTextbook={() => setSelected(toggleTextbook(selected, checkChildIds))}
+              onTogglePoint={(id) => setSelected(toggleKnowledgePoint(selected, id))}
+            />
+          );
+        })}
+      </View>
+    </Screen>
   );
 }
 
@@ -182,25 +214,34 @@ function TreeBlock(props: {
   if (props.node.kind === 'knowledge_point') {
     const on = props.selected.includes(props.node.id);
     return (
-      <View className="tree-row" onClick={() => props.onTogglePoint(props.node.id)}>
+      <View className={on ? 'u-tree u-tree-on' : 'u-tree'} onClick={() => props.onTogglePoint(props.node.id)}>
         <CheckBox state={on ? 'checked' : 'unchecked'} />
-        <Text className="tree-name">{props.node.name}</Text>
+        <View className="u-card-copy">
+          <Text className="u-card-title">{props.node.name}</Text>
+          <Text className="u-tag u-tag-blue">知识点</Text>
+        </View>
       </View>
     );
   }
 
+  const state = textbookCheckState(props.checkChildIds, props.selected);
   return (
     <View>
-      <View className="tree-row">
-        <View onClick={props.onToggleTextbook}>
-          <CheckBox state={textbookCheckState(props.checkChildIds, props.selected)} />
-        </View>
-        <Text className="expander" onClick={props.onToggleExpand}>
+      <View className="u-tree">
+        <Text className="u-fold" onClick={props.onToggleExpand}>
           {props.collapsed ? '▸' : '▾'}
         </Text>
-        <Text className="tree-name" onClick={props.onToggleExpand}>
-          {props.node.name}
-        </Text>
+        <View className="u-book">书</View>
+        <View className="u-card-copy" onClick={props.onToggleExpand}>
+          <Text className="u-card-title">{props.node.name}</Text>
+          <View className="u-chips">
+            <Text className="u-tag">教材</Text>
+            <Text className="u-card-sub">{props.node.children.length} 个知识点</Text>
+          </View>
+        </View>
+        <View onClick={props.onToggleTextbook}>
+          <CheckBox state={state} />
+        </View>
       </View>
       {props.collapsed
         ? null
@@ -209,11 +250,11 @@ function TreeBlock(props: {
             return (
               <View
                 key={child.id}
-                className="tree-row kp-row"
+                className={on ? 'u-tree u-tree-child u-tree-on' : 'u-tree u-tree-child'}
                 onClick={() => props.onTogglePoint(child.id)}
               >
                 <CheckBox state={on ? 'checked' : 'unchecked'} />
-                <Text className="tree-name">{child.name}</Text>
+                <Text className="u-card-title">{child.name}</Text>
               </View>
             );
           })}
@@ -224,8 +265,8 @@ function TreeBlock(props: {
 function CheckBox(props: { state: CheckState }) {
   const mark = props.state === 'checked' ? '✓' : props.state === 'indeterminate' ? '–' : '';
   return (
-    <View className={props.state === 'unchecked' ? 'box box-off' : 'box box-on'}>
-      <Text className="box-mark">{mark}</Text>
+    <View className={props.state === 'unchecked' ? 'u-check' : 'u-check u-check-on'}>
+      <Text className="u-check-mark">{mark}</Text>
     </View>
   );
 }

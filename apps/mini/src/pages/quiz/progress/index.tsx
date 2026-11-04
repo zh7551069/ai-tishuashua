@@ -1,8 +1,9 @@
 import { Button, Text, View } from '@tarojs/components';
 import Taro, { useDidHide, useDidShow, useRouter } from '@tarojs/taro';
-import type { QuizSessionView } from '@tishuashua/shared';
+import { QUIZ_DIFFICULTY_LABELS, QUIZ_TYPE_LABELS, type QuizSessionView } from '@tishuashua/shared';
 import { useRef, useState } from 'react';
-import { MiniPage } from '../../../components/MiniPage';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { Screen } from '../../../components/Screen';
 import { isAuthFailure, withAuth } from '../../../services/guard';
 import { queryValue } from '../../../services/query';
 import { cancelQuizSession, fetchQuizSession } from '../../../services/quiz-api';
@@ -12,6 +13,7 @@ export default function QuizProgressPage() {
   const [session, setSession] = useState<QuizSessionView | null>(null);
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const stopped = useRef(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -77,15 +79,6 @@ export default function QuizProgressPage() {
     if (!sessionId || cancelling) {
       return;
     }
-    const confirmed = await Taro.showModal({
-      title: '取消出题',
-      content: '取消后会丢弃未完成的试卷。',
-      confirmText: '取消出题',
-      confirmColor: '#b42318',
-    });
-    if (!confirmed.confirm) {
-      return;
-    }
     setCancelling(true);
     try {
       const next = await withAuth((token) => cancelQuizSession(token, sessionId));
@@ -107,48 +100,67 @@ export default function QuizProgressPage() {
 
   const generated = session?.progress.generated ?? 0;
   const total = session?.progress.total ?? 0;
-  const percent = total > 0 ? Math.min(100, Math.round((generated / total) * 100)) : 0;
-  const failed = session?.status === 'failed';
+  const percent = total > 0 ? Math.min(100, Math.round((generated / total) * 100)) : 8;
+  const failed = session?.status === 'failed' || Boolean(error);
 
   return (
-    <MiniPage
-      title="正在出题"
-      hint={failed ? '这次没有生成试卷。' : '正在按知识点原创题目，可以取消。'}
-    >
-      {error ? <Text className="error">{error}</Text> : null}
-      {failed && session?.error ? <Text className="error">{session.error.message}</Text> : null}
-      {!failed ? (
-        <View className="card">
-          <Text className="tree-name">
-            已生成 {generated}/{total || '…'}
+    <Screen back title="出题设置" navPlain>
+      <View className="u-scrim" />
+      <View className="u-center-card">
+        {failed ? <View className="u-fail-lg">!</View> : <View className="u-spin" />}
+        <Text className="u-state-title">{failed ? '出题失败' : '正在出题…'}</Text>
+        <Text className="u-state-sub">
+          {failed ? session?.error?.message || error || '这次没有生成试卷。' : '预计很快完成'}
+        </Text>
+        {!failed ? (
+          <Text className="u-link" style={{ marginTop: '12px' }}>
+            已生成 {generated} / {total || '…'}
           </Text>
-          <View className="bar">
-            <View className="bar-fill" style={{ width: `${percent}%` }} />
+        ) : null}
+        {!failed ? (
+          <View className="u-bar" style={{ width: '100%' }}>
+            <View className="u-bar-fill" style={{ width: `${percent}%` }} />
           </View>
-          <Text className="meta">
-            {session ? statusText(session.status) : '正在连接出题任务。'}
-          </Text>
-        </View>
+        ) : null}
+        {session ? <Text className="u-note">{metaLine(session)}</Text> : null}
+        {failed ? (
+          <Button className="u-btn" style={{ marginTop: '23px', width: '100%' }} onClick={() => void Taro.navigateBack()}>
+            返回设置
+          </Button>
+        ) : (
+          <Button
+            className="u-btn-ghost"
+            style={{ marginTop: '23px', width: '100%' }}
+            disabled={cancelling}
+            onClick={() => setConfirming(true)}
+          >
+            取消
+          </Button>
+        )}
+      </View>
+      {confirming ? (
+        <ConfirmDialog
+          title="取消出题"
+          body="取消后会丢弃未完成的试卷。"
+          confirmText="取消出题"
+          danger
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            void cancel();
+          }}
+        />
       ) : null}
-      {failed ? (
-        <Button className="primary" onClick={() => void Taro.navigateBack()}>
-          返回设置
-        </Button>
-      ) : (
-        <Button className="danger" disabled={cancelling} onClick={() => void cancel()}>
-          取消出题
-        </Button>
-      )}
-    </MiniPage>
+    </Screen>
   );
 }
 
-function statusText(status: QuizSessionView['status']): string {
-  if (status === 'pending') {
-    return '已排队，等待开始生成。';
-  }
-  if (status === 'generating') {
-    return '正在写入题目。取消会丢弃已生成的部分。';
-  }
-  return '正在更新进度。';
+function metaLine(session: QuizSessionView): string {
+  const types = session.settings.types.map((item) => QUIZ_TYPE_LABELS[item]).join('+');
+  const timer = session.settings.timer.enabled
+    ? session.settings.timer.kind === 'paper'
+      ? `限时 ${session.settings.timer.paperMinutes} 分钟`
+      : `每题 ${session.settings.timer.perQuestionSeconds} 秒`
+    : '不限时';
+  return `${session.context.certName || session.context.packName} · ${QUIZ_DIFFICULTY_LABELS[session.settings.difficulty]} · ${types} · ${timer}`;
 }

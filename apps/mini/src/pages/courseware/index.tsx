@@ -7,7 +7,8 @@ import {
   type ExtractStage,
 } from '@tishuashua/shared';
 import { useRef, useState } from 'react';
-import { MiniPage } from '../../components/MiniPage';
+import { Screen } from '../../components/Screen';
+import { ErrorBlock } from '../../components/StateBlock';
 import {
   cancelExtractJob,
   commitExtractJob,
@@ -274,115 +275,143 @@ export default function CoursewarePage() {
 
   if (phase === 'pick') {
     return (
-      <MiniPage
-        title="上传教材"
-        hint="上传后 AI 会自动学习并提炼知识点，材料越长可能越慢。完成后可以勾选，加入知识点树，再放进刷题包。"
+      <Screen
+        back
+        title="上传课件或书籍"
+        subtitle="出题时自主上传 · AI 提炼知识点"
+        footer={
+          <Button className="u-btn" disabled={busy} loading={busy} onClick={() => void choose()}>
+            选择文件
+          </Button>
+        }
       >
-        <Text className="meta">支持 PPT、PPTX、PDF、DOC、DOCX，单个文件不超过 50MB。</Text>
-        {error ? <Text className="error">{error}</Text> : null}
-        <Button className="primary" disabled={busy} loading={busy} onClick={() => void choose()}>
-          选择文件
-        </Button>
-        <Button className="ghost" onClick={() => void Taro.navigateBack()}>
-          返回知识点
-        </Button>
-      </MiniPage>
+        <View className="u-pad">
+          <View className="u-drop" onClick={() => void choose()}>
+            <View className="u-drop-icon">↑</View>
+            <Text className="u-drop-title">点击选择文件上传</Text>
+            <Text className="u-drop-sub">支持 PPT / PPTX / PDF / DOC · 单文件 ≤ 50MB</Text>
+          </View>
+          <View className="u-panel" style={{ marginTop: '23px' }}>
+            <Text className="u-label">上传后会发生什么</Text>
+            <Text className="u-meta">1. 上传课件或书籍文件</Text>
+            <Text className="u-meta">2. AI 自动学习并提炼知识点（可能较慢）</Text>
+            <Text className="u-meta">3. 提炼完成后可勾选回树，加入刷题包</Text>
+          </View>
+          {error ? <ErrorBlock detail={error} /> : null}
+        </View>
+      </Screen>
     );
   }
 
   if (phase === 'uploading') {
     return (
-      <MiniPage title="正在上传" hint="文件上传完成后会自动开始学习材料。">
-        <StageList stage="uploading" uploadPercent={uploadPercent} />
-        <View className="bar">
-          <View className="bar-fill" style={{ width: `${uploadPercent}%` }} />
+      <Screen back title="正在上传" subtitle="文件上传完成后会自动开始学习材料">
+        <View className="u-pad">
+          <View className="u-panel">
+            <Text className="u-label">上传文件</Text>
+            <Text className="u-clock">{uploadPercent}%</Text>
+            <View className="u-bar">
+              <View className="u-bar-fill" style={{ width: `${uploadPercent}%` }} />
+            </View>
+            <StageList stage="uploading" uploadPercent={uploadPercent} />
+          </View>
         </View>
-        <Text className="meta">已上传 {uploadPercent}%</Text>
-      </MiniPage>
+      </Screen>
     );
   }
 
   if (phase === 'success' && job) {
     return (
-      <MiniPage title="提炼完成" hint="勾选要留下的知识点。它们会写进当前证书下的「我的课件」。">
-        {error ? <Text className="error">{error}</Text> : null}
-        {job.drafts.map((draft) => {
-          const on = checked.includes(draft.id);
-          return (
-            <View
-              key={draft.id}
-              className="tree-row"
-              onClick={() =>
-                setChecked((current) =>
-                  current.includes(draft.id)
-                    ? current.filter((id) => id !== draft.id)
-                    : [...current, draft.id],
-                )
-              }
-            >
-              <View className={on ? 'box box-on' : 'box box-off'}>
-                <Text className="box-mark">{on ? '✓' : ''}</Text>
+      <Screen
+        back
+        title="提炼完成"
+        subtitle="勾选要留下的知识点"
+        footer={
+          <Button className="u-btn" disabled={busy || checked.length === 0} onClick={() => void commit()}>
+            加入知识点树
+          </Button>
+        }
+      >
+        <View className="u-pad">
+          <View className="u-state" style={{ paddingTop: '12px', paddingBottom: '12px' }}>
+            <View className="u-check-lg">✓</View>
+          </View>
+          {error ? <Text className="u-state-sub">{error}</Text> : null}
+          {job.drafts.map((draft) => {
+            const on = checked.includes(draft.id);
+            return (
+              <View
+                key={draft.id}
+                className={on ? 'u-tree u-tree-on' : 'u-tree'}
+                onClick={() =>
+                  setChecked((current) =>
+                    current.includes(draft.id)
+                      ? current.filter((id) => id !== draft.id)
+                      : [...current, draft.id],
+                  )
+                }
+              >
+                <View className={on ? 'u-check u-check-on' : 'u-check'}>
+                  <Text className="u-check-mark">{on ? '✓' : ''}</Text>
+                </View>
+                <View className="u-card-copy">
+                  <Text className="u-card-title">{draft.name}</Text>
+                  <Text className="u-card-sub">{draft.excerpt}</Text>
+                </View>
               </View>
-              <View className="sheet-copy">
-                <Text className="tree-name">{draft.name}</Text>
-                <Text className="meta">{draft.excerpt}</Text>
-              </View>
-            </View>
-          );
-        })}
-        <Button
-          className="primary"
-          disabled={busy || checked.length === 0}
-          onClick={() => void commit()}
-        >
-          加入知识点树
-        </Button>
-        <Button className="ghost" onClick={backToTree}>
-          返回知识点
-        </Button>
-      </MiniPage>
+            );
+          })}
+        </View>
+      </Screen>
     );
   }
 
   if (phase === 'fail') {
     return (
-      <MiniPage title="提炼失败" hint="可以换一份材料重新上传，或先回到知识点树。">
-        <Text className="error">{job?.error?.message || error || '提炼没有完成'}</Text>
-        <Button
-          className="primary"
-          onClick={() => {
-            stopPolling();
-            jobId.current = '';
-            setJob(null);
-            setError('');
-            setPhase('pick');
-          }}
-        >
-          重新上传
-        </Button>
-        <Button className="ghost" onClick={backToTree}>
-          返回知识点
-        </Button>
-      </MiniPage>
+      <Screen back title="提炼失败" subtitle="可以换一份材料重新上传">
+        <View className="u-pad">
+          <ErrorBlock
+            detail={job?.error?.message || error || '提炼没有完成'}
+            retryLabel="重新上传"
+            onRetry={() => {
+              stopPolling();
+              jobId.current = '';
+              setJob(null);
+              setError('');
+              setPhase('pick');
+            }}
+            onBack={backToTree}
+          />
+        </View>
+      </Screen>
     );
   }
 
   const stage = job?.stage ?? 'learning';
   return (
-    <MiniPage title="正在提炼知识点" hint="材料越长提炼越慢，可先去做别的。关闭本页不影响提炼。">
-      {error ? <Text className="error">{error}</Text> : null}
-      <View className="card">
-        <Text className="tree-name">{job?.file.fileName || '课件'}</Text>
-        <Text className="meta">预计约 {job?.estimatedMinutes ?? 1} 分钟</Text>
-        <StageList stage={stage} />
-        <View className="bar">
-          <View className="bar-fill" style={{ width: `${job?.progress ?? 8}%` }} />
+    <Screen
+      back
+      title="正在提炼知识点"
+      subtitle="材料越长提炼越慢，关闭本页不影响提炼"
+      footer={
+        <Button className="u-btn-ghost" disabled={busy} onClick={() => void cancel()}>
+          取消并返回
+        </Button>
+      }
+    >
+      <View className="u-pad">
+        <View className="u-center-card" style={{ marginTop: '24px', width: '100%' }}>
+          <View className="u-spin" />
+          <Text className="u-state-title">{job?.file.fileName || '课件'}</Text>
+          <Text className="u-state-sub">预计约 {job?.estimatedMinutes ?? 1} 分钟</Text>
+          <View className="u-bar" style={{ width: '100%' }}>
+            <View className="u-bar-fill" style={{ width: `${job?.progress ?? 8}%` }} />
+          </View>
+          <StageList stage={stage} />
         </View>
+        {error ? <Text className="u-state-sub">{error}</Text> : null}
       </View>
-      <Button className="danger" disabled={busy} onClick={() => void cancel()}>
-        取消并返回
-      </Button>
-    </MiniPage>
+    </Screen>
   );
 }
 
@@ -395,9 +424,9 @@ function StageList(props: { stage: ExtractStage; uploadPercent?: number }) {
         const done = props.stage === 'done' || index < current;
         const active = index === current;
         return (
-          <View key={step.stage} className="step">
-            <View className={done || active ? 'step-dot step-dot-on' : 'step-dot'} />
-            <Text className={done || active ? 'step-label' : 'step-label step-label-wait'}>
+          <View key={step.stage} className="u-step" style={{ marginTop: '15px' }}>
+            <View className={done || active ? 'u-step-dot u-step-dot-on' : 'u-step-dot'} />
+            <Text className={done || active ? 'u-step-name u-step-name-on' : 'u-step-name'}>
               {step.label}
               {step.stage === 'uploading' && props.uploadPercent !== undefined
                 ? ` ${props.uploadPercent}%`

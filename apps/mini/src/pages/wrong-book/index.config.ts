@@ -1,3 +1,5 @@
 export default definePageConfig({
-  navigationBarTitleText: '错题',
+  navigationStyle: 'custom',
+  navigationBarTitleText: '错题本',
+  backgroundColor: '#f8f9fb',
 });
