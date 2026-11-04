@@ -788,6 +788,371 @@ describe('quiz generation', { concurrency: 1 }, () => {
       await pool.query('DELETE FROM quiz_sessions WHERE id = $1', [otherId]).catch(() => undefined);
     }
   });
+
+  test('错题本下发 kpIds，复练同类只覆盖本次会话且不改包', async (t) => {
+    if (!ready(t)) return;
+    const pool = requiredPool();
+    const fixture = requiredFixture();
+    await pool.query(`DELETE FROM wrong_items WHERE user_id = $1`, [ctx.userA]);
+    const wrongId = await insertWrong({
+      certId: fixture.certId,
+      kpIds: [fixture.kp2],
+      stem: '复练原题',
+    });
+    const detail = await call(`/wrong-book/${wrongId}`, ctx.tokenA);
+    assert.equal(detail.status, 200);
+    const detailBody = detail.body as { kpIds?: string[]; kpNames?: string[] };
+    assert.deepEqual(detailBody.kpIds, [fixture.kp2]);
+    assert.deepEqual(detailBody.kpNames, ['出题知识点二']);
+    const list = await call('/wrong-book?status=all', ctx.tokenA);
+    const listed = ((list.body as { items?: { id: string; kpIds?: string[] }[] }).items ?? []).find(
+      (item) => item.id === wrongId,
+    );
+    assert.deepEqual(listed?.kpIds, [fixture.kp2]);
+
+    const before = await packBinding(ctx.packId);
+    const beforeCount = await sessionCount(ctx.packId);
+    const rejected = await call('/quiz/sessions', ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify(
+        payload(ctx.packId, {
+          source: 'retrain_similar',
+          knowledgePointIds: [fixture.limitedKp],
+        }),
+      ),
+    });
+    assert.equal(rejected.status, 400);
+    assert.equal(rejected.body.code, ApiErrorCode.VALIDATION_ERROR);
+    assert.match(String(rejected.body.message), /没有可用的知识点/);
+    assert.equal(await sessionCount(ctx.packId), beforeCount);
+
+    await pool.query(`UPDATE knowledge_points SET status = 'offline' WHERE id = $1`, [fixture.kp1]);
+    try {
+      const offline = await call('/quiz/sessions', ctx.tokenA, {
+        method: 'POST',
+        body: JSON.stringify(
+          payload(ctx.packId, {
+            source: 'retrain_similar',
+            knowledgePointIds: [fixture.kp1],
+          }),
+        ),
+      });
+      assert.equal(offline.status, 400);
+      assert.equal(offline.body.code, ApiErrorCode.VALIDATION_ERROR);
+      assert.equal(await sessionCount(ctx.packId), beforeCount);
+    } finally {
+      await pool.query(`UPDATE knowledge_points SET status = 'online' WHERE id = $1`, [
+        fixture.kp1,
+      ]);
+    }
+
+    const closed = await call('/quiz/sessions', ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify(payload(ctx.packId, { source: 'wrongSet' })),
+    });
+    assert.equal(closed.status, 400);
+    assert.match(String(closed.body.message), /暂未开放/);
+    assert.equal(await sessionCount(ctx.packId), beforeCount);
+
+    await pool.query(`DELETE FROM wrong_items WHERE user_id = $1`, [ctx.userA]);
+    const paper = await generate(ctx.packId, {
+      source: 'retrain_similar',
+      mode: 'exam',
+      knowledgePointIds: [fixture.kp2],
+    });
+    assert.equal(paper.source, 'retrain_similar');
+    assert.equal(paper.mode, 'exam');
+    assert.equal(paper.questions.length, 10);
+    assert.equal(
+      paper.questions.every((question) => question.stem.includes('出题知识点二')),
+      true,
+    );
+    assert.equal(
+      paper.questions.some((question) => question.stem.includes('出题知识点一')),
+      false,
+    );
+    const stored = await storedQuestions(paper.id);
+    assert.equal(
+      stored.every(
+        (question) => question.kp_ids.length === 1 && question.kp_ids[0] === fixture.kp2,
+      ),
+      true,
+    );
+    const row = await sessionRow(paper.id);
+    assert.deepEqual(row?.knowledge_point_ids, [fixture.kp2]);
+    assert.equal(row?.wrong_item_id, null);
+    assert.deepEqual(await packBinding(ctx.packId), before);
+    const submitted = await call(`/quiz/sessions/${paper.id}/submit`, ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify({ reason: 'manual' }),
+    });
+    assert.equal(submitted.status, 200);
+    const scores = await call('/quiz/sessions', ctx.tokenA);
+    const score = (
+      (scores.body as { items?: { id: string; source?: string }[] }).items ?? []
+    ).find((item) => item.id === paper.id);
+    assert.equal(score?.source, 'retrain_similar');
+
+    const carriedWrong = await insertWrong({
+      certId: fixture.certId,
+      kpIds: [fixture.kp2],
+      stem: '同类可带入',
+    });
+    const outside = await insertWrong({
+      certId: fixture.certId,
+      kpIds: [fixture.kp1],
+      stem: '包外知识点不带入',
+    });
+    const mixed = await generate(ctx.packId, {
+      source: 'retrain_similar',
+      knowledgePointIds: [fixture.kp2],
+    });
+    assert.equal(
+      mixed.questions.some(
+        (question) => question.stem === '同类可带入' && question.source === 'wrong_carry',
+      ),
+      true,
+    );
+    assert.equal(
+      mixed.questions.some((question) => question.stem === '包外知识点不带入'),
+      false,
+    );
+    assert.ok(carriedWrong && outside);
+  });
+
+  test('题型变异只出 1 道练习题，答对不消灭原错，并计入成绩', async (t) => {
+    if (!ready(t)) return;
+    const pool = requiredPool();
+    const fixture = requiredFixture();
+    await pool.query(`DELETE FROM wrong_items WHERE user_id = $1`, [ctx.userA]);
+    const before = await packBinding(ctx.packId);
+    const beforeCount = await sessionCount(ctx.packId);
+    const wrongId = await insertWrong({
+      certId: fixture.certId,
+      kpIds: [fixture.kp1],
+      stem: '待变异的原题干',
+      analysis: 'VARIANT_ANALYSIS_SENTINEL',
+    });
+    await insertWrong({
+      certId: fixture.certId,
+      kpIds: [fixture.kp1],
+      stem: '不应带入的错题',
+    });
+
+    const badCount = await call('/quiz/sessions', ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify(variantPayload(ctx.packId, wrongId, { count: 10 })),
+    });
+    assert.equal(badCount.status, 400);
+    assert.match(String(badCount.body.message), /只能出 1 道题/);
+    const badMode = await call('/quiz/sessions', ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify(variantPayload(ctx.packId, wrongId, { mode: 'exam' })),
+    });
+    assert.equal(badMode.status, 400);
+    assert.match(String(badMode.body.message), /仅支持练习/);
+    const foreign = await insertWrong({
+      userId: ctx.userB,
+      certId: fixture.certId,
+      kpIds: [fixture.kp1],
+      stem: '别人的错题',
+    });
+    const hidden = await call('/quiz/sessions', ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify(variantPayload(ctx.packId, foreign)),
+    });
+    assert.equal(hidden.status, 404);
+    const otherCert = await insertWrong({
+      certId: fixture.limitedCertId,
+      kpIds: [fixture.limitedKp],
+      stem: '另一证书',
+    });
+    const mismatched = await call('/quiz/sessions', ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify(variantPayload(ctx.packId, otherCert)),
+    });
+    assert.equal(mismatched.status, 400);
+    assert.match(String(mismatched.body.message), /同一证书/);
+    assert.equal(await sessionCount(ctx.packId), beforeCount);
+
+    const created = await call('/quiz/sessions', ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...variantPayload(ctx.packId, wrongId, { knowledgePointIds: [fixture.kp2] }),
+        types: undefined,
+      }),
+    });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    const pending = created.body as unknown as QuizSessionView;
+    assert.equal(pending.source, 'variant');
+    assert.equal(pending.mode, 'practice');
+    assert.equal(pending.progress.total, 1);
+    assert.equal(pending.paper, null);
+    const meta = await sessionRow(pending.id);
+    assert.equal(meta?.source, 'variant');
+    assert.equal(meta?.question_count, 1);
+    assert.equal(meta?.wrong_item_id, wrongId);
+    assert.deepEqual(meta?.knowledge_point_ids, [fixture.kp1]);
+    assert.deepEqual(await packBinding(ctx.packId), before);
+
+    const outcome = await runQuizGeneration(createPgExecutor(pool), pending.id, { mode: 'mock' });
+    assert.equal(outcome.status, 'ready');
+    const readyPaper = await call(`/quiz/sessions/${pending.id}`, ctx.tokenA);
+    const paper = readyPaper.body as unknown as QuizSessionView;
+    assert.equal(paper.paper?.questions.length, 1);
+    const question = paper.paper?.questions[0];
+    assert.equal(question?.source, 'ai_variant');
+    assert.equal(question?.type, 'multi');
+    assert.notEqual(question?.stem, '待变异的原题干');
+    assert.notEqual(question?.stem, '不应带入的错题');
+    assert.match(question?.stem ?? '', /待变异|变异/);
+    assert.equal(JSON.stringify(paper).includes('VARIANT_ANALYSIS_SENTINEL'), false);
+
+    const revived = await runQuizGeneration(createPgExecutor(pool), pending.id, { mode: 'mock' });
+    assert.equal(revived.status, 'skipped');
+
+    const stored = await storedQuestions(pending.id);
+    const only = stored[0];
+    assert.ok(only);
+    await saveSelection(pending.id, only.id, only.answer);
+    const submitted = await call(`/quiz/sessions/${pending.id}/submit`, ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify({ reason: 'manual' }),
+    });
+    assert.equal(submitted.status, 200);
+    const original = await pool.query<{ status: string }>(
+      `SELECT status FROM wrong_items WHERE id = $1`,
+      [wrongId],
+    );
+    assert.equal(original.rows[0]?.status, 'pending');
+    const cloned = await pool.query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM wrong_items WHERE user_id = $1 AND question_snapshot->>'stem' = $2`,
+      [ctx.userA, only.stem],
+    );
+    assert.equal(cloned.rows[0]?.count, 0);
+    const scores = await call('/quiz/sessions', ctx.tokenA);
+    const score = ((scores.body as { items?: { id: string; source?: string }[] }).items ?? []).find(
+      (item) => item.id === pending.id,
+    );
+    assert.equal(score?.source, 'variant');
+
+    const failed = await call('/quiz/sessions', ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify(variantPayload(ctx.packId, wrongId)),
+    });
+    const failedId = (failed.body as unknown as QuizSessionView).id;
+    const broken = await runQuizGeneration(createPgExecutor(pool), failedId, {
+      mode: 'live',
+      provider: 'deepseek',
+      apiKey: 'test',
+      baseUrl: 'http://127.0.0.1',
+      completeAi: async () => ({
+        questions: [
+          {
+            type: 'multi',
+            stem: '待变异的原题干',
+            options: [
+              { id: 'A', text: '甲' },
+              { id: 'B', text: '乙' },
+              { id: 'C', text: '丙' },
+            ],
+            answer: ['A', 'B'],
+            analysis: '新解析',
+            score: 1,
+            knowledgePointId: fixture.kp1,
+          },
+        ],
+      }),
+    });
+    assert.equal(broken.status, 'failed');
+    if (broken.status === 'failed') {
+      assert.equal(broken.code, ApiErrorCode.LLM_INVALID_OUTPUT);
+    }
+    const again = await runQuizGeneration(createPgExecutor(pool), failedId, { mode: 'mock' });
+    assert.equal(again.status, 'failed');
+    const retry = await call('/quiz/sessions', ctx.tokenA, {
+      method: 'POST',
+      body: JSON.stringify(variantPayload(ctx.packId, wrongId)),
+    });
+    const retryId = (retry.body as unknown as QuizSessionView).id;
+    assert.notEqual(retryId, failedId);
+    const retried = await runQuizGeneration(createPgExecutor(pool), retryId, { mode: 'mock' });
+    assert.equal(retried.status, 'ready');
+  });
+
+  test('变异 Prompt 使用证书覆盖，用户提示不含原题解析', async (t) => {
+    if (!ready(t)) return;
+    const pool = requiredPool();
+    const fixture = requiredFixture();
+    await pool.query(`DELETE FROM wrong_items WHERE user_id = $1`, [ctx.userA]);
+    const wrongId = await insertWrong({
+      certId: fixture.certId,
+      kpIds: [fixture.kp1],
+      stem: '证书覆盖原题干',
+      analysis: 'VARIANT_ANALYSIS_SENTINEL',
+    });
+    const promptId = randomUUID();
+    await pool.query(
+      `
+        INSERT INTO prompt_templates (id, scope, scope_ref_id, templates, variables, version, status)
+        VALUES ($1, 'certificate', $2, $3::jsonb, '[]'::jsonb, 1, 'published')
+      `,
+      [
+        promptId,
+        fixture.certId,
+        JSON.stringify({
+          system: 'CERT_VARIANT_MARKER',
+          user: '普通出题不会被变异读取',
+          variant: {
+            system: 'CERT_VARIANT_MARKER',
+            user: '证书覆盖变异 {{originalStem}}',
+          },
+        }),
+      ],
+    );
+    try {
+      const created = await call('/quiz/sessions', ctx.tokenA, {
+        method: 'POST',
+        body: JSON.stringify(variantPayload(ctx.packId, wrongId)),
+      });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      const sessionId = (created.body as unknown as QuizSessionView).id;
+      let captured = { system: '', user: '' };
+      const outcome = await runQuizGeneration(createPgExecutor(pool), sessionId, {
+        mode: 'live',
+        provider: 'deepseek',
+        apiKey: 'test',
+        baseUrl: 'http://127.0.0.1',
+        completeAi: async (prompt) => {
+          captured = prompt;
+          return {
+            questions: [
+              {
+                type: 'judge',
+                stem: `证书覆盖后的新题干 ${sessionId.slice(0, 8)}`,
+                options: [
+                  { id: 'T', text: '正确' },
+                  { id: 'F', text: '错误' },
+                ],
+                answer: ['T'],
+                analysis: '新解析',
+                score: 1,
+                knowledgePointId: fixture.kp1,
+              },
+            ],
+          };
+        },
+      });
+      assert.equal(outcome.status, 'ready');
+      assert.match(captured.system, /CERT_VARIANT_MARKER/);
+      assert.match(captured.system, /不得检索或引用教材全文/);
+      assert.match(captured.user, /证书覆盖变异 证书覆盖原题干/);
+      assert.equal(captured.user.includes('VARIANT_ANALYSIS_SENTINEL'), false);
+      assert.equal(captured.user.includes('普通出题不会被变异读取'), false);
+    } finally {
+      await pool.query('DELETE FROM prompt_templates WHERE id = $1', [promptId]);
+    }
+  });
 });
 
 const MOCK_ANALYSIS = '这是本地 mock 题目，没有调用模型。';
@@ -810,6 +1175,111 @@ function payload(packId: string, extra?: Record<string, unknown>): Record<string
     mode: 'practice',
     ...extra,
   };
+}
+
+function variantPayload(
+  packId: string,
+  wrongItemId: string,
+  extra?: Record<string, unknown>,
+): Record<string, unknown> {
+  return payload(packId, {
+    source: 'variant',
+    count: 1,
+    mode: 'practice',
+    timer: { enabled: false },
+    wrongItemId,
+    ...extra,
+  });
+}
+
+function requiredFixture(): Fixture {
+  if (!ctx.fixture) {
+    throw new Error('测试证书没有准备好');
+  }
+  return ctx.fixture;
+}
+
+async function insertWrong(input: {
+  userId?: string;
+  certId: string;
+  kpIds: string[];
+  stem: string;
+  status?: string;
+  analysis?: string;
+}): Promise<string> {
+  const id = randomUUID();
+  await requiredPool().query(
+    `
+      INSERT INTO wrong_items (id, user_id, cert_id, kp_ids, question_snapshot, status, wrong_count)
+      VALUES ($1, $2, $3, $4::uuid[], $5::jsonb, $6, 1)
+    `,
+    [
+      id,
+      input.userId ?? ctx.userA,
+      input.certId,
+      input.kpIds,
+      JSON.stringify({
+        type: 'single',
+        stem: input.stem,
+        options: [
+          { id: 'A', text: '甲' },
+          { id: 'B', text: '乙' },
+        ],
+        answer: ['A'],
+        analysis: input.analysis ?? '选甲',
+        score: 4,
+      }),
+      input.status ?? 'pending',
+    ],
+  );
+  return id;
+}
+
+async function packBinding(packId: string): Promise<{ active: boolean | null; points: string[] }> {
+  const points = await requiredPool().query<{ knowledge_point_id: string }>(
+    `
+      SELECT knowledge_point_id
+      FROM pack_knowledge_points
+      WHERE pack_id = $1
+      ORDER BY position
+    `,
+    [packId],
+  );
+  const pack = await requiredPool().query<{ active: boolean }>(
+    `SELECT active FROM packs WHERE id = $1`,
+    [packId],
+  );
+  return {
+    active: pack.rows[0]?.active ?? null,
+    points: points.rows.map((row) => row.knowledge_point_id),
+  };
+}
+
+async function sessionRow(id: string): Promise<
+  | {
+      source: string;
+      mode: string;
+      question_count: number;
+      knowledge_point_ids: string[] | null;
+      wrong_item_id: string | null;
+    }
+  | undefined
+> {
+  const result = await requiredPool().query<{
+    source: string;
+    mode: string;
+    question_count: number;
+    knowledge_point_ids: string[] | null;
+    wrong_item_id: string | null;
+  }>(
+    `
+      SELECT source, mode, question_count, knowledge_point_ids, wrong_item_id
+      FROM quiz_sessions
+      WHERE id = $1
+    `,
+    [id],
+  );
+  return result.rows[0];
 }
 
 async function createSession(
@@ -885,6 +1355,7 @@ async function storedQuestions(sessionId: string): Promise<
     answer: string[];
     score: number;
     source: string;
+    kp_ids: string[];
     options: { id: string; text: string }[];
   }[]
 > {
@@ -895,10 +1366,11 @@ async function storedQuestions(sessionId: string): Promise<
     answer: unknown;
     score: number | string;
     source: string;
+    kp_ids: string[] | null;
     options: unknown;
   }>(
     `
-      SELECT id, type_code, stem, answer, score, source, options
+      SELECT id, type_code, stem, answer, score, source, kp_ids, options
       FROM paper_questions
       WHERE session_id = $1
       ORDER BY ordinal
@@ -914,6 +1386,7 @@ async function storedQuestions(sessionId: string): Promise<
       : [],
     score: Number(row.score),
     source: row.source,
+    kp_ids: row.kp_ids ?? [],
     options: Array.isArray(row.options)
       ? row.options.flatMap((item) => {
           if (!item || typeof item !== 'object' || !('id' in item) || !('text' in item)) {

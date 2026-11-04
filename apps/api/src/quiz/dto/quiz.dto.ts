@@ -1,8 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  QUIZ_COUNTS,
+  PACK_KNOWLEDGE_POINT_MAX,
   QUIZ_DIFFICULTIES,
   QUIZ_MODES,
+  QUIZ_SESSION_SOURCES,
   QUIZ_SUBMIT_REASONS,
   QUIZ_TYPES,
   type QuizAnswerResult,
@@ -15,7 +16,6 @@ import {
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
-  ArrayNotEmpty,
   ArrayUnique,
   IsArray,
   IsBoolean,
@@ -60,21 +60,26 @@ export class CreateQuizSessionDto {
   @IsUUID('4', { message: 'packId 必须是 UUID' })
   packId!: string;
 
-  @ApiProperty({ enum: QUIZ_COUNTS })
+  @ApiProperty({ description: '普通出题为 10、20、30 或 50。题型变异必须是 1。' })
   @IsInt({ message: '题量必须是整数' })
-  @IsIn(QUIZ_COUNTS, { message: '题量只能是 10、20、30 或 50' })
-  count!: 10 | 20 | 30 | 50;
+  @Min(1, { message: '题量不正确' })
+  @Max(50, { message: '题量不正确' })
+  count!: number;
 
   @ApiProperty({ enum: QUIZ_DIFFICULTIES })
   @IsIn(QUIZ_DIFFICULTIES, { message: '难度不正确' })
   difficulty!: 'easy' | 'medium' | 'hard';
 
-  @ApiProperty({ enum: QUIZ_TYPES, isArray: true })
+  @ApiPropertyOptional({
+    enum: QUIZ_TYPES,
+    isArray: true,
+    description: '至少一种，且属于证书开放题型。variant 可省略，省略时用证书白名单。',
+  })
+  @IsOptional()
   @IsArray({ message: 'types 必须是数组' })
-  @ArrayNotEmpty({ message: '请至少选择一种题型' })
   @ArrayUnique({ message: '题型不能重复' })
   @IsIn(QUIZ_TYPES, { each: true, message: '题型不正确' })
-  types!: Array<'single' | 'multi' | 'judge'>;
+  types?: Array<'single' | 'multi' | 'judge'>;
 
   @ApiProperty({ type: QuizTimerDto })
   @IsDefined({ message: '请设置计时' })
@@ -85,6 +90,37 @@ export class CreateQuizSessionDto {
   @ApiProperty({ enum: QUIZ_MODES })
   @IsIn(QUIZ_MODES, { message: '模式只能是练习或考试' })
   mode!: 'practice' | 'exam';
+
+  @ApiPropertyOptional({
+    enum: QUIZ_SESSION_SOURCES,
+    description: '缺省 normal。wrongSet 会返回 400。',
+  })
+  @IsOptional()
+  @IsIn(QUIZ_SESSION_SOURCES, { message: '会话来源不正确' })
+  source?: 'normal' | 'retrain_similar' | 'variant' | 'wrongSet';
+
+  @ApiPropertyOptional({
+    enum: QUIZ_SESSION_SOURCES,
+    description: '历史草案字段。与 source 冲突时 400；未传 source 时映射为 source。',
+  })
+  @IsOptional()
+  @IsIn(QUIZ_SESSION_SOURCES, { message: '会话来源不正确' })
+  intent?: 'normal' | 'retrain_similar' | 'variant' | 'wrongSet';
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: '会话级知识点覆盖。不写回刷题包。variant 忽略。',
+  })
+  @IsOptional()
+  @IsArray({ message: '知识点不正确' })
+  @ArrayMaxSize(PACK_KNOWLEDGE_POINT_MAX, { message: '知识点过多' })
+  @IsUUID('4', { each: true, message: '知识点不正确' })
+  knowledgePointIds?: string[];
+
+  @ApiPropertyOptional({ description: '仅 source=variant 时必填。' })
+  @IsOptional()
+  @IsUUID('4', { message: 'wrongItemId 不正确' })
+  wrongItemId?: string;
 }
 
 export class SaveQuizAnswerDto implements SaveQuizAnswerRequest {
@@ -137,6 +173,9 @@ export class QuizSessionViewDto implements QuizSessionView {
 
   @ApiProperty({ enum: QUIZ_MODES })
   mode!: QuizSessionView['mode'];
+
+  @ApiProperty({ enum: QUIZ_SESSION_SOURCES })
+  source!: QuizSessionView['source'];
 
   @ApiProperty()
   status!: QuizSessionView['status'];

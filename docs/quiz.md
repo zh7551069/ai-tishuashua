@@ -60,7 +60,7 @@ pnpm dev:worker
 - 题型单选 / 多选 / 判断，至少一种。都关掉时红字提示，按钮不可点。证书没开放的题型不会出现
 - 计时默认关。打开后可选「整卷倒计时」或「每题限时」。整卷默认 30 分钟。每题限时的单位是秒，字段名 `perQuestionSeconds`
 - 模式默认练习，可改考试
-- 「AI 开始出题」提交 `{ packId, count, difficulty, types, timer, mode }`
+- 「AI 开始出题」提交 `{ packId, count, difficulty, types, timer, mode }`。可选 `source`，缺省 `normal`
 
 ## API
 
@@ -110,7 +110,7 @@ curl -sS -X POST http://127.0.0.1:3000/api/quiz/sessions/会话id/cancel \
   -H "authorization: Bearer $TOKEN"
 ```
 
-成卷后 `status` 为 `ready`，`paper.questions` 有题干、选项、分值和来源（`ai` 或 `wrong_carry`）。响应里没有标准答案和解析。分值之和等于出题时的证书总分；模型给的分值不一致时，在落库前做整数归一化。
+成卷后 `status` 为 `ready`，`paper.questions` 有题干、选项、分值和来源（`ai`、`wrong_carry` 或 `ai_variant`）。响应里没有标准答案和解析。分值之和等于出题时的证书总分；模型给的分值不一致时，在落库前做整数归一化。会话响应带 `source`。
 
 进入答题会把状态改成 `in_progress`：
 
@@ -161,7 +161,7 @@ curl -sS http://127.0.0.1:3000/api/quiz/sessions \
   -H "authorization: Bearer $TOKEN"
 ```
 
-响应除了 `items`，还有 `total`、`limit` 和 `hasMore`。`items` 每条是 `QuizScoreSummary`：`id`、`mode`、`certName`、`packName`、`earnedScore`、`totalScore`、`accuracy`、`scoreRate`、`correctCount`、`questionCount`、`passed`、`passScore`、`reason`、`submittedAt`。按交卷时间从新到旧，最多 `limit` 条（50）。`total` 是当前用户已交卷会话数，快照读不出来、因此不会出现在 `items` 里的记录也算进去。`hasMore` 在 `total` 大于 `limit` 时为 true，表示更早的成绩被截掉了。未交卷不计入。未登录返回 401。打开列表时，已到点但还没交卷的考试会先被收卷，再出现在结果里。
+响应除了 `items`，还有 `total`、`limit` 和 `hasMore`。`items` 每条是 `QuizScoreSummary`：`id`、`mode`、`source`、`certName`、`packName`、`earnedScore`、`totalScore`、`accuracy`、`scoreRate`、`correctCount`、`questionCount`、`passed`、`passScore`、`reason`、`submittedAt`。`source` 为 `normal`、`retrain_similar`、`variant` 或预留的 `wrongSet`。按交卷时间从新到旧，最多 `limit` 条（50）。`total` 是当前用户已交卷会话数，快照读不出来、因此不会出现在 `items` 里的记录也算进去。`hasMore` 在 `total` 大于 `limit` 时为 true，表示更早的成绩被截掉了。未交卷不计入。复练同类和题型变异的已交卷会话都在这张表里。未登录返回 401。打开列表时，已到点但还没交卷的考试会先被收卷，再出现在结果里。
 
 小程序首页「成绩」进入 `/pages/score/index`。列表展示证书、刷题包、模式、得分、正确率、得分率、对题数、及格与及格线、交卷原因和交卷时间。`hasMore` 为 true 时，列表上方显示「只显示最近 50 条」。没有 token 或会话失效时停在本页，引导去登录。加载中、还没有交卷记录、请求失败是分开的状态，失败可以重试。点一条进入已有的 `/pages/quiz/paper/index?sessionId=`。已交卷会话不会再次开考，沿用交卷结果页看正确答案和解析。
 
@@ -184,7 +184,9 @@ curl -sS http://127.0.0.1:3000/api/quiz/sessions \
 
 - `wrong`、`partial`、`unanswered` 写入 `wrong_items`，状态 `pending`
 - 同一用户、同一证书下，题型、题干、选项和答案都相同的记录会累加 `wrong_count`，不会另起一条
-- `correct` 会把这条未消灭错题标为 `cleared`。已消灭的记录不会被 `wrong_carry` 再带进新试卷
+- `correct` 会把题干指纹相同的未消灭错题标为 `cleared`。已消灭的记录不会被 `wrong_carry` 再带进新试卷
+- 答对题型变异题不会按 `wrong_item_id` 清除原错题。只有变异题和某条错题的题型、题干、选项、答案完全一致时，才走上面的指纹规则
+- 列表和详情都带 `kpIds`。有名称时带等长的 `kpNames`，对不上名称则为空串
 
 快照字段和出题时解析错题的格式一致：`type`、`stem`、`options`、`answer`、`analysis`、`score`。
 
@@ -214,9 +216,41 @@ curl -sS -X POST http://127.0.0.1:3000/api/wrong-book/错题id/clear \
 | 错题详情                      | `/pages/wrong-book/detail/index?id=`    |
 | 成绩列表                      | `/pages/score/index`                    |
 
+## 复练同类
+
+正式规则见 [复练同类 / 题型变异契约](contracts/retrain-C-contracts-v0.1.0-C.md)（v0.1.0-C）。这里只记已接通的行为。
+
+`POST /api/quiz/sessions` 增加可选字段：
+
+| 字段                | 说明                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `source`            | `normal`（缺省）、`retrain_similar`、`variant`。`wrongSet` 预留，请求会 `400` / `VALIDATION_ERROR`，文案含「暂未开放」 |
+| `knowledgePointIds` | 会话级知识点覆盖。不写回 `pack_knowledge_points`，也不改用户当前包                                                     |
+| `wrongItemId`       | 仅 `variant` 可传                                                                                                      |
+| `intent`            | 历史草案。没传 `source` 时映射成 `source`；两者不一致则 `400`                                                          |
+
+`source=retrain_similar` 时 `knowledgePointIds` 必填、去重后非空。每个 id 必须是该包里已绑定、`kind=knowledge_point` 且 `online` 的知识点。有一个不满足就不创建会话，`400` / `VALIDATION_ERROR`，不会改用整包知识点继续出题。练习和考试都可以。未消灭错题仍可按现网比例带入，但只带和这次知识点有交集的错题。
+
+普通出题如果自己带了 `knowledgePointIds`，用同一套校验，通过后也只覆盖这一场。不传则仍用整包上架知识点。
+
+迁移 `007_quiz_retrain.sql` 放宽 `quiz_sessions.source`，并增加可空列 `knowledge_point_ids`、`wrong_item_id`。旧会话没有这两列里的值，按 `normal`、整包知识点处理。
+
+## 题型变异
+
+`source=variant` 仍走 `quiz.generate`，不新开队列。请求必须带本人的 `wrongItemId`，`count` 只能是 `1`，`mode` 只能是 `practice`，否则 `400`。`types` 可省略，省略时用证书已开放的题型。刷题包必须和错题同一证书，且证书仍上架。知识点取错题 `kp_ids` 里仍然上架、并且属于这个包的部分；过滤后一个不剩就 `400`，不回退整包。请求里的 `knowledgePointIds` 忽略。
+
+Worker 只把错题的题型、题干和选项交给模型，不放标准答案和解析，不读课件，不做向量检索。目标题型在证书白名单（以及请求里给出的题型）内，优先和原题型不同；白名单只剩原题型时允许同型，但题干不能和原题相同。生成题的 `source` 是 `ai_variant`。变异卷不带 `wrong_carry`。
+
+Prompt 沿用证书 > 领域 > 全局 > 代码内置。变异读 `prompt_templates.templates.variant` 的 `{ system, user }`。都没有时用 `BUILTIN_QUIZ_VARIANT_PROMPT`。证书覆盖如果没写检索禁令和「题干不得与原题干相同」，服务端会把这两句补进 system。`LLM_MOCK=true` 时用内置变异题，题干带会话盐。
+
+失败的会话不能重新拉起来出题。重试要再 `POST` 一次，拿新的会话 id。交卷后这场会出现在成绩列表里，`source` 为 `variant`。答对只按题干指纹处理，不会把 `wrong_item_id` 指向的原错题标成已消灭。用户仍可在错题详情里手动标记已消灭。
+
+小程序入口还没接。详情底栏和预填页要等 UI 评审通过后再改 `apps/mini`，约束见 [复练 UI 约束](delivery/retrain-C-ui-constraints-v0.1.0-C.md)。
+
 ## 还没做
 
 - 后管发布 Prompt。本地靠迁移种子
 - 课件提炼的会员配额。上传本身见 [课件](courseware.md)
-- 弱项复练的高级策略。错题只按未消灭、错过次数带入，没有单独的复练编排
+- `wrongSet`「再练这 N 道」。枚举已留好，创建请求会拒绝
+- 弱项临时包。复练同类只做会话级知识点覆盖
 - 每题限时没有逐题时钟，考试里把它折成整卷截止时间

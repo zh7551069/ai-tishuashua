@@ -15,6 +15,8 @@ interface WrongRow {
   cert_name: string;
   status: string;
   wrong_count: number | string;
+  kp_ids: string[] | null;
+  kp_names: string[] | null;
   question_snapshot: unknown;
   updated_at: Date | string;
 }
@@ -33,6 +35,8 @@ export class WrongBookRepository {
             c.name AS cert_name,
             w.status,
             w.wrong_count,
+            w.kp_ids,
+            ${KP_NAMES_SQL} AS kp_names,
             w.question_snapshot,
             w.updated_at
           FROM wrong_items w
@@ -60,6 +64,8 @@ export class WrongBookRepository {
             c.name AS cert_name,
             w.status,
             w.wrong_count,
+            w.kp_ids,
+            ${KP_NAMES_SQL} AS kp_names,
             w.question_snapshot,
             w.updated_at
           FROM wrong_items w
@@ -93,6 +99,28 @@ export class WrongBookRepository {
   }
 }
 
+const KP_NAMES_SQL = `
+  COALESCE(
+    (
+      SELECT array_agg(COALESCE(kp.name, '') ORDER BY u.ord)
+      FROM unnest(w.kp_ids) WITH ORDINALITY AS u(id, ord)
+      LEFT JOIN knowledge_points kp ON kp.id = u.id
+    ),
+    ARRAY[]::text[]
+  )
+`;
+
+function alignNames(ids: string[] | null, names: string[] | null): string[] {
+  const count = ids?.length ?? 0;
+  if (count === 0) {
+    return [];
+  }
+  return Array.from({ length: count }, (_item, index) => {
+    const name = names?.[index];
+    return typeof name === 'string' ? name : '';
+  });
+}
+
 function mapItem(row: WrongRow): WrongBookItem {
   const snapshot = readSnapshot(row.question_snapshot);
   const updated = row.updated_at instanceof Date ? row.updated_at : new Date(row.updated_at);
@@ -108,6 +136,8 @@ function mapItem(row: WrongRow): WrongBookItem {
     answer: snapshot.answer,
     analysis: snapshot.analysis,
     score: snapshot.score,
+    kpIds: (row.kp_ids ?? []).map((id) => id.toLowerCase()),
+    kpNames: alignNames(row.kp_ids, row.kp_names),
     updatedAt: Number.isFinite(updated.getTime())
       ? updated.toISOString()
       : new Date(0).toISOString(),

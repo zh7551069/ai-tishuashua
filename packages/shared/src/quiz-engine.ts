@@ -1,4 +1,5 @@
 import { WRONG_QUESTION_RATIO_MAX } from './constants';
+import { PACK_KNOWLEDGE_POINT_MAX } from './pack';
 import {
   DEFAULT_PAPER_MINUTES,
   DEFAULT_PER_QUESTION_SECONDS,
@@ -6,11 +7,15 @@ import {
   QUIZ_DIFFICULTIES,
   QUIZ_DIFFICULTY_LABELS,
   QUIZ_MODES,
+  QUIZ_SESSION_SOURCES,
   QUIZ_TYPE_LABELS,
   QUIZ_TYPES,
+  VARIANT_QUIZ_COUNT,
+  type QuestionSource,
   type QuizDifficulty,
   type QuizMode,
   type QuizOption,
+  type QuizSessionSource,
   type QuizSettings,
   type QuizTimer,
   type QuizTypeCode,
@@ -26,7 +31,7 @@ export interface PromptCandidate {
   scopeRefId: string | null;
   status: string;
   version: number;
-  templates: { system?: unknown; user?: unknown };
+  templates: { system?: unknown; user?: unknown; variant?: unknown };
 }
 
 export interface WrongItemRecord {
@@ -43,7 +48,7 @@ export interface PaperDraft {
   analysis: string;
   score: number;
   knowledgePointIds: string[];
-  source: 'ai' | 'wrong_carry';
+  source: QuestionSource;
 }
 
 export interface AiQuestionDraft {
@@ -176,6 +181,229 @@ export const BUILTIN_QUIZ_PROMPT: PromptTemplateBody = {
     'knowledgePointId 必须来自上面的知识点。不要输出 Markdown。',
   ].join('\n'),
 };
+
+/**
+ * 题型变异内置模板。证书 / 领域 / 全局已发布模板若带 templates.variant，优先于本模板。
+ * 用户提示只放题干和选项，不放标准答案和解析。
+ */
+export const BUILTIN_QUIZ_VARIANT_PROMPT: PromptTemplateBody = {
+  system: [
+    '你是题刷刷的题型变异助手。只根据给定的错题快照改写一道新题：更换情境，并按指定题型出题。',
+    '不得检索或引用教材全文、向量库或外部语料。不得输出原题的标准答案，不得输出思维过程。',
+    '题干不得与原题干相同。题目、选项和解析使用简体中文。只返回一个 JSON 对象。',
+  ].join(''),
+  user: [
+    '请为「{{certificateName}}」（领域：{{domainName}}）基于下面的错题快照，变异出 {{count}} 道{{difficulty}}题目。',
+    '目标题型只能是：{{types}}。优先使用与原题型不同的题型；若只能使用原题型，必须更换情境。',
+    '原题型：{{originalType}}',
+    '原题干：{{originalStem}}',
+    '原选项：{{originalOptions}}',
+    '知识点与出题提示：',
+    '{{knowledgePoints}}',
+    '附加约束：{{extraConstraint}}',
+    '证书总分 {{totalScore}}。请为这道题给出正数 score。',
+    '返回格式：{"questions":[{"type":"single","stem":"题干","options":[{"id":"A","text":"选项"}],"answer":["A"],"analysis":"简短解析","score":1,"knowledgePointId":"知识点id"}]}',
+    '单选只有 1 个正确答案且至少 2 个选项。多选至少 2 个正确答案且至少 3 个选项。判断只有 2 个选项且 1 个正确答案。',
+    'knowledgePointId 必须来自上面的知识点。不要输出 Markdown。不要复述原题标准答案。',
+  ].join('\n'),
+};
+
+const VARIANT_SYSTEM_GUARD =
+  '硬约束：只改写语境或题型；不得检索或引用教材全文、向量库或外部语料；题干不得与原题干相同；不得把原题标准答案写进提示。';
+
+/** 证书覆盖模板若没写检索禁令和题干差异，仍把硬约束补进 system。 */
+export function sealVariantPrompt(template: PromptTemplateBody): PromptTemplateBody {
+  if (
+    template.system.includes('不得检索或引用教材全文') &&
+    template.system.includes('题干不得与原题干相同')
+  ) {
+    return template;
+  }
+  return {
+    system: `${template.system.trim()}\n${VARIANT_SYSTEM_GUARD}`,
+    user: template.user,
+  };
+}
+
+/**
+ * 与 pickPublishedPrompt 同一优先级（证书 > 领域 > 全局），但只认 templates.variant。
+ * 都没有可用变异模板时返回 null，调用方改用 BUILTIN_QUIZ_VARIANT_PROMPT。
+ */
+export function pickPublishedVariantPrompt(
+  candidates: readonly PromptCandidate[],
+  target: { certificateId: string; domainId: string },
+): PromptTemplateBody | null {
+  const narrowed: PromptCandidate[] = [];
+  for (const item of candidates) {
+    const body = readVariantBody(item.templates.variant);
+    if (!body) {
+      continue;
+    }
+    narrowed.push({ ...item, templates: body });
+  }
+  return pickPublishedPrompt(narrowed, target);
+}
+
+/** 证书白名单内优先异于原题型。白名单只剩原题型时保留同型。 */
+export function preferVariantTypes(
+  allowed: readonly QuizTypeCode[],
+  originalType: QuizTypeCode | null,
+): QuizTypeCode[] {
+  const unique: QuizTypeCode[] = [];
+  for (const type of allowed) {
+    if (isQuizType(type) && !unique.includes(type)) {
+      unique.push(type);
+    }
+  }
+  if (!originalType) {
+    return unique;
+  }
+  return [
+    ...unique.filter((type) => type !== originalType),
+    ...unique.filter((type) => type === originalType),
+  ];
+}
+
+export function buildVariantPromptVariables(input: {
+  domainName: string;
+  certificateName: string;
+  totalScore: number;
+  difficulty: QuizDifficulty;
+  types: readonly QuizTypeCode[];
+  count: number;
+  knowledgePoints: readonly { id: string; name: string; promptHint: string }[];
+  extraConstraint: string | null;
+  originalType: string;
+  originalStem: string;
+  originalOptions: string;
+}): Record<string, string> {
+  return {
+    ...buildPromptVariables(input),
+    originalType: input.originalType,
+    originalStem: input.originalStem,
+    originalOptions: input.originalOptions,
+  };
+}
+
+/** mock 变异题：题干带会话盐，且不等于原题干。题型取 preferVariantTypes 的第一项。 */
+export function mockVariantQuestion(input: {
+  sessionId: string;
+  originalStem: string;
+  originalType: QuizTypeCode | null;
+  types: readonly QuizTypeCode[];
+  difficulty: QuizDifficulty;
+  knowledgePoints: readonly { id: string; name: string; promptHint: string }[];
+}): AiQuestionDraft {
+  const preferred = preferVariantTypes(input.types, input.originalType);
+  const type = preferred[0] ?? 'single';
+  const point = input.knowledgePoints[0];
+  const salt = input.sessionId.slice(0, 8);
+  let stem = `【变异·${QUIZ_DIFFICULTY_LABELS[input.difficulty]}】${point?.name ?? '综合'}：换一个情境理解${point?.promptHint ?? ''}（${salt}）`;
+  if (stem.trim() === input.originalStem.trim()) {
+    stem = `${stem}·再写`;
+  }
+  return {
+    type,
+    stem,
+    options: optionsFor(type, 0),
+    answer: answerFor(type),
+    analysis: '这是本地 mock 变异题，没有调用模型，也没有检索教材。',
+    score: 1,
+    knowledgePointId: point?.id ? point.id.toLowerCase() : null,
+  };
+}
+
+export interface AcceptedQuizSessionRequest {
+  source: Exclude<QuizSessionSource, 'wrongSet'>;
+  settings: QuizSettings;
+  /** null 表示未传。普通出题因此用整包。variant 恒为 null，创建时忽略该字段。 */
+  knowledgePointIds: string[] | null;
+  wrongItemId: string | null;
+  /** 仅 variant：请求省略了 types，创建时改用证书题型白名单。 */
+  typesOmitted: boolean;
+}
+
+/**
+ * 创建会话的字段互斥与题量规则。不查库。
+ * wrongSet 一律拒绝。知识点是否属于刷题包由 API 再校验，这里不回退整包。
+ */
+export function parseCreateQuizSessionRequest(input: {
+  count: unknown;
+  difficulty: unknown;
+  types?: unknown;
+  timer: {
+    enabled: boolean;
+    kind?: string;
+    paperMinutes?: number;
+    perQuestionSeconds?: number;
+  };
+  mode: unknown;
+  source?: unknown;
+  intent?: unknown;
+  knowledgePointIds?: unknown;
+  wrongItemId?: unknown;
+}): { ok: true; request: AcceptedQuizSessionRequest } | { ok: false; message: string } {
+  const source = resolveSessionSource(input.source, input.intent);
+  if (!source.ok) {
+    return source;
+  }
+  if (source.source === 'wrongSet') {
+    return { ok: false, message: '错题再练暂未开放' };
+  }
+  const wrongItem = readWrongItemId(input.wrongItemId);
+  if (!wrongItem.ok) {
+    return wrongItem;
+  }
+  if (source.source !== 'variant' && wrongItem.id) {
+    return { ok: false, message: 'wrongItemId 仅用于 variant' };
+  }
+  if (source.source === 'variant' && !wrongItem.id) {
+    return { ok: false, message: '请指定要变异的错题' };
+  }
+  if (source.source === 'variant') {
+    if (input.count !== VARIANT_QUIZ_COUNT) {
+      return { ok: false, message: '题型变异只能出 1 道题' };
+    }
+    if (input.mode !== 'practice') {
+      return { ok: false, message: '题型变异仅支持练习' };
+    }
+  }
+  const points = readKnowledgePointIds(input.knowledgePointIds);
+  if (!points.ok) {
+    return points;
+  }
+  if (source.source === 'retrain_similar' && (!points.ids || points.ids.length === 0)) {
+    return { ok: false, message: '没有可用的知识点，无法复练同类' };
+  }
+  if (source.source === 'normal' && points.ids && points.ids.length === 0) {
+    return { ok: false, message: '没有可用的知识点，无法复练同类' };
+  }
+  const typesOmitted = source.source === 'variant' && input.types === undefined;
+  const probe = normalizeQuizRequest({
+    count: source.source === 'variant' ? 10 : (input.count as number),
+    difficulty: typeof input.difficulty === 'string' ? input.difficulty : '',
+    types: typesOmitted ? ['single'] : Array.isArray(input.types) ? input.types : [],
+    timer: input.timer,
+    mode: typeof input.mode === 'string' ? input.mode : '',
+  });
+  if (!probe.ok) {
+    return probe;
+  }
+  return {
+    ok: true,
+    request: {
+      source: source.source,
+      settings: {
+        ...probe.settings,
+        count: source.source === 'variant' ? VARIANT_QUIZ_COUNT : probe.settings.count,
+        types: typesOmitted ? [] : probe.settings.types,
+      },
+      knowledgePointIds: source.source === 'variant' ? null : points.ids,
+      wrongItemId: source.source === 'variant' ? wrongItem.id : null,
+      typesOmitted,
+    },
+  };
+}
 
 export function renderPrompt(
   template: PromptTemplateBody,
@@ -520,6 +748,85 @@ function readKnowledgePointId(value: unknown): string | null {
   }
   const id = (value as { knowledgePointId: unknown }).knowledgePointId;
   return typeof id === 'string' && id.trim() ? id.trim() : null;
+}
+
+function readVariantBody(value: unknown): PromptTemplateBody | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  return readTemplate(value as { system?: unknown; user?: unknown });
+}
+
+function resolveSessionSource(
+  source: unknown,
+  intent: unknown,
+): { ok: true; source: QuizSessionSource } | { ok: false; message: string } {
+  const parsedSource = readSessionSource(source);
+  const parsedIntent = readSessionSource(intent);
+  if (source !== undefined && source !== null && !parsedSource) {
+    return { ok: false, message: '会话来源不正确' };
+  }
+  if (intent !== undefined && intent !== null && !parsedIntent) {
+    return { ok: false, message: '会话来源不正确' };
+  }
+  if (parsedSource && parsedIntent && parsedSource !== parsedIntent) {
+    return { ok: false, message: 'source 与 intent 不一致' };
+  }
+  return { ok: true, source: parsedSource ?? parsedIntent ?? 'normal' };
+}
+
+function readSessionSource(value: unknown): QuizSessionSource | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  return typeof value === 'string' && (QUIZ_SESSION_SOURCES as readonly string[]).includes(value)
+    ? (value as QuizSessionSource)
+    : null;
+}
+
+function readWrongItemId(
+  value: unknown,
+): { ok: true; id: string | null } | { ok: false; message: string } {
+  if (value === undefined || value === null || value === '') {
+    return { ok: true, id: null };
+  }
+  if (typeof value !== 'string' || !isUuid(value)) {
+    return { ok: false, message: 'wrongItemId 不正确' };
+  }
+  return { ok: true, id: value.toLowerCase() };
+}
+
+function readKnowledgePointIds(
+  value: unknown,
+): { ok: true; ids: string[] | null } | { ok: false; message: string } {
+  if (value === undefined || value === null) {
+    return { ok: true, ids: null };
+  }
+  if (!Array.isArray(value)) {
+    return { ok: false, message: '知识点不正确' };
+  }
+  if (value.length > PACK_KNOWLEDGE_POINT_MAX) {
+    return { ok: false, message: '知识点过多' };
+  }
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    if (typeof item !== 'string' || !isUuid(item)) {
+      return { ok: false, message: '知识点不正确' };
+    }
+    const id = item.toLowerCase();
+    if (!seen.has(id)) {
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  return { ok: true, ids };
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
 }
 
 function readTemplate(templates: { system?: unknown; user?: unknown }): PromptTemplateBody | null {

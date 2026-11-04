@@ -49,7 +49,7 @@ export class QuizSessionController {
   @Post()
   @ApiOperation({
     summary: '创建出题任务',
-    description: `校验刷题包后写入会话并投递 ${JOB_GENERATE_QUIZ}。未消灭错题入卷不超过 ${WRONG_QUESTION_RATIO_MAX}，其余由模型原创。证书已下架返回 PACK_UNAVAILABLE。未配置模型且未打开 LLM_MOCK 时返回 LLM_NOT_CONFIGURED。`,
+    description: `校验刷题包后写入会话并投递 ${JOB_GENERATE_QUIZ}。source 缺省 normal。retrain_similar 必须带 knowledgePointIds，只覆盖本次出题，不改刷题包。variant 必须带 wrongItemId，题量只能是 1，模式只能是练习，且不带入未消灭错题。wrongSet 暂未开放。未消灭错题入卷不超过 ${WRONG_QUESTION_RATIO_MAX}，其余由模型原创。证书已下架返回 PACK_UNAVAILABLE。未配置模型且未打开 LLM_MOCK 时返回 LLM_NOT_CONFIGURED。`,
   })
   @ApiBody({ type: CreateQuizSessionDto })
   @ApiCreatedResponse({ type: QuizSessionViewDto })
@@ -61,7 +61,7 @@ export class QuizSessionController {
   @Get()
   @ApiOperation({
     summary: '成绩列表',
-    description: `只返回当前用户已交卷的成绩摘要，不含题目，按交卷时间从新到旧，最多 ${QUIZ_SCORE_LIST_LIMIT} 条。total 是已交卷总数，hasMore 为 true 时还有更早的记录没出现在 items 里。读取时会先把已到点的考试收卷。`,
+    description: `只返回当前用户已交卷的成绩摘要，不含题目，按交卷时间从新到旧，最多 ${QUIZ_SCORE_LIST_LIMIT} 条。含 retrain_similar 与 variant。每条带 source。total 是已交卷总数，hasMore 为 true 时还有更早的记录没出现在 items 里。读取时会先把已到点的考试收卷。`,
   })
   @ApiOkResponse({ type: QuizScoreListDto })
   list(@CurrentUser() user: UserSummary) {
