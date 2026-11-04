@@ -121,6 +121,11 @@
   color: #ffffff;
 }
 
+.u-btn-ghost[disabled] {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
 .u-btn-ghost {
   background: #ffffff;
   color: #111827;
@@ -1554,6 +1559,8 @@
 }
 
 .u-center-card {
+  position: relative;
+  z-index: 26;
   width: 596px;
   margin: 120px auto 0;
   padding: 54px 38px 46px;
@@ -1563,6 +1570,60 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-sizing: border-box;
+}
+
+.u-center-card-float {
+  position: fixed;
+  left: 50%;
+  top: 168px;
+  width: 596px;
+  margin: 0;
+  transform: translateX(-50%);
+}
+
+.u-progress-lock {
+  position: relative;
+  min-height: 68vh;
+  overflow: hidden;
+}
+
+.u-settings-ghost {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding-bottom: 200px;
+  pointer-events: none;
+}
+
+.u-help-alert {
+  display: block;
+  margin-top: 15px;
+  color: #dc2626;
+  font-size: 23px;
+  line-height: 34px;
+  text-align: center;
+}
+
+.u-help-link {
+  display: block;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.u-keep-note {
+  display: block;
+  width: 100%;
+  margin-top: 19px;
+  padding: 15px 23px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 19px;
+  color: #c2410c;
+  font-size: 25px;
+  line-height: 35px;
+  text-align: center;
   box-sizing: border-box;
 }
 
