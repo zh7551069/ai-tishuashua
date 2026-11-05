@@ -116,7 +116,7 @@ export default function HomePage() {
           <Text className="u-avatar-label">我</Text>
         </View>
       </View>
-      <View className="u-pad">
+      <View className="u-pad u-pad-home">
         {!ready && !error ? <LoadingBlock label="正在加载刷题包" /> : null}
         {error ? (
           <ErrorBlock detail={error} onRetry={() => void load()} />
@@ -250,17 +250,17 @@ function PackHome(props: {
       </View>
       {pack.unavailable ? (
         <View>
-          <Button className="u-btn-danger" style={{ marginTop: '23px' }} disabled={props.busy} onClick={props.onDelete}>
+          <Button className="u-btn-danger" style={{ marginTop: '12px' }} disabled={props.busy} onClick={props.onDelete}>
             删除此刷题包
           </Button>
-          <Button className="u-btn-ghost" style={{ marginTop: '15px' }} onClick={props.onCreate}>
+          <Button className="u-btn-ghost" style={{ marginTop: '8px' }} onClick={props.onCreate}>
             新建刷题包
           </Button>
         </View>
       ) : (
         <Button
           className="u-btn-ghost"
-          style={{ marginTop: '23px' }}
+          style={{ marginTop: '12px' }}
           onClick={() =>
             void Taro.navigateTo({
               url: `/pages/pack/knowledge/index?domainId=${pack.domainId}&certId=${pack.certId}&packId=${pack.id}`,

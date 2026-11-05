@@ -7,8 +7,11 @@ export default defineConfig<'webpack5'>(async (merge) => {
   const baseConfig: UserConfigExport<'webpack5'> = {
     projectName: 'tishuashua-mini',
     date: '2026-11-1',
-    designWidth: 750,
+    // 源码 px 与 Figma 390 画板一致。postcss 用 deviceRatio 把 px 收成 rpx：
+    // 14px → 14 * (750/390) rpx，在 390 宽上仍是 14px。行内 style 不走 postcss，必须直接写稿面 px。
+    designWidth: 390,
     deviceRatio: {
+      390: 750 / 390,
       640: 2.34 / 2,
       750: 1,
       375: 2,

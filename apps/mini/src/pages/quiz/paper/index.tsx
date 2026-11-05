@@ -206,7 +206,7 @@ export default function QuizPaperPage() {
         onBackResult: () => setReview(false),
       })}
     >
-      <View className="u-pad">
+      <View className="u-pad u-pad-tight">
         {error ? <ErrorBlock detail={error} onRetry={() => void load()} onBack={leave} /> : null}
         {!session && !error ? <LoadingBlock label="正在加载试卷" /> : null}
         {session && !paper ? <ErrorBlock title="试卷还没准备好" onRetry={() => void load()} /> : null}
@@ -253,7 +253,7 @@ export default function QuizPaperPage() {
                 );
               })}
             </View>
-            <Button className="u-btn" style={{ marginTop: '15px' }} onClick={() => setDialog('submit')}>
+            <Button className="u-btn" style={{ marginTop: '8px' }} onClick={() => setDialog('submit')}>
               交卷
             </Button>
           </View>
@@ -393,7 +393,7 @@ function QuestionView(props: {
           <View className="u-bar-fill" style={{ width: `${progress}%` }} />
         </View>
       </View>
-      <Text className="u-tag u-tag-blue">{QUIZ_TYPE_LABELS[props.question.type]}</Text>
+      <Text className="u-tag u-tag-lg u-tag-blue">{QUIZ_TYPE_LABELS[props.question.type]}</Text>
       <Text className="u-stem">{props.question.stem}</Text>
       {props.question.options.map((option) => {
         const selected = props.question.selected.includes(option.id);
@@ -429,9 +429,9 @@ function ResultView(props: { session: QuizSessionView; onReview: () => void }) {
   return (
     <View>
       <Text className={`u-banner u-banner-${band}`}>{bandHeadline(band, props.session.mode)}</Text>
-      <View className="u-panel">
-        <Text className="u-kicker">刷题包</Text>
-        <Text className="u-card-title">
+      <View className="u-pack-mini">
+        <Text className="u-kicker-sm">刷题包</Text>
+        <Text className="u-title-13">
           {props.session.context.certName || props.session.context.packName}
         </Text>
       </View>
@@ -461,12 +461,10 @@ function ResultView(props: { session: QuizSessionView; onReview: () => void }) {
         <View className="u-wrong-entry" onClick={props.onReview}>
           <View className="u-danger-dot">!</View>
           <View className="u-card-copy">
-            <Text className="u-card-title" style={{ color: '#dc2626' }}>
-              错题回顾
-            </Text>
+            <Text className="u-card-title">错题回顾</Text>
             <Text className="u-card-sub">{wrong.length} 道错题 · 含解析</Text>
           </View>
-          <Text className="u-chev" style={{ color: '#dc2626' }}>
+          <Text className="u-chev">
             ›
           </Text>
         </View>
@@ -474,7 +472,7 @@ function ResultView(props: { session: QuizSessionView; onReview: () => void }) {
         <Text className="u-meta">本卷没有错题。</Text>
       )}
       {duration ? (
-        <View className="u-panel" style={{ marginTop: '23px' }}>
+        <View className="u-panel" style={{ marginTop: '12px' }}>
           <Text className="u-note">用时</Text>
           <Text className="u-clock">{duration.label}</Text>
           {duration.limit ? <Text className="u-note">/ {duration.limit}</Text> : null}
@@ -493,7 +491,7 @@ function ReviewView(props: {
   return (
     <View>
       <View className="u-panel">
-        <Text className="u-kicker">来自本卷</Text>
+        <Text className="u-kicker-sm">来自本卷</Text>
         <Text className="u-card-title">
           {props.session.context.certName || props.session.context.packName} ·{' '}
           {QUIZ_MODE_LABELS[props.session.mode]}模式
@@ -515,7 +513,7 @@ function ReviewView(props: {
           <View className="u-compare">
             <Text className="u-compare-label u-mine">你的答案</Text>
             <Text className="u-compare-value u-mine">{answerLine(question, question.selected)}</Text>
-            <Text className="u-compare-label u-right" style={{ marginTop: '15px' }}>
+            <Text className="u-compare-label u-right" style={{ marginTop: '8px' }}>
               正确答案
             </Text>
             <Text className="u-compare-value u-right">

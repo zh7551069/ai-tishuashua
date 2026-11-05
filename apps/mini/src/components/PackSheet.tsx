@@ -70,27 +70,27 @@ export function PackSheet(props: {
           <View>
             <Input
               className="u-search"
-              style={{ marginTop: '23px' }}
+              style={{ marginTop: '12px' }}
               maxlength={40}
               value={draft}
               placeholder="刷题包名称"
               onInput={(event) => setDraft(event.detail.value)}
             />
-            <Button className="u-btn" style={{ marginTop: '19px' }} disabled={props.busy} onClick={() => void rename()}>
+            <Button className="u-btn" style={{ marginTop: '10px' }} disabled={props.busy} onClick={() => void rename()}>
               确认重命名
             </Button>
-            <Button className="u-btn-ghost" style={{ marginTop: '15px' }} disabled={props.busy} onClick={() => setDraft(null)}>
+            <Button className="u-btn-ghost" style={{ marginTop: '8px' }} disabled={props.busy} onClick={() => setDraft(null)}>
               取消
             </Button>
           </View>
         ) : (
           <View>
-            <Button className="u-btn" style={{ marginTop: '23px' }} disabled={props.busy} onClick={props.onCreate}>
+            <Button className="u-btn" style={{ marginTop: '12px' }} disabled={props.busy} onClick={props.onCreate}>
               新建刷题包
             </Button>
             <Button
               className="u-btn-ghost"
-              style={{ marginTop: '15px' }}
+              style={{ marginTop: '8px' }}
               disabled={props.busy || !selected || selected.unavailable}
               onClick={() => setDraft(selected?.name ?? '')}
             >
@@ -98,7 +98,7 @@ export function PackSheet(props: {
             </Button>
             <Button
               className="u-btn-danger"
-              style={{ marginTop: '15px' }}
+              style={{ marginTop: '8px' }}
               disabled={props.busy || !selected}
               onClick={() => setConfirming(true)}
             >

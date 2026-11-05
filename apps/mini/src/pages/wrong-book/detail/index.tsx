@@ -188,7 +188,7 @@ export default function WrongBookDetailPage() {
         ) : null
       }
     >
-      <View className="u-pad">
+      <View className="u-pad u-detail">
         {!item && !error ? <LoadingBlock label="正在加载错题" /> : null}
         {error ? (
           <ErrorBlock
@@ -202,7 +202,7 @@ export default function WrongBookDetailPage() {
             <Text className="u-note">
               {item.certName} · {formatSubmittedAt(item.updatedAt)}
             </Text>
-            <View className="u-chips" style={{ marginTop: '15px' }}>
+            <View className="u-chips">
               <Text className={typeClass(item.type)}>
                 {item.type ? QUIZ_TYPE_LABELS[item.type] : '题目'}
               </Text>
@@ -243,7 +243,7 @@ export default function WrongBookDetailPage() {
                 <Text className="u-note">只改变这道错题的状态。复练或变异答对不会自动消灭。</Text>
                 <Button
                   className="u-btn-ghost"
-                  style={{ marginTop: '15px', width: '100%' }}
+                  style={{ marginTop: '8px', width: '100%' }}
                   disabled={pendingAction !== null}
                   loading={pendingAction === 'clear'}
                   onClick={() => void clear()}
@@ -254,7 +254,7 @@ export default function WrongBookDetailPage() {
             ) : (
               <Text className="u-meta">这道题已经消灭。仍可以复练同类或题型变异。</Text>
             )}
-            {help ? <View style={{ height: '48px' }} /> : null}
+            {help ? <View style={{ height: '25px' }} /> : null}
           </View>
         ) : null}
       </View>
