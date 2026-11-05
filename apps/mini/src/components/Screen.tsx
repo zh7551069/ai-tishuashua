@@ -25,6 +25,8 @@ export function Screen(props: {
   subtitleTone?: 'brand' | 'muted';
   titleSize?: 'md' | 'lg' | 'page';
   bodyFill?: boolean;
+  /** 覆盖 .u-screen 底色。选领域有数据时头白、其余 #f5f6f8。 */
+  background?: string;
   children?: ReactNode;
 }) {
   const [inset] = useState(readInset);
@@ -56,7 +58,13 @@ export function Screen(props: {
   };
 
   return (
-    <View className="u-screen" style={{ paddingTop: `${inset}px` }}>
+    <View
+      className="u-screen"
+      style={{
+        paddingTop: `${inset}px`,
+        ...(props.background ? { background: props.background } : {}),
+      }}
+    >
       {props.bare ? null : (
         <View
           className={
