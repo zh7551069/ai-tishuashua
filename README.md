@@ -31,6 +31,8 @@ AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通�
 │   └── shared         类型、常量、队列契约
 ├── design
 │   └── dev-cache      Figma 单帧缓存（见 design/dev-cache/README.md）
+├── scripts
+│   └── deploy.sh      生产机拉取已合并版本、构建并重启
 ├── docker-compose.yml 本地 PostgreSQL 16 + Redis 7
 ├── .env.example
 └── package.json       pnpm workspace + Turborepo
@@ -84,6 +86,17 @@ cp .env.example .env
 没有真实小程序密钥时，在 API 环境显式设置 `WECHAT_LOGIN_MOCK=true`（默认 `false`）。只有 `true` 或 `1` 会启用，启用后登录和手机号授权都不请求微信。生产不要打开。详见 [docs/wechat-login.md](docs/wechat-login.md)。
 
 没有 LLM Key 时，出题同样要显式设置 `LLM_MOCK=true`（默认 `false`）。只有 `true` 或 `1` 会启用，启用后 Worker 不请求 DeepSeek 或通义。生产不要打开。详见 [docs/quiz.md](docs/quiz.md)。
+
+## 生产部署
+
+先合并 PR，再在生产机 `/opt/tishuashua` 执行。不要手改线上业务文件后直接重启。
+
+```bash
+cd /opt/tishuashua
+sudo ./scripts/deploy.sh
+```
+
+脚本会拉取当前分支、按需 `pnpm install --frozen-lockfile`，构建 API、Worker 和后管，然后重启 `tishuashua-api.service`。后管生产构建使用 `VITE_API_BASE=/api`（nginx 把 `/api/` 反代到本机 3000）。`apps/admin/dist` 由 nginx 直接提供，脚本不拷贝静态文件。参数、Worker 单元和密钥边界见 [docs/deploy.md](docs/deploy.md)。
 
 ## 本地依赖
 
@@ -232,6 +245,7 @@ pnpm --filter @tishuashua/mini build:weapp
 | `pnpm lint`                       | ESLint（不含小程序目录，小程序以 `tsc` 为准）                                                                                                                  |
 | `pnpm test`                       | API 单元测试；Postgres 与 Redis 可连接时跑微信、刷题包、证书查询、后管目录、后管用户、后管出题会话、后管错题、后管课件和后管证书与成绩集成测试，Redis 可连接时跑后管登录和限流集成测试 |
 | `pnpm build`                      | 构建 shared、api、worker、admin，并编译小程序                                                                                                                  |
+| `scripts/deploy.sh`               | 生产机拉取已合并版本、构建 API / Worker / 后管并重启。见 [docs/deploy.md](docs/deploy.md)                                                                     |
 
 根脚本走 Turborepo，会先构建 `@tishuashua/shared`。
 
