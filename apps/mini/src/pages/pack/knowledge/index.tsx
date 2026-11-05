@@ -125,7 +125,7 @@ export default function KnowledgePage() {
             <Text className="u-note">已选 {selected.length} 个知识点</Text>
             <Button
               className="u-btn"
-              style={{ marginTop: '15px' }}
+              style={{ marginTop: '8px' }}
               disabled={saving || selected.length === 0}
               loading={saving}
               onClick={() => void save()}
@@ -137,7 +137,7 @@ export default function KnowledgePage() {
       }
     >
       <Steps current={3} />
-      <View className="u-pad">
+      <View className="u-pad u-pad-kp">
         <View className="u-search">
           <Text className="u-search-mark">⌕</Text>
           <Input
@@ -148,7 +148,7 @@ export default function KnowledgePage() {
             onInput={(event) => setQuery(event.detail.value)}
           />
         </View>
-        <View className="u-tip" style={{ marginTop: '15px' }}>
+        <View className="u-tip" style={{ marginTop: '8px' }}>
           勾选教材 = 全选其下知识点；半选表示部分已选。
         </View>
         <View className="u-upload" onClick={() => openCourseware(extractJobId || undefined)}>

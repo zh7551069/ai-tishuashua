@@ -1,19 +1,19 @@
 .page {
-  padding: 32px;
+  padding: 17px;
 }
 
 .title {
   display: block;
-  margin-bottom: 16px;
-  font-size: 40px;
+  margin-bottom: 8px;
+  font-size: 21px;
   font-weight: 600;
 }
 
 .hint,
 .link {
   display: block;
-  margin-bottom: 12px;
-  font-size: 28px;
+  margin-bottom: 6px;
+  font-size: 15px;
   color: #5c6b66;
   line-height: 1.5;
 }
@@ -24,32 +24,32 @@
 
 .label {
   display: block;
-  margin-top: 8px;
-  margin-bottom: 8px;
-  font-size: 26px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  font-size: 14px;
   color: #334155;
 }
 
 .field {
-  margin-bottom: 16px;
-  padding: 16px 20px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
   background: #f4f7fb;
-  border-radius: 12px;
-  font-size: 28px;
+  border-radius: 6px;
+  font-size: 15px;
 }
 
 .primary {
-  margin: 12px 0 16px;
+  margin: 6px 0 8px;
   background: #2563eb;
   color: #ffffff;
-  border-radius: 12px;
-  font-size: 30px;
+  border-radius: 6px;
+  font-size: 16px;
 }
 
 .error {
   display: block;
-  margin-bottom: 12px;
-  font-size: 26px;
+  margin-bottom: 6px;
+  font-size: 14px;
   color: #b42318;
   line-height: 1.5;
 }
@@ -62,11 +62,11 @@
 }
 
 .card {
-  margin-bottom: 20px;
-  padding: 24px;
+  margin-bottom: 10px;
+  padding: 12px;
   background: #ffffff;
   border: 1px solid #dbe4f0;
-  border-radius: 16px;
+  border-radius: 8px;
 }
 
 .card-off {
@@ -82,18 +82,18 @@
 }
 
 .badge {
-  padding: 4px 12px;
+  padding: 2px 6px;
   background: #fee2e2;
   color: #b42318;
   border-radius: 999px;
-  font-size: 22px;
+  font-size: 11px;
 }
 
 .meta {
   display: block;
-  margin-top: 8px;
+  margin-top: 4px;
   color: #64748b;
-  font-size: 24px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -101,16 +101,16 @@
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 .chip {
-  margin: 0 12px 12px 0;
-  padding: 6px 14px;
+  margin: 0 6px 6px 0;
+  padding: 3px 7px;
   background: #eff6ff;
   color: #1d4ed8;
   border-radius: 999px;
-  font-size: 24px;
+  font-size: 12px;
 }
 
 .chip-on {
@@ -119,11 +119,11 @@
 }
 
 .option {
-  margin-top: 12px;
-  padding: 16px 20px;
+  margin-top: 6px;
+  padding: 8px 10px;
   background: #f8fafc;
   border: 1px solid #dbe4f0;
-  border-radius: 12px;
+  border-radius: 6px;
 }
 
 .option-on {
@@ -133,7 +133,7 @@
 
 .option-text,
 .option-text-on {
-  font-size: 28px;
+  font-size: 15px;
   line-height: 1.5;
 }
 
@@ -157,35 +157,35 @@
 
 .analysis {
   display: block;
-  margin-top: 16px;
+  margin-top: 8px;
   color: #334155;
-  font-size: 26px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
 .score-num {
   display: block;
   color: #0f172a;
-  font-size: 56px;
+  font-size: 29px;
   font-weight: 600;
 }
 
 .score-total {
   color: #64748b;
-  font-size: 28px;
+  font-size: 15px;
   font-weight: 400;
 }
 
 .bar {
-  height: 12px;
-  margin-top: 16px;
+  height: 6px;
+  margin-top: 8px;
   background: #e2e8f0;
   border-radius: 999px;
   overflow: hidden;
 }
 
 .bar-fill {
-  height: 12px;
+  height: 6px;
   background: #2563eb;
 }
 
@@ -198,41 +198,41 @@
 }
 
 .choice {
-  margin-bottom: 16px;
-  padding: 20px;
+  margin-bottom: 8px;
+  padding: 10px;
   background: #ffffff;
   border: 1px solid #dbe4f0;
-  border-radius: 16px;
+  border-radius: 8px;
 }
 
 .tree-row {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 .kp-row {
-  margin-left: 56px;
+  margin-left: 29px;
 }
 
 .tree-name {
-  font-size: 30px;
+  font-size: 16px;
   color: #0f172a;
 }
 
 .expander {
-  margin-right: 8px;
+  margin-right: 4px;
   color: #2563eb;
-  font-size: 28px;
+  font-size: 15px;
 }
 
 .box {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  margin-right: 16px;
-  border: 2px solid #2563eb;
-  border-radius: 8px;
+  width: 19px;
+  height: 19px;
+  margin-right: 8px;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
 }
 
 .box-on {
@@ -245,7 +245,7 @@
 
 .box-mark {
   color: #ffffff;
-  font-size: 22px;
+  font-size: 11px;
   line-height: 1;
 }
 
@@ -259,9 +259,9 @@
 .ghost,
 .secondary,
 .danger {
-  margin: 12px 0;
-  border-radius: 12px;
-  font-size: 30px;
+  margin: 6px 0;
+  border-radius: 6px;
+  font-size: 16px;
 }
 
 .ghost {
@@ -307,18 +307,18 @@
 }
 
 .sheet {
-  padding: 28px 32px 48px;
+  padding: 15px 17px 25px;
   background: #ffffff;
-  border-radius: 24px 24px 0 0;
+  border-radius: 12px 12px 0 0;
 }
 
 .sheet-list {
-  height: 360px;
-  margin-bottom: 12px;
+  height: 187px;
+  margin-bottom: 6px;
 }
 
 .sheet-row {
-  padding: 16px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -329,17 +329,17 @@
 
 .section-title {
   display: block;
-  margin-bottom: 12px;
-  font-size: 32px;
+  margin-bottom: 6px;
+  font-size: 17px;
   font-weight: 600;
 }
 
 .radio {
-  width: 28px;
-  height: 28px;
-  margin-right: 16px;
-  border: 2px solid #94a3b8;
-  border-radius: 14px;
+  width: 15px;
+  height: 15px;
+  margin-right: 8px;
+  border: 1px solid #94a3b8;
+  border-radius: 7px;
 }
 
 .radio-on {
@@ -351,14 +351,14 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 .step-dot {
-  width: 16px;
-  height: 16px;
-  margin-right: 12px;
-  border-radius: 8px;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 4px;
   background: #dbe4f0;
 }
 
@@ -367,7 +367,7 @@
 }
 
 .step-label {
-  font-size: 28px;
+  font-size: 15px;
   color: #0f172a;
 }
 

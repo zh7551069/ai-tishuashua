@@ -264,7 +264,7 @@ function NormalCard(props: {
         {props.failed ? props.message || '这次没有生成试卷。' : '预计很快完成'}
       </Text>
       {!props.failed ? (
-        <Text className="u-link" style={{ marginTop: '12px' }}>
+        <Text className="u-link" style={{ marginTop: '6px' }}>
           已生成 {props.generated} / {props.total || '…'}
         </Text>
       ) : null}
@@ -277,7 +277,7 @@ function NormalCard(props: {
       {props.failed ? (
         <Button
           className="u-btn"
-          style={{ marginTop: '23px', width: '100%' }}
+          style={{ marginTop: '12px', width: '100%' }}
           onClick={() => void Taro.navigateBack()}
         >
           返回设置
@@ -285,7 +285,7 @@ function NormalCard(props: {
       ) : (
         <Button
           className="u-btn-ghost"
-          style={{ marginTop: '23px', width: '100%' }}
+          style={{ marginTop: '12px', width: '100%' }}
           disabled={props.cancelling}
           onClick={props.onCancel}
         >
@@ -321,14 +321,14 @@ function VariantCard(props: {
         <Text className="u-keep-note">已生成进度不会保留</Text>
         <Button
           className="u-btn"
-          style={{ marginTop: '23px', width: '100%' }}
+          style={{ marginTop: '12px', width: '100%' }}
           loading={props.retrying}
           disabled={props.retrying}
           onClick={props.onRetry}
         >
           重新生成
         </Button>
-        <Text className="u-link" style={{ marginTop: '23px' }} onClick={props.onBack}>
+        <Text className="u-link" style={{ marginTop: '12px' }} onClick={props.onBack}>
           返回详情
         </Text>
       </View>
@@ -338,10 +338,10 @@ function VariantCard(props: {
     <View style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <View className="u-spin" />
       <Text className="u-state-title">正在生成变异题…</Text>
-      <Text className="u-link" style={{ marginTop: '12px' }}>
+      <Text className="u-link" style={{ marginTop: '6px' }}>
         基于本题换题型或语境
       </Text>
-      <Text className="u-link" style={{ marginTop: '8px' }}>
+      <Text className="u-link" style={{ marginTop: '4px' }}>
         预计很快完成
       </Text>
       <View className="u-bar" style={{ width: '100%' }}>
@@ -351,7 +351,7 @@ function VariantCard(props: {
       <Text className="u-note">答对不消灭原错题</Text>
       <Button
         className="u-btn-ghost"
-        style={{ marginTop: '23px', width: '100%' }}
+        style={{ marginTop: '12px', width: '100%' }}
         disabled={props.cancelling}
         onClick={props.onCancel}
       >
@@ -365,10 +365,10 @@ function VariantCard(props: {
 function SettingsBackdrop(props: { headline: string }) {
   return (
     <View className="u-settings-ghost">
-      <View className="u-pad">
-        <View className="u-panel">
-          <Text className="u-kicker">当前刷题包</Text>
-          <Text className="u-h1" style={{ marginTop: '6px', fontSize: '27px', lineHeight: '42px' }}>
+      <View className="u-pad u-pad-quiz">
+        <View className="u-pack-mini">
+          <Text className="u-kicker-sm">当前刷题包</Text>
+          <Text className="u-pack-line">
             {props.headline}
           </Text>
         </View>

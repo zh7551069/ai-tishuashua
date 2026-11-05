@@ -116,7 +116,7 @@ export default function CertificateQueryPage() {
                 {item.activePackId && !item.unavailable ? (
                   <Button
                     className="u-btn-ghost"
-                    style={{ marginTop: '-8px', marginBottom: '23px' }}
+                    style={{ marginTop: '-4px', marginBottom: '12px' }}
                     onClick={() => {
                       void Taro.navigateTo({ url: `/pages/quiz/index?packId=${item.activePackId}` });
                     }}

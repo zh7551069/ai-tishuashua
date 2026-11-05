@@ -76,7 +76,7 @@ export default function SettingsPage() {
 
   return (
     <Screen back centerTitle title="设置">
-      <View className="u-pad">
+      <View className="u-pad u-pad-set">
         {!ready && !error ? <LoadingBlock label="正在读取账号" /> : null}
         {error && !ready ? (
           <ErrorBlock

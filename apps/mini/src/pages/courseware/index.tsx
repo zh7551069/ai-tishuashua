@@ -291,7 +291,7 @@ export default function CoursewarePage() {
             <Text className="u-drop-title">点击选择文件上传</Text>
             <Text className="u-drop-sub">支持 PPT / PPTX / PDF / DOC · 单文件 ≤ 50MB</Text>
           </View>
-          <View className="u-panel" style={{ marginTop: '23px' }}>
+          <View className="u-panel" style={{ marginTop: '12px' }}>
             <Text className="u-label">上传后会发生什么</Text>
             <Text className="u-meta">1. 上传课件或书籍文件</Text>
             <Text className="u-meta">2. AI 自动学习并提炼知识点（可能较慢）</Text>
@@ -333,7 +333,7 @@ export default function CoursewarePage() {
         }
       >
         <View className="u-pad">
-          <View className="u-state" style={{ paddingTop: '12px', paddingBottom: '12px' }}>
+          <View className="u-state" style={{ paddingTop: '6px', paddingBottom: '6px' }}>
             <View className="u-check-lg">✓</View>
           </View>
           {error ? <Text className="u-state-sub">{error}</Text> : null}
@@ -400,7 +400,7 @@ export default function CoursewarePage() {
       }
     >
       <View className="u-pad">
-        <View className="u-center-card" style={{ marginTop: '24px', width: '100%' }}>
+        <View className="u-center-card" style={{ marginTop: '12px', width: '100%' }}>
           <View className="u-spin" />
           <Text className="u-state-title">{job?.file.fileName || '课件'}</Text>
           <Text className="u-state-sub">预计约 {job?.estimatedMinutes ?? 1} 分钟</Text>
@@ -424,7 +424,7 @@ function StageList(props: { stage: ExtractStage; uploadPercent?: number }) {
         const done = props.stage === 'done' || index < current;
         const active = index === current;
         return (
-          <View key={step.stage} className="u-step" style={{ marginTop: '15px' }}>
+          <View key={step.stage} className="u-step" style={{ marginTop: '8px' }}>
             <View className={done || active ? 'u-step-dot u-step-dot-on' : 'u-step-dot'} />
             <Text className={done || active ? 'u-step-name u-step-name-on' : 'u-step-name'}>
               {step.label}

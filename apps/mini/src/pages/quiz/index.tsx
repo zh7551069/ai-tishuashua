@@ -189,7 +189,7 @@ export default function QuizSettingsPage() {
         ) : null
       }
     >
-      <View className="u-pad">
+      <View className="u-pad u-pad-quiz">
         {!ready && !error ? <LoadingBlock /> : null}
         {error ? (
           <ErrorBlock
@@ -199,12 +199,9 @@ export default function QuizSettingsPage() {
           />
         ) : null}
         {pack ? (
-          <View className="u-panel">
-            <Text className="u-kicker">当前刷题包</Text>
-            <Text
-              className="u-h1"
-              style={{ marginTop: '6px', fontSize: '27px', lineHeight: '42px' }}
-            >
+          <View className="u-pack-mini">
+            <Text className="u-kicker-sm">当前刷题包</Text>
+            <Text className="u-pack-line">
               {fromRetrain
                 ? `${pack.certName || pack.name} · 复练同类`
                 : `${pack.certName || pack.name} · ${pack.knowledgePointCount} 知识点`}
@@ -214,8 +211,8 @@ export default function QuizSettingsPage() {
         ) : null}
         {pack && !pack.unavailable && fromRetrain ? (
           <View className="u-panel">
-            <Text className="u-kicker">复练同类</Text>
-            <Text className="u-label" style={{ marginTop: '8px' }}>
+            <Text className="u-kicker-sm">复练同类</Text>
+            <Text className="u-label" style={{ marginTop: '4px' }}>
               知识点
             </Text>
             <Text className="u-note">只使用这些知识点，点一下可去掉或加回。不能改成整包。</Text>
@@ -293,7 +290,7 @@ export default function QuizSettingsPage() {
             </View>
             {timerOn ? (
               <View>
-                <Text className="u-note" style={{ marginTop: '15px' }}>
+                <Text className="u-note" style={{ marginTop: '8px' }}>
                   计时方式
                 </Text>
                 <View className="u-seg">

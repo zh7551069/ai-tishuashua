@@ -70,7 +70,7 @@ export default function WrongBookPage() {
     >
       <View className="u-pad">
         {searching ? (
-          <View className="u-search" style={{ marginBottom: '23px' }}>
+          <View className="u-search" style={{ marginBottom: '12px' }}>
             <Text className="u-search-mark">⌕</Text>
             <Input
               className="u-search-input"
@@ -101,7 +101,7 @@ export default function WrongBookPage() {
                 {cleared}
                 <Text className="u-note"> / {items.length}</Text>
               </Text>
-              <View className="u-bar">
+              <View className="u-bar u-bar-thin">
                 <View
                   className="u-bar-fill"
                   style={{
@@ -114,14 +114,14 @@ export default function WrongBookPage() {
           </View>
         ) : null}
         {ready ? (
-          <View className="u-pills" style={{ marginTop: '23px' }}>
-            <Text className={filter === 'pending' ? 'u-pill u-pill-on' : 'u-pill'} onClick={() => setFilter('pending')}>
+          <View className="u-pills" style={{ marginTop: '12px' }}>
+            <Text className={filter === 'pending' ? 'u-filter u-filter-on' : 'u-filter'} onClick={() => setFilter('pending')}>
               待消灭 {pending}
             </Text>
-            <Text className={filter === 'cleared' ? 'u-pill u-pill-on' : 'u-pill'} onClick={() => setFilter('cleared')}>
+            <Text className={filter === 'cleared' ? 'u-filter u-filter-on' : 'u-filter'} onClick={() => setFilter('cleared')}>
               已消灭 {cleared}
             </Text>
-            <Text className={filter === 'all' ? 'u-pill u-pill-on' : 'u-pill'} onClick={() => setFilter('all')}>
+            <Text className={filter === 'all' ? 'u-filter u-filter-on' : 'u-filter'} onClick={() => setFilter('all')}>
               全部 {items.length}
             </Text>
           </View>
@@ -135,7 +135,7 @@ export default function WrongBookPage() {
         {visible.map((item) => (
           <View
             key={item.id}
-            className="u-panel"
+            className="u-panel u-wrong-card"
             onClick={() => void Taro.navigateTo({ url: `/pages/wrong-book/detail/index?id=${item.id}` })}
           >
             <View className="u-q-head">
@@ -147,10 +147,8 @@ export default function WrongBookPage() {
                 {item.status === 'cleared' ? '已消灭' : '待消灭'}
               </Text>
             </View>
-            <Text className="u-card-title" style={{ marginTop: '15px' }}>
-              {item.stem}
-            </Text>
-            <View className="u-q-head" style={{ marginTop: '12px' }}>
+            <Text className="u-item-title">{item.stem}</Text>
+            <View className="u-q-head u-item-meta">
               <Text className="u-note">{item.certName}</Text>
               <Text className="u-note">
                 {formatSubmittedAt(item.updatedAt)} ›

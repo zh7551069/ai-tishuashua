@@ -5,10 +5,8 @@ import { useState } from 'react';
 
 function readInset(): number {
   try {
-    const info = Taro.getSystemInfoSync();
-    const bar = info.statusBarHeight ?? 0;
-    const width = info.windowWidth || 390;
-    return Math.round((bar * 750) / width);
+    // 行内 px 不经 postcss。状态栏高度已是设备 px，不能再乘 750/屏宽。
+    return Taro.getSystemInfoSync().statusBarHeight ?? 0;
   } catch {
     return 0;
   }

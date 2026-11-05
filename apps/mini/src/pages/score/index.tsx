@@ -62,7 +62,7 @@ export default function ScorePage() {
 
   return (
     <Screen back centerTitle title="成绩">
-      <View className="u-pad">
+      <View className="u-pad u-pad-set">
         {guest ? (
           <EmptyBlock
             title="登录后查看成绩"
