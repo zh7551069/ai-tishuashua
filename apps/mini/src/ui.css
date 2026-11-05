@@ -1939,7 +1939,7 @@
 
 .u-greet-domain {
   align-items: center;
-  padding: 12px 16px 4px;
+  padding: 12px 20px 4px;
 }
 
 .u-greet-title-domain {
@@ -2004,57 +2004,6 @@
 
 .u-section-first {
   margin-top: 16px;
-}
-
-.u-ico-chip {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #2563eb;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-.u-ico-chip-core {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: #2563eb;
-}
-
-.u-ico-cap {
-  width: 22px;
-  height: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.u-ico-cap-top {
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-bottom: 7px solid #2563eb;
-}
-
-.u-ico-cap-board {
-  width: 22px;
-  height: 4px;
-  margin-top: 1px;
-  border-radius: 1px;
-  background: #2563eb;
-}
-
-.u-ico-cap-stem {
-  width: 10px;
-  height: 4px;
-  margin-top: 1px;
-  border-radius: 0 0 5px 5px;
-  background: #2563eb;
 }
 
 .u-mask-dim {
@@ -2570,4 +2519,63 @@
 
 .u-saved-list {
   margin-top: 20px;
+}
+
+/* 2:2 选领域。只出现在 domain-sheet 里，证书页的 u-pick / u-steps 不动。 */
+.domain-sheet {
+  display: flex;
+  flex-direction: column;
+  background: #f5f6f8;
+}
+
+.domain-head {
+  background: #ffffff;
+}
+
+.domain-steps {
+  padding: 4px 20px 8px;
+  background: #ffffff;
+}
+
+.domain-search {
+  padding: 4px 20px 12px;
+  background: #ffffff;
+}
+
+.domain-list {
+  flex: 1;
+  padding: 8px 20px 24px;
+  background: #f5f6f8;
+  box-sizing: border-box;
+}
+
+.domain-section {
+  margin: 0 0 10px;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.domain-list .u-pick {
+  margin-bottom: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.domain-list .u-card-sub,
+.domain-list .u-count-link {
+  margin-top: 2px;
+}
+
+.domain-list .u-count-link {
+  font-weight: 500;
+}
+
+.domain-ico {
+  width: 24px;
+  height: 24px;
 }
