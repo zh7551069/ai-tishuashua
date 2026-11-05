@@ -1,18 +1,9 @@
-import { useEffect, useState } from 'react';
-import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { PRODUCT_NAME } from '@tishuashua/shared';
+import { useEffect, useState } from 'react';
+import { NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AdminApiError, logoutAdmin, pingAdmin } from '../api';
 import { clearAdminSession, readAdminSession, type StoredAdminSession } from '../session';
-
-const links = [
-  { to: '/', label: '概览', end: true },
-  { to: '/catalog', label: '目录' },
-  { to: '/users', label: '用户' },
-  { to: '/courseware', label: '课件' },
-  { to: '/quiz', label: '出题会话' },
-  { to: '/wrong-book', label: '错题' },
-  { to: '/certificates', label: '证书与成绩' },
-];
+import { NAV, crumbFor } from './nav';
 
 export interface AdminOutletContext {
   session: StoredAdminSession;
@@ -21,6 +12,7 @@ export interface AdminOutletContext {
 
 export function AdminLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const session = readAdminSession();
   const token = session?.token ?? '';
   const [ready, setReady] = useState(false);
@@ -90,32 +82,63 @@ export function AdminLayout() {
   return (
     <div className="shell">
       <aside className="sider">
-        <div className="brand">{PRODUCT_NAME} · 管理后台</div>
+        <div className="brand">
+          <span className="logo" aria-hidden="true">
+            题
+          </span>
+          <span>
+            <strong>{PRODUCT_NAME}后管</strong>
+            <small>运营 / 教研配置台</small>
+          </span>
+        </div>
         <nav>
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.end}
-              className={({ isActive }) => (isActive ? 'active' : undefined)}
-            >
-              {link.label}
-            </NavLink>
+          {NAV.map((group) => (
+            <div key={group.label ?? 'home'} className="nav-group">
+              {group.label ? <p className="nav-label">{group.label}</p> : null}
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end
+                  className={({ isActive }) =>
+                    ['nav-link', item.placeholder ? 'is-later' : '', isActive ? 'active' : '']
+                      .filter(Boolean)
+                      .join(' ')
+                  }
+                >
+                  <span className="nav-dot" aria-hidden="true" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
-        <p className="account">{current.username}</p>
-        <button type="button" className="logout" onClick={onLogout} disabled={pendingLogout}>
-          {pendingLogout ? '退出中' : '退出'}
-        </button>
       </aside>
-      <main className="main">
-        {actionError ? (
-          <p className="form-error" role="alert">
-            {actionError}
-          </p>
-        ) : null}
-        <Outlet context={{ session: current, sessionNotice } satisfies AdminOutletContext} />
-      </main>
+      <div className="workspace">
+        <header className="topbar">
+          <p className="crumb">{crumbFor(location.pathname)}</p>
+          <div className="topbar-end">
+            <span className="role-chip">配置台</span>
+            <span className="who">{current.username}</span>
+            <button type="button" className="link" onClick={onLogout} disabled={pendingLogout}>
+              {pendingLogout ? '退出中' : '退出'}
+            </button>
+          </div>
+        </header>
+        <main className="main">
+          {actionError ? (
+            <p className="form-error" role="alert">
+              {actionError}
+            </p>
+          ) : null}
+          {sessionNotice ? (
+            <p className="form-error" role="status">
+              {sessionNotice}
+            </p>
+          ) : null}
+          <Outlet context={{ session: current, sessionNotice } satisfies AdminOutletContext} />
+        </main>
+      </div>
     </div>
   );
 }

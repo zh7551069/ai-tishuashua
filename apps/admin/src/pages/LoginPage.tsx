@@ -41,9 +41,16 @@ export function LoginPage() {
 
   return (
     <div className="login-screen">
-      <form className="card" onSubmit={onSubmit}>
-        <h1>{PRODUCT_NAME} 管理登录</h1>
-        <p className="muted">使用 API 配置的管理员帐号。成功后进入后台，失败会留在此页。</p>
+      <form className="login-card" onSubmit={onSubmit}>
+        <div className="login-brand">
+          <span className="logo" aria-hidden="true">
+            题
+          </span>
+          <div>
+            <h1>{PRODUCT_NAME}后管</h1>
+            <p>运营 / 教研配置台</p>
+          </div>
+        </div>
         <label>
           用户名
           <input
@@ -73,6 +80,7 @@ export function LoginPage() {
         <button type="submit" disabled={pending}>
           {pending ? '登录中' : '登录'}
         </button>
+        <p className="login-foot">帐密由配置文件维护（非 SSO）</p>
       </form>
     </div>
   );

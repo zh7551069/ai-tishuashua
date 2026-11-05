@@ -138,7 +138,7 @@ export function CoursewarePage() {
 
   return (
     <section className="panel wide">
-      <h1>课件</h1>
+      <h1>用户上传教材</h1>
       <p className="muted">
         只读查看全站课件上传和提炼任务。默认包含全部状态，按最近更新从新到旧。这里不能重新上传、取消任务或修改提炼次数。
       </p>
