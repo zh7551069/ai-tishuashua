@@ -1,7 +1,28 @@
 import { Button, Text, View } from '@tarojs/components';
 
 /** 157:* 最小态：空态灰圆占位 + 主色 CTA；失败态红叹号 + 重试，可附返回。 */
-export function LoadingBlock(props: { label?: string; skeleton?: boolean }) {
+export function LoadingBlock(props: {
+  label?: string;
+  skeleton?: boolean | 'rows';
+  count?: number;
+}) {
+  if (props.skeleton === 'rows') {
+    const count = props.count ?? 5;
+    return (
+      <View>
+        {Array.from({ length: count }, (_, index) => (
+          <View key={index} className="u-skel-row">
+            <View className="u-skel-dot" />
+            <View className="u-skel-lines">
+              <View className={index % 2 === 0 ? 'u-skel-line' : 'u-skel-line u-skel-line-mid'} />
+              <View className="u-skel-line u-skel-line-short" />
+            </View>
+            <View className="u-skel-dot u-skel-dot-sm" />
+          </View>
+        ))}
+      </View>
+    );
+  }
   if (props.skeleton) {
     return (
       <View>
@@ -24,14 +45,22 @@ export function EmptyBlock(props: {
   detail?: string;
   action?: string;
   onAction?: () => void;
+  tone?: 'solid' | 'soft';
+  fill?: boolean;
+  titleSize?: 'md' | 'lg';
 }) {
+  const buttonClass = props.tone === 'soft' ? 'u-btn-soft u-btn-hug' : 'u-btn u-btn-hug';
   return (
-    <View className="u-state">
+    <View className={props.fill ? 'u-state u-state-fill' : 'u-state'}>
       <View className="u-ph" />
-      <Text className="u-state-title">{props.title}</Text>
+      <Text
+        className={props.titleSize === 'lg' ? 'u-state-title u-state-title-lg' : 'u-state-title'}
+      >
+        {props.title}
+      </Text>
       {props.detail ? <Text className="u-state-sub">{props.detail}</Text> : null}
       {props.action && props.onAction ? (
-        <Button className="u-btn u-btn-hug" onClick={props.onAction}>
+        <Button className={buttonClass} onClick={props.onAction}>
           {props.action}
         </Button>
       ) : null}

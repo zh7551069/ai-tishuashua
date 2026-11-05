@@ -22,9 +22,26 @@ export function Screen(props: {
   bare?: boolean;
   navPlain?: boolean;
   centerTitle?: boolean;
+  subtitleTone?: 'brand' | 'muted';
+  titleSize?: 'md' | 'lg' | 'page';
+  bodyFill?: boolean;
   children?: ReactNode;
 }) {
   const [inset] = useState(readInset);
+  const titleSizeClass =
+    props.titleSize === 'lg'
+      ? 'u-nav-title-lg'
+      : props.titleSize === 'page'
+        ? 'u-nav-title-page'
+        : '';
+  const subClass = props.subtitleTone === 'muted' ? 'u-nav-sub u-nav-sub-muted' : 'u-nav-sub';
+  const bodyClass = [
+    'u-body',
+    props.footer ? 'u-body-pad' : '',
+    props.bodyFill ? 'u-body-fill' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const back = () => {
     if (props.onBack) {
@@ -41,7 +58,15 @@ export function Screen(props: {
   return (
     <View className="u-screen" style={{ paddingTop: `${inset}px` }}>
       {props.bare ? null : (
-        <View className={props.centerTitle ? 'u-nav u-nav-center' : props.navPlain ? 'u-nav u-nav-plain' : 'u-nav'}>
+        <View
+          className={
+            props.centerTitle
+              ? 'u-nav u-nav-center'
+              : props.navPlain
+                ? 'u-nav u-nav-plain'
+                : 'u-nav'
+          }
+        >
           {props.back ? (
             <View className="u-back" onClick={back}>
               <Text className="u-back-mark">‹</Text>
@@ -50,17 +75,27 @@ export function Screen(props: {
             <View className="u-back-spacer" />
           )}
           {props.centerTitle ? (
-            <Text className="u-nav-title u-nav-title-center">{props.title}</Text>
+            <Text
+              className={['u-nav-title', 'u-nav-title-center', titleSizeClass]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {props.title}
+            </Text>
           ) : (
             <View className="u-nav-copy">
-              {props.title ? <Text className="u-nav-title">{props.title}</Text> : null}
-              {props.subtitle ? <Text className="u-nav-sub">{props.subtitle}</Text> : null}
+              {props.title ? (
+                <Text className={['u-nav-title', titleSizeClass].filter(Boolean).join(' ')}>
+                  {props.title}
+                </Text>
+              ) : null}
+              {props.subtitle ? <Text className={subClass}>{props.subtitle}</Text> : null}
             </View>
           )}
           <View className="u-nav-side">{props.right}</View>
         </View>
       )}
-      <View className={props.footer ? 'u-body u-body-pad' : 'u-body'}>{props.children}</View>
+      <View className={bodyClass}>{props.children}</View>
       {props.footer ? <View className="u-foot">{props.footer}</View> : null}
     </View>
   );

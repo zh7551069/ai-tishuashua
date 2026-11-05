@@ -14,22 +14,25 @@ export function PackSheet(props: {
   onRename: (id: string, name: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) {
-  const selected = props.items.find((item) => item.id === props.activeId) ?? props.items[0];
-  const [draft, setDraft] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const [pending, setPending] = useState<PackView | null>(null);
+  const renaming = props.items.find((item) => item.id === renameId) ?? null;
+  const hasUnavailable = props.items.some((item) => item.unavailable);
 
   const rename = async () => {
-    if (!selected || selected.unavailable) {
+    if (!renaming || renaming.unavailable) {
       return;
     }
-    const name = (draft ?? '').trim();
+    const name = draft.trim();
     if (!name) {
       void Taro.showToast({ title: '请填写刷题包名称', icon: 'none' });
       return;
     }
     try {
-      await props.onRename(selected.id, name);
-      setDraft(null);
+      await props.onRename(renaming.id, name);
+      setRenameId(null);
       void Taro.showToast({ title: '已重命名', icon: 'success' });
     } catch (error) {
       void Taro.showToast({
@@ -40,33 +43,115 @@ export function PackSheet(props: {
   };
 
   return (
-    <View className="u-sheet-mask" onClick={props.onClose}>
-      <View className="u-sheet" onClick={(event) => event.stopPropagation()}>
+    <View
+      className="u-sheet-mask u-mask-dim"
+      onClick={() => {
+        if (pending) {
+          return;
+        }
+        props.onClose();
+      }}
+    >
+      <View className="u-sheet u-sheet-pack" onClick={(event) => event.stopPropagation()}>
+        <View className="u-sheet-handle" />
         <Text className="u-sheet-title">切换刷题包</Text>
-        <ScrollView scrollY className="u-sheet-list">
+        <ScrollView scrollY className="u-sheet-cards">
           {props.items.map((item) => {
-            const on = item.id === selected?.id;
+            const on = item.id === props.activeId;
+            const rowClass = item.unavailable
+              ? 'u-sheet-option u-sheet-option-off'
+              : on
+                ? 'u-sheet-option u-sheet-option-on'
+                : 'u-sheet-option';
             return (
-              <View key={item.id} className="u-sheet-row" onClick={() => props.onSelect(item.id)}>
-                <View className={on ? 'u-radio u-radio-on' : 'u-radio'} />
+              <View
+                key={item.id}
+                className={rowClass}
+                onClick={() => {
+                  setMenuId(null);
+                  if (item.unavailable || props.busy) {
+                    return;
+                  }
+                  props.onSelect(item.id);
+                }}
+              >
                 <View className="u-card-copy">
-                  <Text className="u-card-title" style={{ color: item.unavailable ? '#9ca3af' : '#111827' }}>
+                  <Text
+                    className={item.unavailable ? 'u-sheet-name u-kp-name-dim' : 'u-sheet-name'}
+                  >
                     {item.name}
                   </Text>
-                  <Text className="u-card-sub">
-                    {item.certName} · {item.knowledgePointCount} 个知识点
-                    {item.unavailable ? ' · 不可用' : ''}
-                  </Text>
+                  {item.unavailable ? (
+                    <View className="u-sheet-subrow">
+                      <Text className="u-flag">不可用</Text>
+                      <Text className="u-sheet-note">证书已下架 · 不可修改</Text>
+                    </View>
+                  ) : (
+                    <Text className="u-card-sub">
+                      {item.knowledgePointCount} 个知识点 · {item.domainName}
+                    </Text>
+                  )}
                 </View>
-                {item.unavailable ? <Text className="u-badge">不可用</Text> : null}
+                {item.unavailable ? (
+                  <Text
+                    className="u-row-delete"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setMenuId(null);
+                      setPending(item);
+                    }}
+                  >
+                    删除
+                  </Text>
+                ) : on ? (
+                  <View className="u-sheet-side">
+                    <View className="u-tickbox u-tickbox-on">
+                      <View className="u-tick" />
+                    </View>
+                    <Text
+                      className="u-more"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setMenuId(menuId === item.id ? null : item.id);
+                      }}
+                    >
+                      ⋯
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="u-tickbox" />
+                )}
+                {menuId === item.id ? (
+                  <View className="u-menu" onClick={(event) => event.stopPropagation()}>
+                    <Text
+                      className="u-menu-item"
+                      onClick={() => {
+                        setMenuId(null);
+                        setRenameId(item.id);
+                        setDraft(item.name);
+                      }}
+                    >
+                      重命名
+                    </Text>
+                    <Text
+                      className="u-menu-item u-menu-danger"
+                      onClick={() => {
+                        setMenuId(null);
+                        setPending(item);
+                      }}
+                    >
+                      删除
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             );
           })}
         </ScrollView>
-        {selected?.unavailable ? (
-          <Text className="u-meta">此包关联证书已下架，只能删除，不能重命名。</Text>
+        {hasUnavailable ? (
+          <Text className="u-sheet-hint">不可用项无法选中或编辑，仅可删除</Text>
         ) : null}
-        {draft !== null && selected && !selected.unavailable ? (
+        {renaming && !renaming.unavailable ? (
           <View>
             <Input
               className="u-search"
@@ -76,47 +161,52 @@ export function PackSheet(props: {
               placeholder="刷题包名称"
               onInput={(event) => setDraft(event.detail.value)}
             />
-            <Button className="u-btn" style={{ marginTop: '10px' }} disabled={props.busy} onClick={() => void rename()}>
+            <Button
+              className="u-btn"
+              style={{ marginTop: '10px' }}
+              disabled={props.busy}
+              onClick={() => void rename()}
+            >
               确认重命名
-            </Button>
-            <Button className="u-btn-ghost" style={{ marginTop: '8px' }} disabled={props.busy} onClick={() => setDraft(null)}>
-              取消
-            </Button>
-          </View>
-        ) : (
-          <View>
-            <Button className="u-btn" style={{ marginTop: '12px' }} disabled={props.busy} onClick={props.onCreate}>
-              新建刷题包
             </Button>
             <Button
               className="u-btn-ghost"
               style={{ marginTop: '8px' }}
-              disabled={props.busy || !selected || selected.unavailable}
-              onClick={() => setDraft(selected?.name ?? '')}
+              disabled={props.busy}
+              onClick={() => setRenameId(null)}
             >
-              重命名
-            </Button>
-            <Button
-              className="u-btn-danger"
-              style={{ marginTop: '8px' }}
-              disabled={props.busy || !selected}
-              onClick={() => setConfirming(true)}
-            >
-              删除
+              取消
             </Button>
           </View>
+        ) : (
+          <Button
+            className="u-btn"
+            style={{ marginTop: '4px' }}
+            disabled={props.busy}
+            onClick={props.onCreate}
+          >
+            新建刷题包
+          </Button>
         )}
+        {hasUnavailable ? null : <Text className="u-sheet-foot">也可从首页重新选择领域</Text>}
       </View>
-      {confirming && selected ? (
+      {pending ? (
         <ConfirmDialog
-          title="删除刷题包"
-          body={`确定删除「${selected.name}」？删除后不可恢复。`}
-          confirmText="删除"
-          danger
-          onCancel={() => setConfirming(false)}
+          title={pending.unavailable ? '删除不可用刷题包？' : '删除刷题包？'}
+          body={
+            pending.unavailable
+              ? '证书已下架，删除后无法恢复。\n不会影响其他可用刷题包。'
+              : `确定删除「${pending.name}」？\n删除后不可恢复。`
+          }
+          confirmText="确认删除"
+          solid
+          align="start"
+          mask="strong"
+          onCancel={() => setPending(null)}
           onConfirm={() => {
-            setConfirming(false);
-            void props.onDelete(selected.id).catch((error: unknown) => {
+            const pack = pending;
+            setPending(null);
+            void props.onDelete(pack.id).catch((error: unknown) => {
               void Taro.showToast({
                 title: error instanceof Error ? error.message : '删除失败',
                 icon: 'none',
