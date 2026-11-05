@@ -29,6 +29,8 @@ AI 刷题微信小程序与管理后台的 monorepo。微信登录已经接通�
 ├── packages
 │   ├── config         共享 tsconfig
 │   └── shared         类型、常量、队列契约
+├── design
+│   └── dev-cache      Figma 单帧缓存（见 design/dev-cache/README.md）
 ├── docker-compose.yml 本地 PostgreSQL 16 + Redis 7
 ├── .env.example
 └── package.json       pnpm workspace + Turborepo

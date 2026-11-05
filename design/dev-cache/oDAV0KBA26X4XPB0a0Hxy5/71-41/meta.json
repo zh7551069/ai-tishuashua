@@ -1,0 +1,65 @@
+{
+  "nodeId": "71:41",
+  "name": "筛选练习",
+  "page": "练习记录",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#16a34a",
+    "#2563eb",
+    "#4b5563",
+    "#9ca3af",
+    "#dcfce7",
+    "#e5e7eb",
+    "#ea580c",
+    "#eff6ff",
+    "#f8f9fb",
+    "#fff7ed"
+  ],
+  "fontSizes_px": [
+    10,
+    12,
+    13,
+    15,
+    16,
+    17,
+    30
+  ],
+  "gaps_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    16
+  ],
+  "paddings_px": [
+    2,
+    3,
+    5,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    28
+  ],
+  "radii_px": [
+    1,
+    2,
+    3,
+    4,
+    7,
+    10,
+    12,
+    14,
+    16
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=71-41",
+  "screenshot": "screenshot.png"
+}

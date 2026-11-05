@@ -1,0 +1,68 @@
+{
+  "nodeId": "119:222",
+  "name": "MaterialChecked",
+  "page": "首页选知识点",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#4b5563",
+    "#4f46e5",
+    "#9ca3af",
+    "#bfdbfe",
+    "#e5e7eb",
+    "#ea580c",
+    "#eef2ff",
+    "#eff6ff",
+    "#f8f9fb",
+    "#fff7ed"
+  ],
+  "fontSizes_px": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    16,
+    17,
+    18,
+    28
+  ],
+  "gaps_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12
+  ],
+  "paddings_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    40
+  ],
+  "radii_px": [
+    1,
+    2,
+    3,
+    6,
+    8,
+    10,
+    11,
+    12,
+    14,
+    16
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=119-222",
+  "screenshot": "screenshot.png"
+}

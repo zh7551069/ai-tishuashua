@@ -1,0 +1,38 @@
+{
+  "nodeId": "46:18",
+  "name": "失败",
+  "page": "错题本",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#9ca3af",
+    "#f8f9fb",
+    "#fee2e2"
+  ],
+  "fontSizes_px": [
+    13,
+    15,
+    17
+  ],
+  "gaps_px": [
+    6,
+    12
+  ],
+  "paddings_px": [
+    16,
+    20,
+    24,
+    28
+  ],
+  "radii_px": [
+    3,
+    14,
+    24,
+    44
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=46-18",
+  "screenshot": "screenshot.png"
+}

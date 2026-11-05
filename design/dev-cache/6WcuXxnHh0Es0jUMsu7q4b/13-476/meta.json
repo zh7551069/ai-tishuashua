@@ -1,0 +1,47 @@
+{
+  "nodeId": "13:476",
+  "name": "权益 SKU 编辑抽屉",
+  "page": "商业化",
+  "fileKey": "6WcuXxnHh0Es0jUMsu7q4b",
+  "cache_rev": 1,
+  "colors": [
+    "#0f172a",
+    "#2563eb",
+    "#64748b",
+    "#9a3412",
+    "#c2410c",
+    "#e2e8f0",
+    "#fff7ed"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    16
+  ],
+  "gaps_px": [
+    4,
+    6,
+    8,
+    16
+  ],
+  "paddings_px": [
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    24
+  ],
+  "radii_px": [
+    8,
+    999
+  ],
+  "rgba_samples": [
+    "rgba(15,23,42,0.4)"
+  ],
+  "figma": "https://www.figma.com/design/6WcuXxnHh0Es0jUMsu7q4b?node-id=13-476",
+  "screenshot": "screenshot.png"
+}

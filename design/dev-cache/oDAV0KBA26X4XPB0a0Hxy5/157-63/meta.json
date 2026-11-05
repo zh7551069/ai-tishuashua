@@ -1,0 +1,45 @@
+{
+  "nodeId": "157:63",
+  "name": "设置·加载失败",
+  "page": "我",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#4b5563",
+    "#9ca3af",
+    "#dc2626",
+    "#f8f9fb",
+    "#fee2e2"
+  ],
+  "fontSizes_px": [
+    13,
+    14,
+    15,
+    16,
+    17,
+    20,
+    28
+  ],
+  "gaps_px": [
+    6,
+    12
+  ],
+  "paddings_px": [
+    24,
+    28,
+    32
+  ],
+  "radii_px": [
+    1,
+    2,
+    3,
+    14,
+    18,
+    36
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=157-63",
+  "screenshot": "screenshot.png"
+}

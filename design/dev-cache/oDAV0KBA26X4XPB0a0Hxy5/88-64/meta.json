@@ -1,0 +1,71 @@
+{
+  "nodeId": "88:64",
+  "name": "练习·判断",
+  "page": "答题",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#14532d",
+    "#15803d",
+    "#166534",
+    "#16a34a",
+    "#2563eb",
+    "#4b5563",
+    "#86efac",
+    "#9ca3af",
+    "#b91c1c",
+    "#bbf7d0",
+    "#dc2626",
+    "#dcfce7",
+    "#e5e7eb",
+    "#eff6ff",
+    "#f0fdf4",
+    "#f3f4f6",
+    "#f8f9fb",
+    "#fca5a5",
+    "#fecaca",
+    "#fee2e2"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+  ],
+  "gaps_px": [
+    6,
+    8,
+    10,
+    12,
+    14
+  ],
+  "paddings_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    24,
+    28,
+    120
+  ],
+  "radii_px": [
+    2,
+    3,
+    4,
+    8,
+    12,
+    14,
+    16
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=88-64",
+  "screenshot": "screenshot.png"
+}

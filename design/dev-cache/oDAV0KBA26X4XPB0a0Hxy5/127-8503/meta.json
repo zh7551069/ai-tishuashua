@@ -1,0 +1,40 @@
+{
+  "nodeId": "127:8503",
+  "name": "额度用尽半屏",
+  "page": "商业化",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#9ca3af",
+    "#d1d5db",
+    "#e5e7eb",
+    "#eff6ff",
+    "#f3f4f6",
+    "#f5fafe",
+    "#f8f9fb"
+  ],
+  "fontSizes_px": [
+    10,
+    11,
+    13,
+    14,
+    15,
+    18
+  ],
+  "gaps_px": [],
+  "paddings_px": [],
+  "radii_px": [
+    3,
+    4,
+    14,
+    18,
+    26
+  ],
+  "rgba_samples": [
+    "rgba(17,24,39,0.4)"
+  ],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=127-8503",
+  "screenshot": "screenshot.png"
+}

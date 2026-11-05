@@ -1,0 +1,58 @@
+{
+  "nodeId": "3:126",
+  "name": "证书列表",
+  "page": "内容配置",
+  "fileKey": "6WcuXxnHh0Es0jUMsu7q4b",
+  "cache_rev": 1,
+  "colors": [
+    "#0f172a",
+    "#16a34a",
+    "#1e293b",
+    "#2563eb",
+    "#64748b",
+    "#94a3b8",
+    "#d97706",
+    "#e2e8f0",
+    "#ecfdf5",
+    "#eff6ff",
+    "#f1f5f9",
+    "#f8fafc",
+    "#fffbeb"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    16
+  ],
+  "gaps_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    16
+  ],
+  "paddings_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24
+  ],
+  "radii_px": [
+    8,
+    12,
+    999
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/6WcuXxnHh0Es0jUMsu7q4b?node-id=3-126",
+  "screenshot": "screenshot.png"
+}

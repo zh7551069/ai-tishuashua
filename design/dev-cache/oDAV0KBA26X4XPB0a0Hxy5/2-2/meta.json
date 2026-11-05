@@ -1,0 +1,39 @@
+{
+  "nodeId": "2:2",
+  "name": "1·选领域/Default",
+  "page": "首页选知识点",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#6b7280",
+    "#9ca3af",
+    "#e5e7eb",
+    "#eff6ff",
+    "#f3f4f6",
+    "#f5f6f8"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    14,
+    15,
+    16,
+    24
+  ],
+  "gaps_px": [
+    6
+  ],
+  "paddings_px": [
+    10
+  ],
+  "radii_px": [
+    1,
+    12,
+    999
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=2-2",
+  "screenshot": "screenshot.png"
+}

@@ -1,0 +1,71 @@
+{
+  "nodeId": "112:158",
+  "name": "返回清空·考试",
+  "page": "过程态",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#4b5563",
+    "#7c3aed",
+    "#93c5fd",
+    "#9ca3af",
+    "#c2410c",
+    "#d1d5db",
+    "#dc2626",
+    "#e5e7eb",
+    "#eff6ff",
+    "#f5f3ff",
+    "#f8f9fb",
+    "#fed7aa",
+    "#fff7ed"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+  ],
+  "gaps_px": [
+    6,
+    8,
+    10,
+    12,
+    14
+  ],
+  "paddings_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    28,
+    120
+  ],
+  "radii_px": [
+    2,
+    3,
+    4,
+    6,
+    8,
+    12,
+    14,
+    16
+  ],
+  "rgba_samples": [
+    "rgba(15,23,42,0.18)",
+    "rgba(15,23,42,0.6)"
+  ],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=112-158",
+  "screenshot": "screenshot.png"
+}

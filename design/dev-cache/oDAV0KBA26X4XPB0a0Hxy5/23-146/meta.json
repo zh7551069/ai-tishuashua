@@ -1,0 +1,70 @@
+{
+  "nodeId": "23:146",
+  "name": "题号跳转",
+  "page": "答题",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#059669",
+    "#10b981",
+    "#111827",
+    "#2563eb",
+    "#4b5563",
+    "#9ca3af",
+    "#d1d5db",
+    "#dc2626",
+    "#e5e7eb",
+    "#ea580c",
+    "#ecfdf5",
+    "#ef4444",
+    "#f3f4f6",
+    "#f8f9fb",
+    "#fdb974",
+    "#fdba74",
+    "#fef2f2",
+    "#fff7ed"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+  ],
+  "gaps_px": [
+    6,
+    8,
+    10,
+    14,
+    16
+  ],
+  "paddings_px": [
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    28
+  ],
+  "radii_px": [
+    2,
+    3,
+    4,
+    8,
+    12,
+    14,
+    16,
+    24
+  ],
+  "rgba_samples": [
+    "rgba(17,24,39,0.55)"
+  ],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=23-146",
+  "screenshot": "screenshot.png"
+}

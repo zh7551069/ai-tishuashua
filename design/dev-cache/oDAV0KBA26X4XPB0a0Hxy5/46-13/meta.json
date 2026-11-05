@@ -1,0 +1,40 @@
+{
+  "nodeId": "46:13",
+  "name": "加载",
+  "page": "错题本",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#e5e7eb",
+    "#f8f9fb"
+  ],
+  "fontSizes_px": [
+    15,
+    17
+  ],
+  "gaps_px": [
+    6,
+    8,
+    10,
+    12,
+    16
+  ],
+  "paddings_px": [
+    8,
+    14,
+    16,
+    20,
+    24
+  ],
+  "radii_px": [
+    2,
+    3,
+    4,
+    6,
+    14
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=46-13",
+  "screenshot": "screenshot.png"
+}

@@ -1,0 +1,64 @@
+{
+  "nodeId": "94:65",
+  "name": "Auth/Authorizing",
+  "page": "新用户",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#07c160",
+    "#111827",
+    "#16a34a",
+    "#2563eb",
+    "#4b5563",
+    "#60a5fa",
+    "#7c3aed",
+    "#93c5fd",
+    "#9ca3af",
+    "#dcfce7",
+    "#e5e7eb",
+    "#eff6ff",
+    "#f5f3ff"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    26
+  ],
+  "gaps_px": [
+    2,
+    4,
+    8,
+    10,
+    12,
+    14
+  ],
+  "paddings_px": [
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    24,
+    28,
+    30
+  ],
+  "radii_px": [
+    3,
+    10,
+    12,
+    14,
+    18,
+    20,
+    36
+  ],
+  "rgba_samples": [
+    "rgba(15,23,42,0.63)"
+  ],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=94-65",
+  "screenshot": "screenshot.png"
+}

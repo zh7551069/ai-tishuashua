@@ -1,0 +1,61 @@
+{
+  "nodeId": "3:379",
+  "name": "证书下架确认",
+  "page": "内容配置",
+  "fileKey": "6WcuXxnHh0Es0jUMsu7q4b",
+  "cache_rev": 1,
+  "colors": [
+    "#0f172a",
+    "#16a34a",
+    "#1e293b",
+    "#2563eb",
+    "#64748b",
+    "#94a3b8",
+    "#e2e8f0",
+    "#ecfdf5",
+    "#ef4444",
+    "#eff6ff",
+    "#f1f5f9",
+    "#f8fafc",
+    "#fef2f2"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    16
+  ],
+  "gaps_px": [
+    2,
+    4,
+    8,
+    10,
+    12,
+    14,
+    16
+  ],
+  "paddings_px": [
+    2,
+    4,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    250
+  ],
+  "radii_px": [
+    8,
+    12,
+    16,
+    999
+  ],
+  "rgba_samples": [
+    "rgba(15,23,42,0.6)"
+  ],
+  "figma": "https://www.figma.com/design/6WcuXxnHh0Es0jUMsu7q4b?node-id=3-379",
+  "screenshot": "screenshot.png"
+}

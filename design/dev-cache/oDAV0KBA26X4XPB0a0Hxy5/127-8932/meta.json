@@ -1,0 +1,36 @@
+{
+  "nodeId": "127:8932",
+  "name": "场次明细",
+  "page": "商业化",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#059669",
+    "#111827",
+    "#2563eb",
+    "#9ca3af",
+    "#dc2626",
+    "#e5e7eb",
+    "#ecfdf5",
+    "#f8f9fb",
+    "#fef2f2"
+  ],
+  "fontSizes_px": [
+    10,
+    11,
+    12,
+    13,
+    15,
+    16,
+    18,
+    28
+  ],
+  "gaps_px": [],
+  "paddings_px": [],
+  "radii_px": [
+    3
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=127-8932",
+  "screenshot": "screenshot.png"
+}

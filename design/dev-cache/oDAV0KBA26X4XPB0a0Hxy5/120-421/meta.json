@@ -1,0 +1,54 @@
+{
+  "nodeId": "120:421",
+  "name": "Success",
+  "page": "上传教材",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#16a34a",
+    "#2563eb",
+    "#4b5563",
+    "#9ca3af",
+    "#bbf7d0",
+    "#e5e7eb",
+    "#eff6ff",
+    "#f0fdf4",
+    "#f8f9fb"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    28
+  ],
+  "gaps_px": [
+    2,
+    6,
+    8,
+    10,
+    12
+  ],
+  "paddings_px": [
+    12,
+    14,
+    16,
+    24
+  ],
+  "radii_px": [
+    1,
+    2,
+    3,
+    10,
+    12,
+    14,
+    18
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=120-421",
+  "screenshot": "screenshot.png"
+}

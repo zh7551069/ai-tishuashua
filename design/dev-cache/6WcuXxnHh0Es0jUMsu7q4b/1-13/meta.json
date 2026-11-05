@@ -1,0 +1,45 @@
+{
+  "nodeId": "1:13",
+  "name": "登录",
+  "page": "登录",
+  "fileKey": "6WcuXxnHh0Es0jUMsu7q4b",
+  "cache_rev": 1,
+  "colors": [
+    "#0b1220",
+    "#0f172a",
+    "#2563eb",
+    "#64748b",
+    "#e2e8f0"
+  ],
+  "fontSizes_px": [
+    12,
+    13,
+    14,
+    15,
+    16,
+    18
+  ],
+  "gaps_px": [
+    6,
+    8,
+    10,
+    18
+  ],
+  "paddings_px": [
+    6,
+    8,
+    10,
+    12,
+    18,
+    28,
+    32
+  ],
+  "radii_px": [
+    8,
+    10,
+    16
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/6WcuXxnHh0Es0jUMsu7q4b?node-id=1-13",
+  "screenshot": "screenshot.png"
+}

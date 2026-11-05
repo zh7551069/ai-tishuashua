@@ -1,0 +1,60 @@
+{
+  "nodeId": "120:371",
+  "name": "AIExtracting",
+  "page": "上传教材",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#16a34a",
+    "#2563eb",
+    "#4b5563",
+    "#9ca3af",
+    "#d97706",
+    "#e5e7eb",
+    "#ea580c",
+    "#eff6ff",
+    "#f8f9fb",
+    "#fff7ed"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    16,
+    17,
+    20,
+    28
+  ],
+  "gaps_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12
+  ],
+  "paddings_px": [
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24
+  ],
+  "radii_px": [
+    1,
+    2,
+    3,
+    8,
+    12,
+    14,
+    16,
+    48
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=120-371",
+  "screenshot": "screenshot.png"
+}

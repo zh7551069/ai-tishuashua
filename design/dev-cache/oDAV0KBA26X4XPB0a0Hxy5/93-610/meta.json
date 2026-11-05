@@ -1,0 +1,59 @@
+{
+  "nodeId": "93:610",
+  "name": "激励·考试通过",
+  "page": "结果",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#16a34a",
+    "#2563eb",
+    "#4ade80",
+    "#4b5563",
+    "#7c3aed",
+    "#8b5cf6",
+    "#93c5fd",
+    "#9ca3af",
+    "#f5f3ff",
+    "#facc15"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    26,
+    36
+  ],
+  "gaps_px": [
+    2,
+    4,
+    10,
+    12
+  ],
+  "paddings_px": [
+    5,
+    10,
+    14,
+    16,
+    22
+  ],
+  "radii_px": [
+    2,
+    11,
+    14,
+    20,
+    34,
+    40
+  ],
+  "rgba_samples": [
+    "rgba(15,23,41,0.22)",
+    "rgba(15,23,42,0.55)",
+    "rgba(255,255,255,0.8)",
+    "rgba(37,99,235,0.12)"
+  ],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=93-610",
+  "screenshot": "screenshot.png"
+}
