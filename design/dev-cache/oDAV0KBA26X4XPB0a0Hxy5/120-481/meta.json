@@ -1,0 +1,50 @@
+{
+  "nodeId": "120:481",
+  "name": "Fail",
+  "page": "上传教材",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#4b5563",
+    "#dc2626",
+    "#e5e7eb",
+    "#f8f9fb",
+    "#fee2e2"
+  ],
+  "fontSizes_px": [
+    12,
+    13,
+    14,
+    16,
+    17,
+    18,
+    28
+  ],
+  "gaps_px": [
+    2,
+    6,
+    8,
+    10,
+    12
+  ],
+  "paddings_px": [
+    8,
+    12,
+    16,
+    24
+  ],
+  "radii_px": [
+    1,
+    2,
+    3,
+    10,
+    14,
+    18,
+    36
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=120-481",
+  "screenshot": "screenshot.png"
+}

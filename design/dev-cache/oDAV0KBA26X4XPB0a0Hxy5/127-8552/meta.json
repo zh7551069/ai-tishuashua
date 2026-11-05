@@ -1,0 +1,37 @@
+{
+  "nodeId": "127:8552",
+  "name": "会员定价",
+  "page": "商业化",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#6b7280",
+    "#9ca3af",
+    "#adc9fc",
+    "#c6dbff",
+    "#e5e7eb",
+    "#ea580c",
+    "#eff6ff",
+    "#f8f9fb"
+  ],
+  "fontSizes_px": [
+    10,
+    11,
+    12,
+    13,
+    15,
+    16,
+    18,
+    20
+  ],
+  "gaps_px": [],
+  "paddings_px": [],
+  "radii_px": [
+    3
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=127-8552",
+  "screenshot": "screenshot.png"
+}

@@ -1,0 +1,51 @@
+{
+  "nodeId": "18:589",
+  "name": "出题设置·默认",
+  "page": "出题设置",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#4b5563",
+    "#9ca3af",
+    "#e5e7eb",
+    "#f8f9fb"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    18,
+    20
+  ],
+  "gaps_px": [
+    3,
+    5,
+    8,
+    10,
+    12,
+    20
+  ],
+  "paddings_px": [
+    8,
+    10,
+    11,
+    12,
+    16,
+    18,
+    20
+  ],
+  "radii_px": [
+    8,
+    10,
+    14,
+    22
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=18-589",
+  "screenshot": "screenshot.png"
+}

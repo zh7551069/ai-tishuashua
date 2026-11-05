@@ -1,0 +1,36 @@
+{
+  "nodeId": "156:2",
+  "name": "legal/terms",
+  "page": "我",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#6b7280",
+    "#cbd5e1",
+    "#f8f9fb"
+  ],
+  "fontSizes_px": [
+    14,
+    15,
+    17,
+    28
+  ],
+  "gaps_px": [
+    6,
+    14
+  ],
+  "paddings_px": [
+    16,
+    20,
+    24
+  ],
+  "radii_px": [
+    1,
+    2,
+    3
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=156-2",
+  "screenshot": "screenshot.png"
+}

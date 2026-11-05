@@ -1,0 +1,45 @@
+{
+  "nodeId": "13:816",
+  "name": "补发 / 作废确认",
+  "page": "商业化",
+  "fileKey": "6WcuXxnHh0Es0jUMsu7q4b",
+  "cache_rev": 1,
+  "colors": [
+    "#0f172a",
+    "#2563eb",
+    "#334155",
+    "#64748b",
+    "#c2410c",
+    "#e2e8f0",
+    "#f8fafc",
+    "#fff7ed"
+  ],
+  "fontSizes_px": [
+    12,
+    13,
+    16
+  ],
+  "gaps_px": [
+    6,
+    8,
+    14
+  ],
+  "paddings_px": [
+    6,
+    8,
+    10,
+    12,
+    14,
+    20,
+    24
+  ],
+  "radii_px": [
+    8,
+    16
+  ],
+  "rgba_samples": [
+    "rgba(15,23,42,0.4)"
+  ],
+  "figma": "https://www.figma.com/design/6WcuXxnHh0Es0jUMsu7q4b?node-id=13-816",
+  "screenshot": "screenshot.png"
+}

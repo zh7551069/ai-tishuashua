@@ -1,0 +1,49 @@
+{
+  "nodeId": "71:22",
+  "name": "空数据",
+  "page": "练习记录",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#9ca3af",
+    "#e5e7eb",
+    "#eff6ff",
+    "#f8f9fb"
+  ],
+  "fontSizes_px": [
+    10,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+  ],
+  "gaps_px": [
+    6,
+    8,
+    12
+  ],
+  "paddings_px": [
+    3,
+    7,
+    12,
+    14,
+    16,
+    20,
+    24,
+    28
+  ],
+  "radii_px": [
+    1,
+    2,
+    3,
+    7,
+    14
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=71-22",
+  "screenshot": "screenshot.png"
+}

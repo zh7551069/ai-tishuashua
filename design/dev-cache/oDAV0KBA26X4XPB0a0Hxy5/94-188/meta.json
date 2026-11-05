@@ -1,0 +1,54 @@
+{
+  "nodeId": "94:188",
+  "name": "Auth/Success",
+  "page": "新用户",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#16a34a",
+    "#2563eb",
+    "#4b5563",
+    "#93c5fd",
+    "#9ca3af",
+    "#dcfce7",
+    "#e5e7eb",
+    "#eff6ff"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    15,
+    16,
+    18,
+    22
+  ],
+  "gaps_px": [
+    2,
+    4,
+    8,
+    10,
+    12,
+    14
+  ],
+  "paddings_px": [
+    16,
+    18,
+    20,
+    24,
+    28
+  ],
+  "radii_px": [
+    3,
+    6,
+    12,
+    14,
+    16,
+    18,
+    24
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=94-188",
+  "screenshot": "screenshot.png"
+}

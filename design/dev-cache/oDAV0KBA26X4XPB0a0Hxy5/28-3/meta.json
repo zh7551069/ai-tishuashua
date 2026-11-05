@@ -1,0 +1,71 @@
+{
+  "nodeId": "28:3",
+  "name": "结果默认",
+  "page": "结果",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#16a34a",
+    "#2563eb",
+    "#4b5563",
+    "#9ca3af",
+    "#dc2626",
+    "#e5e7eb",
+    "#ea580c",
+    "#eff6ff",
+    "#f8f9fb",
+    "#fca5a5",
+    "#fdba74",
+    "#fee2e2",
+    "#fef2f2",
+    "#fff7ed"
+  ],
+  "fontSizes_px": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    20,
+    22,
+    28
+  ],
+  "gaps_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    16
+  ],
+  "paddings_px": [
+    2,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    28,
+    120
+  ],
+  "radii_px": [
+    2,
+    3,
+    4,
+    6,
+    11,
+    14,
+    16
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=28-3",
+  "screenshot": "screenshot.png"
+}

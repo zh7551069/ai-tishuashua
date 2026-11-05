@@ -1,0 +1,60 @@
+{
+  "nodeId": "58:3",
+  "name": "我·默认",
+  "page": "我",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#4b5563",
+    "#93c5fd",
+    "#9ca3af",
+    "#cbd5e1",
+    "#dc2626",
+    "#e5e7eb",
+    "#eff6ff",
+    "#f8f9fb"
+  ],
+  "fontSizes_px": [
+    9,
+    11,
+    12,
+    15,
+    17,
+    18,
+    22
+  ],
+  "gaps_px": [
+    2,
+    6,
+    8,
+    12,
+    16
+  ],
+  "paddings_px": [
+    4,
+    5,
+    6,
+    8,
+    12,
+    14,
+    16,
+    20,
+    24,
+    28,
+    56
+  ],
+  "radii_px": [
+    1,
+    2,
+    3,
+    8,
+    14,
+    16,
+    28
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=58-3",
+  "screenshot": "screenshot.png"
+}

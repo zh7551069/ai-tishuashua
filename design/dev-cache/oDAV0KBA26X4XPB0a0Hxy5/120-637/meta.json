@@ -1,0 +1,53 @@
+{
+  "nodeId": "120:637",
+  "name": "弹窗/删除不可用刷题包",
+  "page": "首页已选知识点",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#4b5563",
+    "#9ca3af",
+    "#d97706",
+    "#dc2626",
+    "#e5e7eb",
+    "#f3f4f6",
+    "#f8f9fb",
+    "#fef2f2"
+  ],
+  "fontSizes_px": [
+    11,
+    13,
+    14,
+    15,
+    16,
+    17,
+    26
+  ],
+  "gaps_px": [
+    6,
+    10,
+    12
+  ],
+  "paddings_px": [
+    3,
+    7,
+    8,
+    16,
+    20,
+    24
+  ],
+  "radii_px": [
+    1,
+    2,
+    6,
+    12,
+    16,
+    20
+  ],
+  "rgba_samples": [
+    "rgba(15,23,42,0.6)"
+  ],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=120-637",
+  "screenshot": "screenshot.png"
+}

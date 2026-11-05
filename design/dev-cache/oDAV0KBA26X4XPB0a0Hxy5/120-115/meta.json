@@ -1,0 +1,54 @@
+{
+  "nodeId": "120:115",
+  "name": "Error",
+  "page": "首页选知识点",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#4b5563",
+    "#9ca3af",
+    "#dc2626",
+    "#e5e7eb",
+    "#f8f9fb",
+    "#fee2e2"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    28
+  ],
+  "gaps_px": [
+    2,
+    6,
+    8,
+    12
+  ],
+  "paddings_px": [
+    6,
+    12,
+    14,
+    16,
+    24,
+    28
+  ],
+  "radii_px": [
+    1,
+    2,
+    11,
+    12,
+    14,
+    18,
+    36
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=120-115",
+  "screenshot": "screenshot.png"
+}

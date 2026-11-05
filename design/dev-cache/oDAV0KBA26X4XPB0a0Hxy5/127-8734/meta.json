@@ -1,0 +1,46 @@
+{
+  "nodeId": "127:8734",
+  "name": "场次加油包半屏",
+  "page": "商业化",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#2563eb",
+    "#6b7280",
+    "#93b4d4",
+    "#9ca3af",
+    "#d1d5db",
+    "#e5e7eb",
+    "#ea580c",
+    "#f3f4f6",
+    "#f5fafe",
+    "#f8f9fb",
+    "#fde68a",
+    "#fffbeb"
+  ],
+  "fontSizes_px": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    18,
+    24
+  ],
+  "gaps_px": [],
+  "paddings_px": [],
+  "radii_px": [
+    3,
+    4,
+    14,
+    18
+  ],
+  "rgba_samples": [
+    "rgba(17,27,56,0.6)"
+  ],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=127-8734",
+  "screenshot": "screenshot.png"
+}

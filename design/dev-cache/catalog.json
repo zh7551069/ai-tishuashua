@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "cache_root": "design/dev-cache",
+  "updated_at": "2026-11-05T12:14:42.050027+00:00",
+  "products": [
+    {
+      "id": "tishuashua-mini",
+      "name": "AI刷题 / 题刷刷小程序",
+      "product_line": "题刷刷",
+      "repo": "zh7551069/ai-tishuashua",
+      "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+      "figma_url": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5",
+      "dir": "tishuashua-mini",
+      "status": "cached",
+      "pages_known": [
+        "97:2 APP图标",
+        "94:9 新用户",
+        "1:44 首页选知识点",
+        "0:1 首页已选知识点",
+        "11:2 出题设置页",
+        "22:2 答题页",
+        "28:2 结果页",
+        "31:2 错题回顾",
+        "46:2 错题本",
+        "51:2 过程态",
+        "58:2 我",
+        "71:2 练习记录",
+        "85:2 错题详情",
+        "120:294 上传教材",
+        "122:2 商业化 v2.0.0"
+      ],
+      "frames_cached": 92
+    },
+    {
+      "id": "tishuashua-admin",
+      "name": "题刷刷后管系统",
+      "product_line": "题刷刷",
+      "repo": "zh7551069/ai-tishuashua",
+      "fileKey": "6WcuXxnHh0Es0jUMsu7q4b",
+      "figma_url": "https://www.figma.com/design/6WcuXxnHh0Es0jUMsu7q4b",
+      "dir": "tishuashua-admin",
+      "status": "cached",
+      "frames_cached": 28
+    }
+  ],
+  "pull": {
+    "confirmed_by": "hui",
+    "scope": "all",
+    "approx_frames": 141,
+    "root": "/workspace/figma-dev-cache",
+    "completed_at": "2026-11-05T12:14:42.050027+00:00",
+    "frames_total": 141,
+    "frames_failed": 0
+  }
+}

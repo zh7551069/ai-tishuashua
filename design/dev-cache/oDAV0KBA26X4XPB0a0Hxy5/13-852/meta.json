@@ -1,0 +1,50 @@
+{
+  "nodeId": "13:852",
+  "name": "选择知识点·已保存提示",
+  "page": "首页已选知识点",
+  "fileKey": "oDAV0KBA26X4XPB0a0Hxy5",
+  "cache_rev": 1,
+  "colors": [
+    "#111827",
+    "#16a34a",
+    "#2563eb",
+    "#4b5563",
+    "#6b7280",
+    "#e5e7eb",
+    "#f0fdf4",
+    "#f8f9fb"
+  ],
+  "fontSizes_px": [
+    12,
+    13,
+    15,
+    16,
+    22
+  ],
+  "gaps_px": [
+    4,
+    5,
+    8,
+    10,
+    12
+  ],
+  "paddings_px": [
+    12,
+    14,
+    16,
+    20,
+    24
+  ],
+  "radii_px": [
+    4,
+    10,
+    12,
+    14
+  ],
+  "rgba_samples": [
+    "rgba(20,83,45,0.08)",
+    "rgba(22,163,74,0.25)"
+  ],
+  "figma": "https://www.figma.com/design/oDAV0KBA26X4XPB0a0Hxy5?node-id=13-852",
+  "screenshot": "screenshot.png"
+}

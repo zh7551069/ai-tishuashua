@@ -1,0 +1,61 @@
+{
+  "nodeId": "13:252",
+  "name": "用户权益",
+  "page": "商业化",
+  "fileKey": "6WcuXxnHh0Es0jUMsu7q4b",
+  "cache_rev": 1,
+  "colors": [
+    "#059669",
+    "#0f172a",
+    "#1e293b",
+    "#2563eb",
+    "#64748b",
+    "#94a3b8",
+    "#9a3412",
+    "#c2410c",
+    "#e2e8f0",
+    "#ecfdf5",
+    "#eff6ff",
+    "#f1f5f9",
+    "#f8fafc",
+    "#fff7ed"
+  ],
+  "fontSizes_px": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "gaps_px": [
+    2,
+    4,
+    8,
+    10,
+    12,
+    14,
+    16
+  ],
+  "paddings_px": [
+    2,
+    4,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24
+  ],
+  "radii_px": [
+    8,
+    10,
+    12,
+    999
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/6WcuXxnHh0Es0jUMsu7q4b?node-id=13-252",
+  "screenshot": "screenshot.png"
+}

@@ -1,0 +1,59 @@
+{
+  "nodeId": "4:134",
+  "name": "Prompt模板编辑",
+  "page": "出题配置",
+  "fileKey": "6WcuXxnHh0Es0jUMsu7q4b",
+  "cache_rev": 1,
+  "colors": [
+    "#0b1220",
+    "#0f172a",
+    "#1e293b",
+    "#2563eb",
+    "#64748b",
+    "#93c5fd",
+    "#94a3b8",
+    "#cbd5e1",
+    "#d97706",
+    "#e2e8f0",
+    "#eff6ff",
+    "#f1f5f9",
+    "#f8fafc",
+    "#fffbeb"
+  ],
+  "fontSizes_px": [
+    11,
+    12,
+    13,
+    14,
+    16
+  ],
+  "gaps_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    16
+  ],
+  "paddings_px": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24
+  ],
+  "radii_px": [
+    8,
+    12,
+    999
+  ],
+  "rgba_samples": [],
+  "figma": "https://www.figma.com/design/6WcuXxnHh0Es0jUMsu7q4b?node-id=4-134",
+  "screenshot": "screenshot.png"
+}
