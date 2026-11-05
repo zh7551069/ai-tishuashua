@@ -45,6 +45,8 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - run: bash -n scripts/deploy.sh
+      - run: bash scripts/deploy.sh --dry-run --skip-pull
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
