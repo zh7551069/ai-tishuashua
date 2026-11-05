@@ -127,7 +127,7 @@ export function WrongBookPage() {
 
   return (
     <section className="panel wide">
-      <h1>错题</h1>
+      <h1>错题库</h1>
       <p className="muted">
         只读查看全站错题。默认包含未消灭和已消灭，按更新时间从新到旧。这里不能消灭或删除。
       </p>
