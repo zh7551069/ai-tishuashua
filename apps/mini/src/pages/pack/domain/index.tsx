@@ -9,9 +9,11 @@ import { fetchCertificates, fetchDomains } from '../../../services/catalog-api';
 import { withAuth } from '../../../services/guard';
 import { domainBlurb, domainIcon, type DomainIcon } from '../../../ui/catalog-present';
 import iconAi from './assets/icon-ai.png';
+import iconChevron from './assets/icon-chevron.png';
 import iconEdu from './assets/icon-edu.png';
 import iconMoney from './assets/icon-money.png';
 import iconPlain from './assets/icon-plain.png';
+import iconSearch from './assets/icon-search.png';
 
 const DOMAIN_ICONS: Record<DomainIcon, string> = {
   ai: iconAi,
@@ -128,17 +130,17 @@ export default function DomainPage() {
           className="domain-head"
           style={{ marginTop: `-${inset}px`, paddingTop: `${inset}px` }}
         >
-          <View className="u-greet u-greet-domain">
-            <View className="u-greet-copy">
-              <Text className="u-greet-title u-greet-title-domain">你好，备考人</Text>
-              <Text className="u-crumb">选领域 → 证书 → 知识点</Text>
+          <View className="domain-header">
+            <View className="domain-title-row">
+              <Text className="domain-hello">你好，备考人</Text>
+              <View
+                className="domain-me"
+                onClick={() => void Taro.navigateTo({ url: '/pages/settings/index' })}
+              >
+                <Text className="domain-me-text">我</Text>
+              </View>
             </View>
-            <View
-              className="u-me"
-              onClick={() => void Taro.navigateTo({ url: '/pages/settings/index' })}
-            >
-              <Text className="u-me-text">我</Text>
-            </View>
+            <Text className="domain-crumb">选领域 → 证书 → 知识点</Text>
           </View>
           <Steps className="domain-steps" current={1} />
           <View className="domain-search">{search}</View>
@@ -160,7 +162,7 @@ export default function DomainPage() {
             ? visible.map((item) => (
                 <View
                   key={item.id}
-                  className="u-pick"
+                  className="domain-card"
                   onClick={() => {
                     void Taro.navigateTo({
                       url: `/pages/pack/certificate/index?domainId=${item.id}`,
@@ -168,14 +170,14 @@ export default function DomainPage() {
                   }}
                 >
                   <DomainMark name={item.name} code={item.code} />
-                  <View className="u-card-copy">
-                    <Text className="u-card-title">{item.name}</Text>
-                    <Text className="u-card-sub">{domainBlurb(item)}</Text>
+                  <View className="domain-card-body">
+                    <Text className="domain-card-title">{item.name}</Text>
+                    <Text className="domain-card-sub">{domainBlurb(item)}</Text>
                     {counts[item.id] === undefined ? null : (
-                      <Text className="u-count-link">{counts[item.id]} 个证书</Text>
+                      <Text className="domain-card-count">{counts[item.id]} 个证书</Text>
                     )}
                   </View>
-                  <Text className="u-chev">›</Text>
+                  <Image className="domain-chev" src={iconChevron} mode="aspectFit" />
                 </View>
               ))
             : null}
@@ -192,7 +194,7 @@ function DomainSearch(props: {
 }) {
   return (
     <View className="u-search">
-      <Text className="u-search-mark">⌕</Text>
+      <Image className="domain-search-ico" src={iconSearch} mode="aspectFit" />
       <Input
         className="u-search-input"
         placeholder={props.placeholder}
@@ -207,7 +209,7 @@ function DomainSearch(props: {
 function DomainMark(props: { name: string; code: string }) {
   const kind: DomainIcon = domainIcon(props);
   return (
-    <View className="u-mark">
+    <View className="domain-mark">
       <Image className="domain-ico" src={DOMAIN_ICONS[kind]} mode="aspectFit" />
     </View>
   );

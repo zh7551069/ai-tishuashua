@@ -1937,43 +1937,6 @@
   line-height: 30px;
 }
 
-.u-greet-domain {
-  align-items: center;
-  padding: 12px 20px 4px;
-}
-
-.u-greet-title-domain {
-  color: #111827;
-  font-size: 24px;
-  line-height: 32px;
-}
-
-.u-crumb {
-  display: block;
-  margin-top: 4px;
-  color: #6b7280;
-  font-size: 13px;
-  line-height: 18px;
-}
-
-.u-me {
-  width: 36px;
-  height: 36px;
-  border-radius: 18px;
-  background: #eff6ff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.u-me-text {
-  color: #2563eb;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 18px;
-}
-
 .u-greet-sub-warn {
   color: #d97706;
 }
@@ -1988,14 +1951,6 @@
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   box-sizing: border-box;
-}
-
-.u-count-link {
-  margin-top: 4px;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 16px;
 }
 
 .u-pick .u-card-title {
@@ -2521,61 +2476,206 @@
   margin-top: 20px;
 }
 
-/* 2:2 选领域。只出现在 domain-sheet 里，证书页的 u-pick / u-steps 不动。 */
+/* 选领域页。尺寸对齐 Figma-Bridge HTML（390）。证书页的 u-pick / u-steps 不走这里。 */
 .domain-sheet {
+  flex: 1;
   display: flex;
   flex-direction: column;
   background: #f5f6f8;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
 }
 
 .domain-head {
   background: #ffffff;
 }
 
+.domain-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 20px 16px;
+  box-sizing: border-box;
+}
+
+.domain-title-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.domain-hello {
+  color: #111827;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 36px;
+}
+
+.domain-me {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.domain-me-text {
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.domain-crumb {
+  display: block;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
 .domain-steps {
-  padding: 4px 20px 8px;
+  padding: 0 20px 12px;
   background: #ffffff;
+  box-sizing: border-box;
+}
+
+.domain-steps .u-step-dot {
+  border: none;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+.domain-steps .u-step-dot-on {
+  background: #2563eb;
+  box-shadow: none;
+}
+
+.domain-steps .u-step-num {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.domain-steps .u-step-num-on {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+.domain-steps .u-step-line {
+  margin: 0 8px 0 6px;
 }
 
 .domain-search {
-  padding: 4px 20px 12px;
+  padding: 0 20px 12px;
   background: #ffffff;
+  box-sizing: border-box;
+}
+
+.domain-search .u-search {
+  height: 42px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 12px;
+  background: #f3f4f6;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+.domain-search-ico {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.domain-search .u-search-input {
+  height: 20px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
 }
 
 .domain-list {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   padding: 8px 20px 24px;
   background: #f5f6f8;
   box-sizing: border-box;
 }
 
 .domain-section {
-  margin: 0 0 10px;
+  margin: 0;
   color: #111827;
   font-size: 16px;
   font-weight: 700;
   line-height: 22px;
 }
 
-.domain-list .u-pick {
-  margin-bottom: 12px;
+.domain-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
   padding: 16px;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  box-sizing: border-box;
+}
+
+.domain-mark {
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
-  box-shadow: none;
-}
-
-.domain-list .u-card-sub,
-.domain-list .u-count-link {
-  margin-top: 2px;
-}
-
-.domain-list .u-count-link {
-  font-weight: 500;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .domain-ico {
   width: 24px;
   height: 24px;
+}
+
+.domain-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.domain-card-title {
+  color: #111827;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.domain-card-sub {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
+.domain-card-count {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
+.domain-chev {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
