@@ -1,0 +1,316 @@
+/* 出题/交卷/退出/变异弹层。尺寸对齐 design/bridge-export/dialogs-20261107 居中卡片。 */
+
+.dlg-scrim {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.dlg-scrim-strong {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.dlg-card {
+  position: absolute;
+  left: 40px;
+  top: 262px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 310px;
+  padding: 28px 20px 24px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  box-sizing: border-box;
+}
+
+.dlg-card-wide {
+  left: 36px;
+  top: 285px;
+  width: 318px;
+}
+
+.dlg-card-exit {
+  border-radius: 16px;
+}
+
+.dlg-glyph {
+  position: relative;
+  width: 68px;
+  height: 68px;
+}
+
+.dlg-glyph-img,
+.dlg-glyph-still {
+  width: 68px;
+  height: 68px;
+}
+
+.dlg-glyph-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.dlg-spin {
+  animation: dlg-spin 0.9s linear infinite;
+}
+
+@keyframes dlg-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dlg-titleblock,
+.dlg-bodyblock,
+.dlg-meta,
+.dlg-actions,
+.dlg-hint {
+  align-self: stretch;
+}
+
+.dlg-titleblock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dlg-title {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 26px;
+  text-align: center;
+}
+
+.dlg-sub {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  text-align: center;
+}
+
+.dlg-count {
+  color: #2563eb;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+
+.dlg-bar {
+  align-self: stretch;
+  height: 8px;
+  border-radius: 6px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.dlg-bar-fill {
+  height: 8px;
+  border-radius: 6px;
+  background: #2563eb;
+}
+
+.dlg-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.dlg-meta-line {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  text-align: center;
+}
+
+.dlg-bodyblock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dlg-body {
+  align-self: stretch;
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  text-align: center;
+}
+
+.dlg-banner {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: #fff7ed;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px #fdba74;
+  box-sizing: border-box;
+}
+
+.dlg-banner-text {
+  color: #c2410c;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  text-align: center;
+}
+
+.dlg-hint {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.dlg-clock {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.dlg-hint-text {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.dlg-caption {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  text-align: center;
+}
+
+.dlg-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.dlg-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  margin: 0;
+  padding: 0 8px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+  box-sizing: border-box;
+}
+
+.dlg-btn::after {
+  border: none;
+}
+
+.dlg-btn-block {
+  align-self: stretch;
+  width: 100%;
+}
+
+.dlg-actions .dlg-btn {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.dlg-btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.dlg-btn-cancel {
+  background: #ffffff;
+  color: #4b5563;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+.dlg-btn-ghost {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+.dlg-btn-muted {
+  background: #ffffff;
+  color: #4b5563;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+.dlg-btn-orange {
+  background: #ffffff;
+  color: #ea580c;
+  box-shadow: inset 0 0 0 1.5px #ea580c;
+}
+
+.dlg-btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border-radius: 14px;
+}
+
+.dlg-btn[disabled] {
+  opacity: 0.55;
+}
+
+.dlg-link {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+}
+
+.dlg-link-text {
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.dlg-stage {
+  max-height: 620px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dlg-foot-cta {
+  width: 100%;
+}
+
+.dlg-cta-text {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}

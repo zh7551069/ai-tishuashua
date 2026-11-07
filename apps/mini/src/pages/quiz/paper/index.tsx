@@ -10,8 +10,8 @@ import {
   type QuizSubmitReason,
 } from '@tishuashua/shared';
 import { useEffect, useRef, useState } from 'react';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { Screen } from '../../../components/Screen';
+import { LeaveOverlay, SubmitOverlay } from '../paper-dialog';
 import { ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { formatSubmittedAt } from '../../../services/format';
 import { isAuthFailure, withAuth } from '../../../services/guard';
@@ -177,13 +177,17 @@ export default function QuizPaperPage() {
   const unanswered = questions.filter((item) => item.selected.length === 0).length;
   const answering = Boolean(session && paper && !submitted && current);
 
+  const goBack = () => {
+    void Taro.navigateBack({
+      fail: () => {
+        void Taro.reLaunch({ url: '/pages/home/index' });
+      },
+    });
+  };
+
   const leave = () => {
     if (submitted) {
-      void Taro.navigateBack({
-        fail: () => {
-          void Taro.reLaunch({ url: '/pages/home/index' });
-        },
-      });
+      goBack();
       return;
     }
     setDialog('leave');
@@ -289,37 +293,29 @@ export default function QuizPaperPage() {
           </View>
         </View>
       ) : null}
-      {dialog === 'submit' ? (
-        <ConfirmDialog
-          title="交卷"
-          body={
-            unanswered > 0
-              ? `还有 ${unanswered} 题未作答。交卷后不能再改答案，并会显示成绩和解析。`
-              : '题目已答完。交卷后不能再改答案，并会显示成绩和解析。'
-          }
-          confirmText="确认交卷"
-          cancelText="继续作答"
-          onCancel={() => setDialog(null)}
-          onConfirm={() => {
+      {dialog === 'submit' && session ? (
+        <SubmitOverlay
+          mode={session.mode}
+          timerOn={session.settings.timer.enabled}
+          answered={questions.length - unanswered}
+          unanswered={unanswered}
+          total={questions.length}
+          onContinue={() => setDialog(null)}
+          onSubmit={() => {
             setDialog(null);
             void handIn('manual');
           }}
         />
       ) : null}
       {dialog === 'leave' ? (
-        <ConfirmDialog
-          title={session?.mode === 'exam' ? '离开考试' : '离开练习'}
-          body="返回后本次作答会保留在未交卷记录里，再次进入可以继续。"
-          confirmText="返回"
-          cancelText="继续答题"
-          onCancel={() => setDialog(null)}
-          onConfirm={() => {
+        <LeaveOverlay
+          mode={session?.mode ?? 'practice'}
+          answered={questions.length - unanswered}
+          total={questions.length}
+          onContinue={() => setDialog(null)}
+          onLeave={() => {
             setDialog(null);
-            void Taro.navigateBack({
-              fail: () => {
-                void Taro.reLaunch({ url: '/pages/home/index' });
-              },
-            });
+            goBack();
           }}
         />
       ) : null}
