@@ -1,3 +1,6 @@
+import { parsePublicSkuList as parsePublicSkuListFromPayment } from './payment';
+import type { CommerceSkuPublic } from './payment';
+
 export {
   COURSEWARE_MAX_BYTES,
   JOB_EXTRACT_COURSEWARE,
@@ -178,13 +181,22 @@ export {
   parseMockNotifyBody,
   parseOrderListQuery,
   parsePriceSnapshot,
-  parsePublicSkuList,
   parseSkuCatalogQuery,
   parseUpgradeQuoteBody,
   quoteMemberUpgrade,
   resolveOrderKind,
   resolveWechatPayMode,
 } from './payment';
+
+/**
+ * 小程序经 barrel 调用。不要改回 `export { parsePublicSkuList } from './payment'`。
+ * 那种再导出会被 tsc 编成 `exports.parsePublicSkuList = void 0` 再加 getter。
+ * 开发者工具里的命名导入会拿到非函数，开通会员页就报 is not a function。
+ */
+export function parsePublicSkuList(value: unknown): CommerceSkuPublic[] | null {
+  return parsePublicSkuListFromPayment(value);
+}
+
 export type {
   AdminOrderItem,
   CommerceSkuPublic,
