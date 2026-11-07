@@ -31,6 +31,8 @@ export function Screen(props: {
   footerClassName?: string;
   /** 追加在 .u-nav 上，给单页顶栏对齐画板。 */
   navClassName?: string;
+  /** 替换默认「‹」。出题设置用 Bridge 返回箭头。 */
+  backMark?: ReactNode;
   children?: ReactNode;
 }) {
   const [inset] = useState(readInset);
@@ -82,7 +84,7 @@ export function Screen(props: {
         >
           {props.back ? (
             <View className="u-back" onClick={back}>
-              <Text className="u-back-mark">‹</Text>
+              {props.backMark ?? <Text className="u-back-mark">‹</Text>}
             </View>
           ) : (
             <View className="u-back-spacer" />
