@@ -1,43 +1,36 @@
 /* 练习记录列表。尺寸和色值对齐 design/bridge-export/practice-records-20261107（390）。
-   状态栏和 Home 条用系统的，不画。 */
+   状态栏和 Home 条用系统的，不画。
+   顶栏跟全站 .u-nav-center /「我 / 设置」.ms-nav：返回钉在左侧，热区 44×44，标题水平居中。
+   页选择器比 app 里的 .u-nav-center 更具体，位置在这里再写一遍，避免被行内布局盖回去。 */
 
 .u-nav.pr-nav {
+  position: relative;
   min-height: 44px;
   height: 44px;
-  padding: 0 16px 0 12px;
+  padding-left: 0;
+  padding-right: 0;
   background: transparent;
 }
 
 .u-nav.pr-nav .u-back {
-  width: 24px;
-  height: 24px;
-  justify-content: flex-start;
-  align-items: flex-start;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  align-items: center;
 }
 
 .u-nav.pr-nav .u-nav-side {
-  width: 24px;
-  height: 24px;
-}
-
-.u-nav.pr-nav .u-nav-title-center {
-  left: 48px;
-  right: 48px;
-  font-size: 17px;
-  line-height: 24px;
-}
-
-.pr-back-clip {
-  width: 8px;
-  height: 14px;
-  margin-left: 8px;
-  margin-top: 5px;
-  overflow: hidden;
-}
-
-.pr-back-ico {
-  width: 8px;
-  height: 14px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+  min-width: 44px;
+  height: 44px;
+  margin-left: 0;
 }
 
 .pr-fill {
