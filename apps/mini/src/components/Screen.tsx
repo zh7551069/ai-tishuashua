@@ -27,6 +27,8 @@ export function Screen(props: {
   bodyFill?: boolean;
   /** 覆盖 .u-screen 底色。选领域有数据时头白、其余 #f5f6f8。 */
   background?: string;
+  /** 追加在 .u-foot 上，给单页底栏对齐画板。 */
+  footerClassName?: string;
   children?: ReactNode;
 }) {
   const [inset] = useState(readInset);
@@ -104,7 +106,11 @@ export function Screen(props: {
         </View>
       )}
       <View className={bodyClass}>{props.children}</View>
-      {props.footer ? <View className="u-foot">{props.footer}</View> : null}
+      {props.footer ? (
+        <View className={['u-foot', props.footerClassName].filter(Boolean).join(' ')}>
+          {props.footer}
+        </View>
+      ) : null}
     </View>
   );
 }

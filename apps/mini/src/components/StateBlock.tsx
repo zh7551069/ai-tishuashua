@@ -48,10 +48,14 @@ export function EmptyBlock(props: {
   tone?: 'solid' | 'soft';
   fill?: boolean;
   titleSize?: 'md' | 'lg';
+  className?: string;
 }) {
   const buttonClass = props.tone === 'soft' ? 'u-btn-soft u-btn-hug' : 'u-btn u-btn-hug';
+  const rootClass = ['u-state', props.fill ? 'u-state-fill' : '', props.className]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <View className={props.fill ? 'u-state u-state-fill' : 'u-state'}>
+    <View className={rootClass}>
       <View className="u-ph" />
       <Text
         className={props.titleSize === 'lg' ? 'u-state-title u-state-title-lg' : 'u-state-title'}
@@ -74,9 +78,10 @@ export function ErrorBlock(props: {
   onRetry?: () => void;
   retryLabel?: string;
   onBack?: () => void;
+  className?: string;
 }) {
   return (
-    <View className="u-state">
+    <View className={['u-state', props.className].filter(Boolean).join(' ')}>
       <View className="u-err">
         <View className="u-err-dot">
           <Text className="u-err-mark">!</Text>

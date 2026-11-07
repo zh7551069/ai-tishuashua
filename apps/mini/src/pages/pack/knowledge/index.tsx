@@ -1,4 +1,4 @@
-import { Button, Input, Text, View } from '@tarojs/components';
+import { Button, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import {
   filterCatalogTree,
@@ -13,9 +13,9 @@ import {
   type TextbookNode,
 } from '@tishuashua/shared';
 import { useState } from 'react';
+import { BridgeSteps } from '../../../components/BridgeSteps';
 import { Screen } from '../../../components/Screen';
-import { Steps } from '../../../components/Steps';
-import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
+import { EmptyBlock, ErrorBlock } from '../../../components/StateBlock';
 import { fetchCertificates, fetchDomains, fetchKnowledgeTree } from '../../../services/catalog-api';
 import { readCoursewareJob } from '../../../services/courseware-api';
 import { isAuthFailure, withAuth } from '../../../services/guard';
@@ -27,14 +27,35 @@ import {
   materialKind,
   type MaterialKind,
 } from '../../../ui/knowledge-meta';
+import iconSearch from '../assets/icon-search-kp.png';
+import { PackSearch } from '../PackSearch';
 
 type ErrorKind = '' | 'network' | 'missing' | 'unavailable';
+
+const DEFAULT_TIP = '勾选教材 = 全选其下知识点；半选表示部分已选。';
+
+function readInset(): number {
+  try {
+    return Taro.getSystemInfoSync().statusBarHeight ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+function goBack() {
+  void Taro.navigateBack({
+    fail: () => {
+      void Taro.reLaunch({ url: '/pages/home/index' });
+    },
+  });
+}
 
 export default function KnowledgePage() {
   const params = useRouter().params;
   const domainId = queryValue(params.domainId);
   const certId = queryValue(params.certId);
   const packId = queryValue(params.packId);
+  const [inset] = useState(readInset);
   const [tree, setTree] = useState<KnowledgeTree | null>(null);
   const [header, setHeader] = useState<{ domainName: string; certificateName: string } | null>(
     null,
@@ -158,6 +179,7 @@ export default function KnowledgePage() {
     tree?.certificateName || header?.certificateName || '',
   );
   const showFoot = ready && visible.length > 0;
+  const headStyle = { marginTop: `-${inset}px`, paddingTop: `${inset}px` };
 
   if (savedPack && tree) {
     const points = selectedPoints(tree, selected);
@@ -199,21 +221,23 @@ export default function KnowledgePage() {
     );
   }
 
+  const tip = ready && visible.length > 0 ? selectionTip(tree?.nodes ?? [], selected, collapsed) : '';
+
   return (
     <Screen
-      back
-      title="选择知识点"
-      subtitle={subtitle}
+      bare
+      background="#f8f9fb"
+      bodyFill
+      footerClassName="kp-foot"
       footer={
         showFoot ? (
-          <View>
+          <View className="kp-foot-stack">
             {saveError ? <Text className="u-foot-error">{saveError}</Text> : null}
-            <Text className="u-foot-copy">
+            <Text className="kp-foot-copy">
               已选 {selected.length} 个知识点 · AI 将生成约 {aiQuestionCount(selected.length)} 题
             </Text>
             <Button
-              className="u-btn"
-              style={{ marginTop: '10px' }}
+              className="u-btn kp-cta"
               disabled={saving || selected.length === 0}
               loading={saving}
               onClick={() => void save()}
@@ -224,102 +248,117 @@ export default function KnowledgePage() {
         ) : null
       }
     >
-      <Steps current={3} />
-      <View className="u-pad u-pad-kp">
-        <View className="u-search">
-          <Text className="u-search-mark">⌕</Text>
-          <Input
-            className="u-search-input"
-            placeholder="搜索教材或知识点"
-            placeholderStyle="color:#9ca3af"
-            value={query}
-            onInput={(event) => setQuery(event.detail.value)}
-          />
-        </View>
-        {ready && visible.length > 0 ? (
-          <View className="u-tip u-tip-gap">
-            <Text className="u-tip-text">{selectionTip(tree?.nodes ?? [], selected, collapsed)}</Text>
-          </View>
-        ) : null}
-        {ready ? (
-          <View className="u-upload" onClick={() => openCourseware(extractJobId || undefined)}>
-            <View className="u-upload-icon">↑</View>
-            <View className="u-card-copy">
-              <Text className="u-upload-title">
-                {extractJobId ? '查看课件提炼' : '上传课件或书籍'}
-              </Text>
-              <Text className="u-upload-sub">AI 自动提炼知识点 · 支持 PPT / PDF</Text>
+      <View className="kp-sheet">
+        <View className="kp-head" style={headStyle}>
+          <View className="kp-nav">
+            <Text className="kp-back" onClick={goBack}>
+              ‹
+            </Text>
+            <View className="kp-nav-copy">
+              <Text className="kp-title">选择知识点</Text>
+              {subtitle ? <Text className="kp-sub">{subtitle}</Text> : null}
             </View>
-            <Text className="u-chev">›</Text>
           </View>
-        ) : null}
-        {!ready && !error ? (
-          <View className="u-between">
-            <Text className="u-block-title">教材与知识点</Text>
+          <BridgeSteps current={3} numWeight="regular" ring />
+          <View className="kp-search-wrap">
+            <PackSearch
+              placeholder="搜索教材或知识点"
+              value={query}
+              onChange={setQuery}
+              icon={iconSearch}
+            />
           </View>
-        ) : null}
-        {ready && visible.length > 0 ? (
-          <View className="u-between">
-            <Text className="u-block-title">教材与知识点</Text>
-            <Text className="u-link">已选 {selected.length}</Text>
-          </View>
-        ) : null}
-        {!ready && !error ? <LoadingBlock skeleton="rows" /> : null}
-        {error && !ready ? (
-          <ErrorBlock
-            title={errorTitle(errorKind)}
-            detail={errorKind === 'network' ? '网络好像不太稳定，请检查后重试' : error}
-            onRetry={() => void load()}
-            retryLabel={errorKind === 'network' ? '重新加载' : '重试'}
-            onBack={errorKind === 'network' ? undefined : () => void Taro.navigateBack()}
-          />
-        ) : null}
-        {ready && visible.length === 0 ? (
-          <EmptyBlock
-            title={query ? '没有找到相关教材或知识点' : '暂无知识点'}
-            detail={
-              query ? '换个关键词，或上传课件让 AI 提炼' : '可以上传课件，提炼后再加入刷题包。'
-            }
-            action={query ? '清除搜索' : '上传课件'}
-            tone={query ? 'soft' : 'solid'}
-            onAction={() => (query ? setQuery('') : openCourseware())}
-          />
-        ) : null}
-        {ready
-          ? visible.map((node) => {
-              if (node.kind === 'knowledge_point') {
+        </View>
+        <View className="kp-body">
+          {tip ? <Tip text={tip} /> : null}
+          {ready ? (
+            <View className="kp-upload-wrap">
+              <View className="kp-upload" onClick={() => openCourseware(extractJobId || undefined)}>
+                <View className="kp-upload-icon">
+                  <Text className="kp-upload-arrow">↑</Text>
+                </View>
+                <View className="kp-upload-copy">
+                  <Text className="kp-upload-title">
+                    {extractJobId ? '查看课件提炼' : '上传课件或书籍'}
+                  </Text>
+                  <Text className="kp-upload-sub">AI 自动提炼知识点 · 支持 PPT / PDF</Text>
+                </View>
+                <Text className="kp-upload-chev">›</Text>
+              </View>
+            </View>
+          ) : null}
+          {!ready && !error ? (
+            <View className="kp-section">
+              <Text className="kp-section-title">教材与知识点</Text>
+            </View>
+          ) : null}
+          {ready && visible.length > 0 ? (
+            <View className="kp-section">
+              <Text className="kp-section-title">教材与知识点</Text>
+              <Text className="kp-section-count">已选 {selected.length}</Text>
+            </View>
+          ) : null}
+          {!ready && !error ? <KnowledgeSkeleton /> : null}
+          {error && !ready ? (
+            <ErrorBlock
+              className="pack-state"
+              title={errorTitle(errorKind)}
+              detail={errorKind === 'network' ? '网络好像不太稳定，请检查后重试' : error}
+              onRetry={() => void load()}
+              retryLabel={errorKind === 'network' ? '重新加载' : '重试'}
+              onBack={errorKind === 'network' ? undefined : goBack}
+            />
+          ) : null}
+          {ready && visible.length === 0 ? (
+            <EmptyBlock
+              className="pack-state"
+              title={query ? '没有找到相关教材或知识点' : '暂无知识点'}
+              detail={
+                query ? '换个关键词，或上传课件让 AI 提炼' : '可以上传课件，提炼后再加入刷题包。'
+              }
+              action={query ? '清除搜索' : '上传课件'}
+              tone={query ? 'soft' : 'solid'}
+              onAction={() => (query ? setQuery('') : openCourseware())}
+            />
+          ) : null}
+          {ready && visible.length > 0 ? (
+            <View className="kp-list">
+              {visible.map((node) => {
+                if (node.kind === 'knowledge_point') {
+                  return (
+                    <PointRow
+                      key={node.id}
+                      name={node.name}
+                      meta={knowledgeStatLabel(node.id)}
+                      on={selected.includes(node.id)}
+                      independent
+                      onPress={() => setSelected(toggleKnowledgePoint(selected, node.id))}
+                    />
+                  );
+                }
+                const original = originals.get(node.id);
+                const checkChildIds =
+                  original && original.kind === 'textbook'
+                    ? original.children.map((child) => child.id)
+                    : [];
                 return (
-                  <PointRow
+                  <MaterialBlock
                     key={node.id}
-                    name={node.name}
-                    meta={knowledgeStatLabel(node.id)}
-                    on={selected.includes(node.id)}
-                    independent
-                    onPress={() => setSelected(toggleKnowledgePoint(selected, node.id))}
+                    node={node}
+                    checkChildIds={checkChildIds}
+                    selected={selected}
+                    collapsed={Boolean(collapsed[node.id])}
+                    onToggleExpand={() =>
+                      setCollapsed((current) => ({ ...current, [node.id]: !current[node.id] }))
+                    }
+                    onToggleTextbook={() => setSelected(toggleTextbook(selected, checkChildIds))}
+                    onTogglePoint={(id) => setSelected(toggleKnowledgePoint(selected, id))}
                   />
                 );
-              }
-              const original = originals.get(node.id);
-              const checkChildIds =
-                original && original.kind === 'textbook'
-                  ? original.children.map((child) => child.id)
-                  : [];
-              return (
-                <MaterialBlock
-                  key={node.id}
-                  node={node}
-                  checkChildIds={checkChildIds}
-                  selected={selected}
-                  collapsed={Boolean(collapsed[node.id])}
-                  onToggleExpand={() =>
-                    setCollapsed((current) => ({ ...current, [node.id]: !current[node.id] }))
-                  }
-                  onToggleTextbook={() => setSelected(toggleTextbook(selected, checkChildIds))}
-                  onTogglePoint={(id) => setSelected(toggleKnowledgePoint(selected, id))}
-                />
-              );
-            })
-          : null}
+              })}
+            </View>
+          ) : null}
+        </View>
       </View>
     </Screen>
   );
@@ -400,7 +439,50 @@ function selectionTip(
   if (collapsedActive.length > 0 && !expandedPartial) {
     return '教材勾选后折叠仍显示已选；点行展开查看明细。';
   }
-  return '勾选教材 = 全选其下知识点；半选表示部分已选。';
+  return DEFAULT_TIP;
+}
+
+function Tip(props: { text: string }) {
+  if (props.text === DEFAULT_TIP) {
+    return (
+      <View className="kp-tip-bleed">
+        <View className="kp-tip-bar">
+          <Text className="kp-tip-text">{props.text}</Text>
+        </View>
+      </View>
+    );
+  }
+  return (
+    <View className="kp-tip-card-wrap">
+      <View className="kp-tip-card">
+        <Text className="kp-tip-text">{props.text}</Text>
+      </View>
+    </View>
+  );
+}
+
+function KnowledgeSkeleton() {
+  const rows = [
+    { child: false, key: 'a' },
+    { child: true, key: 'b' },
+    { child: true, key: 'c' },
+    { child: false, key: 'd' },
+    { child: false, key: 'e' },
+  ];
+  return (
+    <View className="kp-list">
+      {rows.map((row) => (
+        <View key={row.key} className={row.child ? 'kp-skel kp-skel-child' : 'kp-skel'}>
+          <View className="kp-skel-dot" />
+          <View className="kp-skel-lines">
+            <View className="kp-skel-line" />
+            <View className="kp-skel-line kp-skel-line-short" />
+          </View>
+          <View className="kp-skel-dot" />
+        </View>
+      ))}
+    </View>
+  );
 }
 
 function MaterialBlock(props: {
@@ -415,25 +497,25 @@ function MaterialBlock(props: {
   const kind: MaterialKind = materialKind(props.node.name);
   const state = textbookCheckState(props.checkChildIds, props.selected);
   return (
-    <View>
-      <View className="u-material">
-        <Text className="u-fold" onClick={props.onToggleExpand}>
+    <View className="kp-group">
+      <View className="kp-material">
+        <Text className="kp-fold" onClick={props.onToggleExpand}>
           {props.collapsed ? '▸' : '▾'}
         </Text>
-        <View className={kind === 'courseware' ? 'u-book u-book-file' : 'u-book'}>
-          {kind === 'courseware' ? 'P' : '书'}
+        <View className={kind === 'courseware' ? 'kp-book kp-book-file' : 'kp-book'}>
+          <Text className="kp-book-mark">{kind === 'courseware' ? 'P' : '书'}</Text>
         </View>
-        <View className="u-card-copy" onClick={props.onToggleExpand}>
-          <Text className="u-kp-name">{props.node.name}</Text>
-          <View className="u-mat-meta">
-            <Text className={kind === 'courseware' ? 'u-tag u-tag-orange' : 'u-tag'}>
+        <View className="kp-copy" onClick={props.onToggleExpand}>
+          <Text className="kp-mat-name">{props.node.name}</Text>
+          <View className="kp-meta-row">
+            <Text className={kind === 'courseware' ? 'kp-badge kp-badge-file' : 'kp-badge'}>
               {kind === 'courseware' ? '课件' : '书籍'}
             </Text>
-            <Text className="u-mat-count">{props.checkChildIds.length} 个知识点</Text>
+            <Text className="kp-count">{props.checkChildIds.length} 个知识点</Text>
           </View>
         </View>
         <View onClick={props.onToggleTextbook}>
-          <Tick state={state} end />
+          <Check state={state} />
         </View>
       </View>
       {props.collapsed
@@ -460,39 +542,45 @@ function PointRow(props: {
   independent?: boolean;
   onPress?: () => void;
 }) {
+  const className = [
+    'kp-point',
+    props.on ? 'kp-point-on' : '',
+    props.child ? 'kp-point-child' : '',
+    props.independent ? 'kp-point-root' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <View
-      className={
-        'u-point' + (props.on ? ' u-point-on' : '') + (props.child ? ' u-point-child' : '')
-      }
-      onClick={props.onPress}
-    >
-      <Tick state={props.on ? 'checked' : 'unchecked'} />
-      <View className="u-card-copy">
-        <View className="u-point-title-row">
-          {props.independent ? (
-            <View className={props.on ? 'u-kp-dot u-kp-dot-on' : 'u-kp-dot'} />
-          ) : null}
-          <Text className="u-kp-name">{props.name}</Text>
+    <View className={className} onClick={props.onPress}>
+      <Check state={props.on ? 'checked' : 'unchecked'} />
+      {props.independent ? (
+        <View className={props.on ? 'kp-indot kp-indot-on' : 'kp-indot'}>
+          <View className={props.on ? 'kp-indot-core kp-indot-core-on' : 'kp-indot-core'} />
         </View>
+      ) : null}
+      <View className="kp-point-copy">
+        <Text className="kp-point-name">{props.name}</Text>
         {props.independent ? (
-          <View className="u-mat-meta">
-            <Text className="u-tag u-tag-blue">独立知识点</Text>
+          <View className="kp-meta-row">
+            <Text className="kp-badge kp-badge-free">独立知识点</Text>
+            <Text className="kp-point-meta">{props.meta}</Text>
           </View>
-        ) : null}
-        <Text className="u-kp-meta">{props.meta}</Text>
+        ) : (
+          <Text className="kp-point-meta">{props.meta}</Text>
+        )}
       </View>
     </View>
   );
 }
 
-function Tick(props: { state: CheckState; end?: boolean }) {
-  const on = props.state !== 'unchecked';
-  const place = props.end ? ' u-tickbox-end' : ' u-tickbox-lead';
+function Check(props: { state: CheckState }) {
+  if (props.state === 'unchecked') {
+    return <View className="kp-check" />;
+  }
+  const dash = props.state === 'indeterminate';
   return (
-    <View className={(on ? 'u-tickbox u-tickbox-on' : 'u-tickbox') + place}>
-      {props.state === 'checked' ? <View className="u-tick" /> : null}
-      {props.state === 'indeterminate' ? <View className="u-dash" /> : null}
+    <View className="kp-check kp-check-on">
+      <Text className={dash ? 'kp-check-dash' : 'kp-check-mark'}>{dash ? '–' : '✓'}</Text>
     </View>
   );
 }
