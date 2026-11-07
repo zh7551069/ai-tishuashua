@@ -1,0 +1,291 @@
+/* 对稿 design/bridge-export/mini-commerce-v2 场次明细（122:9）。390 画板 px。不带版本角标。 */
+
+.sl-nav .u-nav-title {
+  font-size: 18px;
+  line-height: 26px;
+}
+
+.sl-page {
+  padding: 8px 16px calc(24px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.sl-card {
+  display: flex;
+  flex-direction: row;
+  height: 102px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.sl-avail {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 8px 0 16px;
+  box-sizing: border-box;
+}
+
+.sl-label,
+.sl-sub,
+.sl-spent-label,
+.sl-spent-note,
+.sl-count-unit {
+  display: block;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.sl-label {
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.sl-count {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  height: 36px;
+  margin-top: 4px;
+}
+
+.sl-count-num,
+.sl-count-wide {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.sl-count-num {
+  font-size: 28px;
+  line-height: 32px;
+}
+
+.sl-count-wide {
+  font-size: 28px;
+  line-height: 32px;
+}
+
+.sl-count-unit {
+  margin-left: 4px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.sl-sub {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 16px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sl-split {
+  width: 1px;
+  height: 54px;
+  margin-top: 24px;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.sl-spent {
+  width: 154px;
+  flex-shrink: 0;
+  padding: 19px 12px 0 16px;
+  box-sizing: border-box;
+}
+
+.sl-spent-label {
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.sl-spent-num {
+  display: block;
+  margin-top: 6px;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 23px;
+}
+
+.sl-spent-note {
+  margin-top: 2px;
+  font-size: 10px;
+  line-height: 15px;
+}
+
+.sl-tabs {
+  display: flex;
+  flex-direction: row;
+  margin-top: 14px;
+}
+
+.sl-tab {
+  width: 48px;
+  height: 30px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sl-tab-on {
+  background: #2563eb;
+  box-shadow: inset 0 0 0 1px #2563eb;
+}
+
+.sl-tab-text {
+  color: #111827;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 19px;
+}
+
+.sl-tab-text-on {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.sl-list {
+  margin-top: 14px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  overflow: hidden;
+}
+
+.sl-row {
+  position: relative;
+  height: 58px;
+  margin: 0 12px;
+}
+
+.sl-row-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.sl-badge {
+  position: absolute;
+  left: 0;
+  top: 13px;
+  width: 34px;
+  height: 17px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sl-badge-credit {
+  background: #ecfdf5;
+}
+
+.sl-badge-debit {
+  background: #fef2f2;
+}
+
+.sl-badge-neutral {
+  background: #f3f4f6;
+}
+
+.sl-badge-text {
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 400;
+}
+
+.sl-badge-text-credit {
+  color: #059669;
+}
+
+.sl-badge-text-debit {
+  color: #dc2626;
+}
+
+.sl-badge-text-neutral {
+  color: #6b7280;
+}
+
+.sl-row-title {
+  position: absolute;
+  left: 0;
+  right: 100px;
+  top: 33px;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 19px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sl-delta {
+  position: absolute;
+  right: 0;
+  top: 12px;
+  width: 94px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.sl-delta-credit {
+  color: #059669;
+}
+
+.sl-delta-debit {
+  color: #dc2626;
+}
+
+.sl-delta-neutral {
+  color: #6b7280;
+}
+
+.sl-time {
+  position: absolute;
+  right: 0;
+  top: 36px;
+  width: 96px;
+  text-align: right;
+  color: #9ca3af;
+  font-size: 10px;
+  line-height: 15px;
+}
+
+.sl-empty.u-state {
+  padding: 28px 16px 32px;
+}
+
+.sl-more {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sl-more-text,
+.sl-more-error {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.sl-more-error {
+  display: block;
+  padding: 0 16px 12px;
+  text-align: center;
+}

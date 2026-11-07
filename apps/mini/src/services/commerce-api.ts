@@ -1,12 +1,22 @@
 import {
   parsePublicSkuList,
   type CommerceSkuPublic,
+  type EntitlementLedgerPage,
   type EntitlementView,
 } from '@tishuashua/shared';
 import { apiRequest } from './http';
+import { entitlementLedgerPath, type EntitlementLedgerQuery } from './session-ledger-present';
 
 export function fetchEntitlement(token: string): Promise<EntitlementView> {
   return apiRequest<EntitlementView>('/me/entitlement', { method: 'GET', token });
+}
+
+/** 只读场次流水。不写账本，也不下单。 */
+export function fetchEntitlementLedger(
+  token: string,
+  query?: EntitlementLedgerQuery,
+): Promise<EntitlementLedgerPage> {
+  return apiRequest<EntitlementLedgerPage>(entitlementLedgerPath(query), { method: 'GET', token });
 }
 
 /** 只读在售会员档。不创建订单。 */
