@@ -9,8 +9,8 @@ import {
   type QuizSubmitReason,
 } from '@tishuashua/shared';
 import { useEffect, useRef, useState } from 'react';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { Screen } from '../../../components/Screen';
+import { LeaveOverlay, SubmitOverlay } from '../paper-dialog';
 import { ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { formatSubmittedAt } from '../../../services/format';
 import { isAuthFailure, withAuth } from '../../../services/guard';
@@ -164,13 +164,17 @@ export default function QuizPaperPage() {
   const current = questions[Math.min(index, Math.max(questions.length - 1, 0))];
   const unanswered = questions.filter((item) => item.selected.length === 0).length;
 
+  const goBack = () => {
+    void Taro.navigateBack({
+      fail: () => {
+        void Taro.reLaunch({ url: '/pages/home/index' });
+      },
+    });
+  };
+
   const leave = () => {
     if (submitted) {
-      void Taro.navigateBack({
-        fail: () => {
-          void Taro.reLaunch({ url: '/pages/home/index' });
-        },
-      });
+      goBack();
       return;
     }
     setDialog('leave');
@@ -209,7 +213,9 @@ export default function QuizPaperPage() {
       <View className="u-pad u-pad-tight">
         {error ? <ErrorBlock detail={error} onRetry={() => void load()} onBack={leave} /> : null}
         {!session && !error ? <LoadingBlock label="正在加载试卷" /> : null}
-        {session && !paper ? <ErrorBlock title="试卷还没准备好" onRetry={() => void load()} /> : null}
+        {session && !paper ? (
+          <ErrorBlock title="试卷还没准备好" onRetry={() => void load()} />
+        ) : null}
         {session && paper && submitted && !review ? (
           <ResultView session={session} onReview={() => setReview(true)} />
         ) : null}
@@ -217,7 +223,9 @@ export default function QuizPaperPage() {
           <ReviewView
             session={session}
             open={openAnalysis}
-            onToggle={(id) => setOpenAnalysis((currentMap) => ({ ...currentMap, [id]: !currentMap[id] }))}
+            onToggle={(id) =>
+              setOpenAnalysis((currentMap) => ({ ...currentMap, [id]: !currentMap[id] }))
+            }
           />
         ) : null}
         {session && paper && !submitted && current ? (
@@ -242,7 +250,13 @@ export default function QuizPaperPage() {
                 return (
                   <Text
                     key={question.id}
-                    className={on ? 'u-board-cell u-board-on' : done ? 'u-board-cell u-board-done' : 'u-board-cell'}
+                    className={
+                      on
+                        ? 'u-board-cell u-board-on'
+                        : done
+                          ? 'u-board-cell u-board-done'
+                          : 'u-board-cell'
+                    }
                     onClick={() => {
                       setIndex(questionIndex);
                       setBoard(false);
@@ -253,43 +267,39 @@ export default function QuizPaperPage() {
                 );
               })}
             </View>
-            <Button className="u-btn" style={{ marginTop: '8px' }} onClick={() => setDialog('submit')}>
+            <Button
+              className="u-btn"
+              style={{ marginTop: '8px' }}
+              onClick={() => setDialog('submit')}
+            >
               交卷
             </Button>
           </View>
         </View>
       ) : null}
-      {dialog === 'submit' ? (
-        <ConfirmDialog
-          title="交卷"
-          body={
-            unanswered > 0
-              ? `还有 ${unanswered} 题未作答。交卷后不能再改答案，并会显示成绩和解析。`
-              : '题目已答完。交卷后不能再改答案，并会显示成绩和解析。'
-          }
-          confirmText="确认交卷"
-          cancelText="继续作答"
-          onCancel={() => setDialog(null)}
-          onConfirm={() => {
+      {dialog === 'submit' && session ? (
+        <SubmitOverlay
+          mode={session.mode}
+          timerOn={session.settings.timer.enabled}
+          answered={questions.length - unanswered}
+          unanswered={unanswered}
+          total={questions.length}
+          onContinue={() => setDialog(null)}
+          onSubmit={() => {
             setDialog(null);
             void handIn('manual');
           }}
         />
       ) : null}
       {dialog === 'leave' ? (
-        <ConfirmDialog
-          title={session?.mode === 'exam' ? '离开考试' : '离开练习'}
-          body="返回后本次作答会保留在未交卷记录里，再次进入可以继续。"
-          confirmText="返回"
-          cancelText="继续答题"
-          onCancel={() => setDialog(null)}
-          onConfirm={() => {
+        <LeaveOverlay
+          mode={session?.mode ?? 'practice'}
+          answered={questions.length - unanswered}
+          total={questions.length}
+          onContinue={() => setDialog(null)}
+          onLeave={() => {
             setDialog(null);
-            void Taro.navigateBack({
-              fail: () => {
-                void Taro.reLaunch({ url: '/pages/home/index' });
-              },
-            });
+            goBack();
           }}
         />
       ) : null}
@@ -464,9 +474,7 @@ function ResultView(props: { session: QuizSessionView; onReview: () => void }) {
             <Text className="u-card-title">错题回顾</Text>
             <Text className="u-card-sub">{wrong.length} 道错题 · 含解析</Text>
           </View>
-          <Text className="u-chev">
-            ›
-          </Text>
+          <Text className="u-chev">›</Text>
         </View>
       ) : (
         <Text className="u-meta">本卷没有错题。</Text>
@@ -512,7 +520,9 @@ function ReviewView(props: {
           <Text className="u-stem">{question.stem}</Text>
           <View className="u-compare">
             <Text className="u-compare-label u-mine">你的答案</Text>
-            <Text className="u-compare-value u-mine">{answerLine(question, question.selected)}</Text>
+            <Text className="u-compare-value u-mine">
+              {answerLine(question, question.selected)}
+            </Text>
             <Text className="u-compare-label u-right" style={{ marginTop: '8px' }}>
               正确答案
             </Text>
@@ -529,7 +539,9 @@ function ReviewView(props: {
               <View className="u-analysis-bar" />
               <View className="u-analysis-copy">
                 <Text className="u-analysis-title">解析</Text>
-                <Text className="u-analysis-body">{question.review?.analysis || '这道题没有解析。'}</Text>
+                <Text className="u-analysis-body">
+                  {question.review?.analysis || '这道题没有解析。'}
+                </Text>
               </View>
             </View>
           ) : null}
@@ -567,7 +579,13 @@ function typeTag(type: QuizQuestionView['type']): string {
 
 function ringColor(band: ReturnType<typeof scoreBand>, rate: number): string {
   const color =
-    band === 'high' ? '#16a34a' : band === 'fail' ? '#dc2626' : band === 'low' ? '#ea580c' : '#2563eb';
+    band === 'high'
+      ? '#16a34a'
+      : band === 'fail'
+        ? '#dc2626'
+        : band === 'low'
+          ? '#ea580c'
+          : '#2563eb';
   return `conic-gradient(${color} ${rate * 3.6}deg, #e5e7eb 0deg)`;
 }
 
@@ -607,7 +625,12 @@ function replaceSelection(
 
 function practiceEndsAt(session: QuizSessionView): number | null {
   const timer = session.settings.timer;
-  if (session.mode !== 'practice' || !timer.enabled || timer.kind !== 'paper' || !session.startedAt) {
+  if (
+    session.mode !== 'practice' ||
+    !timer.enabled ||
+    timer.kind !== 'paper' ||
+    !session.startedAt
+  ) {
     return null;
   }
   const start = Date.parse(session.startedAt);
