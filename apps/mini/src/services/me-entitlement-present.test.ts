@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
-import type { EntitlementBalances, EntitlementMembership, EntitlementView } from '@tishuashua/shared';
+import type {
+  EntitlementBalances,
+  EntitlementMembership,
+  EntitlementView,
+} from '@tishuashua/shared';
 import {
   ME_CHECKIN_FREE_DONE,
   ME_CHECKIN_FREE_DONE_NOTE,
@@ -167,18 +171,25 @@ test('「我」页源码无支付下单，也不写死示意用量', () => {
     'src/services/me-entitlement-present.ts',
     'src/pages/commerce/session-ledger/index.tsx',
   ];
+  const meFiles = files.filter((file) => !file.includes('session-ledger'));
+  const meSource = meFiles.map((file) => readFileSync(join(miniRoot, file), 'utf8')).join('\n');
   const production = files.map((file) => readFileSync(join(miniRoot, file), 'utf8')).join('\n');
   const page = readFileSync(join(miniRoot, 'src/pages/me/index.tsx'), 'utf8');
   const blocks = readFileSync(join(miniRoot, 'src/pages/me/commerce-blocks.tsx'), 'utf8');
   const present = readFileSync(join(miniRoot, 'src/services/me-entitlement-present.ts'), 'utf8');
-  const ledger = readFileSync(join(miniRoot, 'src/pages/commerce/session-ledger/index.tsx'), 'utf8');
+  const ledger = readFileSync(
+    join(miniRoot, 'src/pages/commerce/session-ledger/index.tsx'),
+    'utf8',
+  );
   const config = readFileSync(join(miniRoot, 'src/app.config.ts'), 'utf8');
   assert.equal(/requestPayment|mock-notify|upgrade-quote|\/api\/orders/.test(production), false);
   assert.equal(production.includes('membership-pay'), false);
   assert.equal(production.includes('session-pack-pay'), false);
   assert.equal(production.includes('v2.0.0'), false);
   assert.equal(production.includes('日免 0/2'), false);
-  assert.equal(production.includes('今日消耗'), false);
+  assert.equal(meSource.includes('今日消耗'), false);
+  assert.equal(production.includes('今日消耗 2'), false);
+  assert.equal(production.includes('当前可用 3'), false);
   assert.equal(production.includes('2026-12-01'), false);
   assert.equal(/¥\s*28/.test(production), false);
   assert.equal(present.includes('DEFAULT_DAILY_FREE_SESSIONS'), false);
@@ -192,8 +203,10 @@ test('「我」页源码无支付下单，也不写死示意用量', () => {
   assert.match(blocks, /commerce\.active/);
   assert.match(blocks, /ME_USAGE_TITLE/);
   assert.match(blocks, /todayRemain/);
-  assert.match(ledger, /CommerceStub/);
-  assert.equal(/fetchEntitlement|\/ledger|requestPayment/.test(ledger), false);
+  assert.equal(ledger.includes('CommerceStub'), false);
+  assert.match(ledger, /fetchEntitlement\(/);
+  assert.match(ledger, /fetchEntitlementLedger/);
+  assert.equal(/requestPayment|mock-notify|upgrade-quote|\/api\/orders/.test(ledger), false);
   assert.equal((config.match(/pages\/me\//g) ?? []).length, 1);
   assert.match(config, /pages\/commerce\/session-ledger\/index/);
   const barrel = readFileSync(join(miniRoot, '../../packages/shared/src/index.ts'), 'utf8');

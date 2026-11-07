@@ -8,11 +8,24 @@ C11 只增强既有 `pages/me/index`。会员是否生效、到期日、今日�
 
 - 开通、续费、升级：`navigateTo` `pages/commerce/member/index`（TB-25）。
 - 加油包：三帧没有单独入口行。购买仍走 TB-26 `pages/commerce/session-pack/index`（半屏和会员页已能到达）。
-- 场次明细：入口进 `pages/commerce/session-ledger/index`。没有账本粗算时，非会员只显示库存；会员显示「会员不限场 · 明细可查」。全量列表归 TB-28，当前路由只占位。
+- 场次明细：入口进 `pages/commerce/session-ledger/index`。本页（「我」）不拉账本。没有账本粗算时，非会员只显示库存；会员显示「会员不限场 · 明细可查」。
 - 每日分享、邀请有礼：入口进 `pages/commerce/tasks/index`。发奖归 C13。签到仍写本地，不调用 grant。
 - 本页禁止 `wx.requestPayment`、`POST /api/orders`、mock-notify 和 `upgrade-quote`。
 
 对稿帧 `122:5` / `122:11` / `122:7`。UI 评审见 [TB-27 三行](delivery/tb27-ui-tech-review-20261107.md)。契约：[TB-27 C](contracts/tb27-miniapp-me-member-states-C-contracts-v0.1.0-C.md)。
+
+## 场次明细（C12）
+
+C12 只替换既有 `pages/commerce/session-ledger/index`，对稿 `122:9`。样式对照 `design/bridge-export/mini-commerce-v2/`（与 TB-25/26/27 同源包）。本页只读 `GET /api/me/entitlement` 和 `GET /api/me/entitlement/ledger`，不新开 HTTP endpoint。
+
+- 非会员「当前可用」= 日免剩余 + 奖励剩余 + 库存剩余，副文跟余额走。会员 `membership.active` 时大字改为「不限场」，不用三桶之和当剩余可扣场。
+- 「今日消耗」= 已加载流水里 `bizDate === businessDate` 且 `delta < 0` 的合计。没有业务日就显示「—」，不写死。
+- Tab 全部 / 获得 / 消耗过滤已加载页。获得是 `delta > 0`，消耗是 `delta < 0`。`delta === 0` 只出现在全部。
+- 续拉用响应里的 `nextCursor`。失败可重试，不补假流水。
+- 本页没有支付条，不调用 `wx.requestPayment`、`POST /api/orders`、mock-notify、`upgrade-quote`、grant。
+- 已入账的任务、邀请、分享分录只读展示。发奖归 C13。消耗行没有证名和题数时标题是「AI 出题」。
+
+UI 评审见 [TB-28 三行](delivery/tb28-ui-tech-review-20261107.md)。契约：[TB-28 C](contracts/tb28-miniapp-session-ledger-C-contracts-v0.1.0-C.md)。
 
 ## 场次加油包（C10）
 
