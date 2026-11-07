@@ -1,0 +1,361 @@
+/* 出题设置。尺寸对齐 design/bridge-export/settings-20261107（390）。
+   稿面轨道高 35，分段子项标成 40 并被轨道裁切；这里按可见轨道 35 排，避免文字被裁。 */
+
+.u-nav.qs-nav {
+  min-height: 36px;
+  height: 36px;
+  padding: 0 20px;
+  gap: 12px;
+  background: transparent;
+  overflow: visible;
+}
+
+.u-nav.qs-nav .u-back,
+.u-nav.qs-nav .u-nav-side {
+  width: 44px;
+  height: 44px;
+}
+
+.u-nav.qs-nav .u-nav-title {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 26px;
+}
+
+.qs-back-clip {
+  width: 9px;
+  height: 18px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qs-back-ico {
+  width: 13px;
+  height: 21px;
+  flex-shrink: 0;
+}
+
+.qs-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 20px 16px;
+  box-sizing: border-box;
+}
+
+.qs-pack {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-height: 64px;
+  padding: 10px 16px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  box-sizing: border-box;
+}
+
+.qs-kicker {
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.qs-pack-line {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.qs-pack-off {
+  margin-top: 2px;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.qs-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  box-sizing: border-box;
+}
+
+.qs-retrain {
+  gap: 8px;
+}
+
+.qs-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+}
+
+.qs-block-last {
+  padding-bottom: 0;
+}
+
+.qs-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  height: 20px;
+}
+
+.qs-label {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.qs-aside {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.qs-chips {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.qs-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  padding: 10px 16px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  box-sizing: border-box;
+}
+
+.qs-chip-count {
+  padding: 11px 18px;
+}
+
+.qs-chip-on {
+  background: #2563eb;
+  box-shadow: inset 0 0 0 1px #2563eb;
+}
+
+.qs-chip-label {
+  color: #111827;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.qs-chip-label-on {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.qs-rule {
+  height: 1px;
+  align-self: stretch;
+  background: #e5e7eb;
+}
+
+.qs-split {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.qs-hint {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.qs-alert {
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.qs-timer-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: 31px;
+}
+
+.qs-switch {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 51px;
+  height: 31px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #d1d5db;
+  box-sizing: border-box;
+}
+
+.qs-switch-on {
+  justify-content: flex-end;
+  background: #2563eb;
+}
+
+.qs-knob {
+  width: 27px;
+  height: 27px;
+}
+
+.qs-timer-off {
+  margin-top: 8px;
+}
+
+.qs-timer-on {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.qs-method {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.qs-field {
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 17px;
+}
+
+.qs-seg {
+  display: flex;
+  flex-direction: row;
+  height: 35px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  overflow: hidden;
+}
+
+.qs-seg-item {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  height: 35px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.qs-seg-on {
+  background: #2563eb;
+}
+
+.qs-seg-label {
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.qs-seg-label-on {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.qs-duration {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qs-stepper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 132px;
+  height: 44px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  overflow: hidden;
+}
+
+.qs-step,
+.qs-step-val,
+.qs-step-plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+}
+
+.qs-step-val,
+.qs-step-plus {
+  border-left: 1px solid #e5e7eb;
+}
+
+.qs-step-sign {
+  color: #111827;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.qs-step-num {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.u-foot.qs-foot {
+  padding: 8px 20px calc(8px + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.qs-cta {
+  height: 48px;
+  border-radius: 14px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.qs-cta::after {
+  border: none;
+}
+
+.qs-foot .qs-cta[disabled] {
+  background: #e5e7eb;
+  color: #9ca3af;
+  opacity: 1;
+}
