@@ -27,7 +27,6 @@ import { fetchPack } from '../../services/pack-api';
 import { queryValue } from '../../services/query';
 import { createQuizSession } from '../../services/quiz-api';
 import { RETRAIN_KP_HELP, parseIdList } from '../../services/retrain';
-import iconBack from './assets/icon-back.png';
 import iconKnob from './assets/icon-knob.png';
 import './index.css';
 
@@ -175,15 +174,11 @@ export default function QuizSettingsPage() {
   return (
     <Screen
       back
+      centerTitle
       navPlain
       navClassName="qs-nav"
       footerClassName="qs-foot"
       title="出题设置"
-      backMark={
-        <View className="qs-back-clip">
-          <Image className="qs-back-ico" src={iconBack} mode="aspectFit" />
-        </View>
-      }
       footer={
         pack && !pack.unavailable ? (
           <View>

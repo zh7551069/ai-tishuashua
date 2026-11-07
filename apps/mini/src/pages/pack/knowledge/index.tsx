@@ -1,4 +1,4 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Button, Image, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import {
   filterCatalogTree,
@@ -27,6 +27,7 @@ import {
   materialKind,
   type MaterialKind,
 } from '../../../ui/knowledge-meta';
+import iconBack from '../../../assets/me-settings/3fbuza.svg';
 import iconSearch from '../assets/icon-search-kp.png';
 import { PackSearch } from '../PackSearch';
 
@@ -186,6 +187,7 @@ export default function KnowledgePage() {
     return (
       <Screen
         back
+        centerTitle
         title="编辑刷题包"
         subtitle={tree.certificateName}
         subtitleTone="muted"
@@ -259,11 +261,11 @@ export default function KnowledgePage() {
     >
       <View className="kp-sheet">
         <View className="kp-head" style={headStyle}>
-          <View className="kp-nav">
-            <Text className="kp-back" onClick={goBack}>
-              ‹
-            </Text>
-            <View className="kp-nav-copy">
+          <View className="kp-nav u-pin-nav">
+            <View className="u-pin-back" onClick={goBack}>
+              <Image className="u-back-ico" src={iconBack} mode="aspectFit" />
+            </View>
+            <View className="kp-nav-copy u-pin-copy">
               <Text className="kp-title">选择知识点</Text>
               {subtitle ? <Text className="kp-sub">{subtitle}</Text> : null}
             </View>

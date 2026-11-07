@@ -5,7 +5,6 @@ import { useMemo, useState } from 'react';
 import { Screen } from '../../components/Screen';
 import { isAuthFailure, withAuth } from '../../services/guard';
 import { fetchWrongBook } from '../../services/wrong-book-api';
-import iconBack from './assets/icon-back.png';
 import iconCaret from './assets/icon-caret.png';
 import iconCheck from './assets/icon-check.png';
 import iconSearch from './assets/icon-search.png';
@@ -151,11 +150,6 @@ export default function WrongBookPage() {
       bodyFill
       title="错题本"
       background="#f8f9fb"
-      backMark={
-        <View className="wb-back-clip">
-          <Image className="wb-back-ico" src={iconBack} mode="aspectFit" />
-        </View>
-      }
       right={right}
     >
       {failed ? (

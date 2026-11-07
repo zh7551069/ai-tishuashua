@@ -8,7 +8,6 @@ import { isAuthFailure, withAuth } from '../../services/guard';
 import { fetchPack } from '../../services/pack-api';
 import { fetchQuizSession } from '../../services/quiz-api';
 import iconChevron from './assets/icon-chevron.png';
-import iconClose from './assets/icon-close.png';
 import iconStar from './assets/icon-star.png';
 import { ReviewView } from './review';
 import './review.css';
@@ -151,13 +150,6 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
       }
       background="#f8f9fb"
       title={review ? '错题回顾' : '答题结果'}
-      backMark={
-        review ? (
-          <Text className="wr-back-mark">‹</Text>
-        ) : (
-          <Image className="sc-close" src={iconClose} mode="aspectFit" />
-        )
-      }
       onBack={review ? () => setReview(false) : leave}
       right={
         review ? (

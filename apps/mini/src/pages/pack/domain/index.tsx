@@ -100,6 +100,7 @@ export default function DomainPage() {
     return (
       <Screen
         back
+        centerTitle
         title="选择备考领域"
         subtitle="选领域 → 证书 → 知识点"
         subtitleTone="muted"

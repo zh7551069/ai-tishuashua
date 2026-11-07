@@ -1,35 +1,7 @@
 /* 答题作答页。源码 px 对齐 Bridge 390 画板（answer-20261107）。 */
 
-.paper-nav {
-  height: 48px;
-  padding: 0 16px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  box-sizing: border-box;
-}
-
-.paper-nav-left {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.paper-back {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.paper-back-icon {
-  width: 8px;
-  height: 14px;
+.paper-nav.u-pin-nav {
+  height: 44px;
 }
 
 .paper-nav-title {
@@ -37,6 +9,7 @@
   font-size: 17px;
   font-weight: 700;
   line-height: 24px;
+  text-align: center;
 }
 
 .paper-mode {

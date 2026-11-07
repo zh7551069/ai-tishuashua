@@ -19,7 +19,6 @@ import { isAuthFailure, withAuth } from '../../../services/guard';
 import { queryValue } from '../../../services/query';
 import { cancelQuizSession, createQuizSession, fetchQuizSession } from '../../../services/quiz-api';
 import { isQuizType, variantProgressUrl, variantSessionInput } from '../../../services/retrain';
-import iconBack from '../assets/icon-back.png';
 import iconKnob from '../assets/icon-knob.png';
 import { SpinGlyph, StatusGlyph } from '../glyphs';
 import '../index.css';
@@ -274,14 +273,10 @@ export default function QuizProgressPage() {
   return (
     <Screen
       back
+      centerTitle
       navPlain
       navClassName="qs-nav"
       title="出题设置"
-      backMark={
-        <View className="qs-back-clip">
-          <Image className="qs-back-ico" src={iconBack} mode="aspectFit" />
-        </View>
-      }
       footer={
         <View className="u-btn qs-cta dlg-foot-cta">
           <Text className="dlg-cta-text">AI 开始出题</Text>
