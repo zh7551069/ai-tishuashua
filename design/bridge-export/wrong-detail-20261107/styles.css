@@ -1,0 +1,430 @@
+html,
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-synthesis-weight: none;
+  background: transparent;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.content-layer {
+  position: relative;
+  z-index: 0;
+}
+
+.frame,
+.shape,
+.text,
+.svg-container,
+.mask-container {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 0;
+}
+
+.svg-container>svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  shape-rendering: geometricPrecision;
+}
+
+.svg-container>img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.self-stretch {
+  align-self: stretch;
+}
+
+.grow {
+  flex-grow: 1;
+}
+
+.basis-auto {
+  flex-basis: auto;
+}
+
+.min-w-0 {
+  min-width: 0px;
+}
+
+.min-h-0 {
+  min-height: 0px;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.relative {
+  position: relative;
+}
+
+.box-border {
+  box-sizing: border-box;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.whitespace-pre {
+  white-space: pre;
+}
+
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.gap-\[10px\] {
+  gap: 10px;
+}
+
+.gap-\[8px\] {
+  gap: 8px;
+}
+
+.gap-\[6px\] {
+  gap: 6px;
+}
+
+.gap-\[4px\] {
+  gap: 4px;
+}
+
+.gap-\[2px\] {
+  gap: 2px;
+}
+
+.rounded-\[3px\] {
+  border-radius: 3px;
+}
+
+.rounded-\[11px\] {
+  border-radius: 11px;
+}
+
+.rounded-\[14px\] {
+  border-radius: 14px;
+}
+
+.rounded-\[1px\] {
+  border-radius: 1px;
+}
+
+.rounded-\[2px\] {
+  border-radius: 2px;
+}
+
+.rounded-\[12px\] {
+  border-radius: 12px;
+}
+
+.rounded-\[8px\] {
+  border-radius: 8px;
+}
+
+.text-\[15px\] {
+  font-size: 15px;
+}
+
+.text-\[17px\] {
+  font-size: 17px;
+}
+
+.text-\[12px\] {
+  font-size: 12px;
+}
+
+.text-\[11px\] {
+  font-size: 11px;
+}
+
+.text-\[13px\] {
+  font-size: 13px;
+}
+
+.text-\[10px\] {
+  font-size: 10px;
+}
+
+.leading-\[18px\] {
+  line-height: 18px;
+}
+
+.font-normal {
+  font-weight: 400;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.h-\[844px\] {
+  height: 844px;
+}
+
+.w-\[390px\] {
+  width: 390px;
+}
+
+.h-\[44px\] {
+  height: 44px;
+}
+
+.h-\[671px\] {
+  height: 671px;
+}
+
+.h-\[655px\] {
+  height: 655px;
+}
+
+.h-\[24px\] {
+  height: 24px;
+}
+
+.w-\[24px\] {
+  width: 24px;
+}
+
+.w-\[350px\] {
+  width: 350px;
+}
+
+.h-\[46px\] {
+  height: 46px;
+}
+
+.w-\[164px\] {
+  width: 164px;
+}
+
+.w-\[174px\] {
+  width: 174px;
+}
+
+.w-\[348px\] {
+  width: 348px;
+}
+
+.w-\[320px\] {
+  width: 320px;
+}
+
+.w-\[296px\] {
+  width: 296px;
+}
+
+.h-\[16px\] {
+  height: 16px;
+}
+
+.w-\[16px\] {
+  width: 16px;
+}
+
+.left-\[0px\] {
+  left: 0px;
+}
+
+.top-\[0px\] {
+  top: 0px;
+}
+
+.left-\[420px\] {
+  left: 420px;
+}
+
+.left-\[840px\] {
+  left: 840px;
+}
+
+.left-\[1260px\] {
+  left: 1260px;
+}
+
+.left-\[1680px\] {
+  left: 1680px;
+}
+
+.left-\[2100px\] {
+  left: 2100px;
+}
+
+.left-\[2520px\] {
+  left: 2520px;
+}
+
+.px-\[24px\] {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.px-\[16px\] {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.pb-\[16px\] {
+  padding-bottom: 16px;
+}
+
+.pl-\[20px\] {
+  padding-left: 20px;
+}
+
+.pr-\[20px\] {
+  padding-right: 20px;
+}
+
+.pt-\[8px\] {
+  padding-top: 8px;
+}
+
+.pb-\[10px\] {
+  padding-bottom: 10px;
+}
+
+.pt-\[12px\] {
+  padding-top: 12px;
+}
+
+.pb-\[8px\] {
+  padding-bottom: 8px;
+}
+
+.pt-\[10px\] {
+  padding-top: 10px;
+}
+
+.px-\[8px\] {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.py-\[4px\] {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.px-\[14px\] {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.py-\[12px\] {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.px-\[10px\] {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.pr-\[12px\] {
+  padding-right: 12px;
+}
+
+.py-\[5px\] {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.pl-\[32px\] {
+  padding-left: 32px;
+}
+
+.py-\[6px\] {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.text-\[rgb\(17\,24\,39\)\] {
+  color: rgb(17, 24, 39);
+}
+
+.text-\[rgb\(220\,38\,38\)\] {
+  color: rgb(220, 38, 38);
+}
+
+.text-\[rgb\(234\,88\,12\)\] {
+  color: rgb(234, 88, 12);
+}
+
+.text-\[rgb\(156\,163\,175\)\] {
+  color: rgb(156, 163, 175);
+}
+
+.text-\[rgb\(75\,85\,99\)\] {
+  color: rgb(75, 85, 99);
+}
+
+.text-\[rgb\(22\,163\,74\)\] {
+  color: rgb(22, 163, 74);
+}
+
+.text-\[rgb\(255\,255\,255\)\] {
+  color: rgb(255, 255, 255);
+}
+
+.text-\[rgb\(37\,99\,235\)\] {
+  color: rgb(37, 99, 235);
+}
+
+.opacity-\[0\.55\] {
+  opacity: 0.55;
+}
+
+.z-\[1\] {
+  z-index: 1;
+}
+
+[data-figma-render] .fr-1u3sp5 {
+  background: rgb(248, 249, 251)
+}
