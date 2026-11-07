@@ -39,6 +39,6 @@ Worker 经 `readFreeUserBankFirst` 读这个值。Redis 键 `sysset:freeUserBank
 
 ## 页面
 
-后管导航「系统」里的「免费用户题库优先」进入 `/settings`。文案写明仅影响免费用户、默认关。这一页是占位实现，用来调用上面的接口。正式像素要等 UI 技术评审，不读 Figma `get_design_context`。
+后管导航「系统」里的「免费用户题库优先」进入 `/settings`。页面按 Bridge 导出 `design/bridge-export/admin-settings-20261107/` 的出题策略卡对稿：关态 `28:2`，开态 `28:145`（帧 `28:15`）。文案写明仅影响免费用户、默认关。开关仍立即 GET / PUT `freeUserBankFirst`。全局配额的其它字段、题库只读都不在这一页。样式只读这份 Bridge HTML，不读 `design/dev-cache`，也不调用 `get_design_context`。
 
 出题编排见 [出题](quiz.md)。

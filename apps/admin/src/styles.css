@@ -848,3 +848,170 @@ pre {
     margin-left: 0;
   }
 }
+
+/* 出题策略卡。对稿 design/bridge-export/admin-settings-20261107/：关 28:2，开 28:145。 */
+.strategy-settings {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  color: rgb(15, 23, 42);
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Segoe UI', sans-serif;
+  line-height: normal;
+}
+
+.strategy-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.strategy-settings h1 {
+  margin: 0;
+  color: rgb(15, 23, 42);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.strategy-scope,
+.strategy-status {
+  margin: 0;
+  color: rgb(100, 116, 139);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.strategy-error {
+  margin: 0;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.strategy-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgb(255, 255, 255);
+  box-shadow: inset 0 0 0 1px rgb(226, 232, 240);
+}
+
+.strategy-card h2 {
+  margin: 0;
+  color: rgb(15, 23, 42);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.strategy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.strategy-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.strategy-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.strategy-name {
+  color: rgb(15, 23, 42);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.strategy-key,
+.strategy-sub {
+  color: rgb(148, 163, 184);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.strategy-sub {
+  margin: 0;
+  color: rgb(100, 116, 139);
+}
+
+.strategy-switch {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.strategy-switch:disabled {
+  opacity: 1;
+  cursor: wait;
+}
+
+.strategy-switch:focus-visible {
+  outline: 2px solid rgb(37, 99, 235);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.strategy-track {
+  display: block;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgb(203, 213, 225);
+}
+
+.strategy-switch.is-on .strategy-track {
+  background: rgb(37, 99, 235);
+}
+
+.strategy-switch-label {
+  color: rgb(100, 116, 139);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.strategy-switch.is-on .strategy-switch-label {
+  color: rgb(37, 99, 235);
+}
+
+.strategy-helper {
+  align-self: stretch;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgb(248, 250, 252);
+  color: rgb(100, 116, 139);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+}
