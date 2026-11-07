@@ -78,6 +78,10 @@ describe('rate limit routes', () => {
     assert.equal(classifyRoute('/api/certificates/scores', 'GET').kind, 'wechat-api');
     assert.equal(classifyRoute('/api/certificates/scores/', 'GET').kind, 'wechat-api');
     assert.equal(classifyRoute('/api/not-a-module', 'GET').kind, 'public');
+    assert.equal(classifyRoute('/api/commerce/skus', 'GET').kind, 'wechat-api');
+    assert.equal(classifyRoute('/api/orders', 'POST').kind, 'wechat-api');
+    assert.equal(classifyRoute('/api/orders/upgrade-quote', 'POST').kind, 'wechat-api');
+    assert.equal(classifyRoute('/api/pay/wx/notify', 'POST').kind, 'public');
     assert.equal(classifyRoute('/api/users/me', 'GET').kind, 'wechat-api');
     assert.equal(classifyRoute('/api/users/me/phone', 'POST').kind, 'wechat-api');
   });

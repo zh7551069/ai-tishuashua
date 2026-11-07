@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, test } from 'node:test';
 import {
@@ -135,7 +135,7 @@ describe('entitlement rules', () => {
     assert.equal(/\bSELECT\b/i.test(browserTypes), false);
   });
 
-  test('本刀没有支付或微信回调代码', () => {
+  test('权益迁移本身不含订单和支付表', () => {
     const migration = readFileSync(
       join(repoRoot, 'apps/api/migrations/009_entitlement.sql'),
       'utf8',
@@ -146,33 +146,12 @@ describe('entitlement rules', () => {
     assert.match(migration, /memberships/);
     assert.match(migration, /entitlement_reservations/);
     assert.equal(/payment|wx_notify|unifiedorder|pay\/wx|mch_id|orders/i.test(migration), false);
-    const banned = /pay\/wx|unifiedorder|wxpay|WECHAT_MCH|mch_id|payment_notify/i;
-    for (const file of walk(join(repoRoot, 'apps/api/src')).concat(
-      walk(join(repoRoot, 'apps/worker/src')),
-      walk(join(repoRoot, 'packages/shared/src')),
-    )) {
-      if (!file.endsWith('.ts') || file.endsWith('.test.ts')) {
-        continue;
-      }
-      const text = readFileSync(file, 'utf8');
-      assert.equal(banned.test(text), false, file);
-    }
+    const ledger = readFileSync(join(repoRoot, 'packages/shared/src/entitlement-server.ts'), 'utf8');
+    assert.equal(/unifiedorder|pay\/wx\/notify|mch_id/i.test(ledger), false);
+    assert.match(ledger, /grantEntitlement/);
     assert.deepEqual(
       ENTITLEMENT_EXHAUSTED_CTA.map((item) => item.type),
       ['member', 'pack', 'task'],
     );
   });
 });
-
-function walk(dir: string): string[] {
-  const found: string[] = [];
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) {
-      found.push(...walk(path));
-    } else {
-      found.push(path);
-    }
-  }
-  return found;
-}

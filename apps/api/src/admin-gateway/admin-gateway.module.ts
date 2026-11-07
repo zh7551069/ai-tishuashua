@@ -7,6 +7,8 @@ import { AdminCertificateRepository } from '../admin-certificates/admin-certific
 import { AdminCertificateService } from '../admin-certificates/admin-certificates.service';
 import { CommerceController } from '../admin-commerce/commerce.controller';
 import { CommerceService } from '../admin-commerce/commerce.service';
+import { AdminOrdersController } from '../payment/admin-orders.controller';
+import { PaymentModule } from '../payment/payment.module';
 import { EntitlementOpsController } from '../admin-entitlement/entitlement-ops.controller';
 import { EntitlementOpsService } from '../admin-entitlement/entitlement-ops.service';
 import { SystemSettingsController } from '../admin-system-settings/system-settings.controller';
@@ -31,6 +33,7 @@ import { AdminLoginService } from './admin-login.service';
 import { AdminSessionGuard } from './admin-session.guard';
 
 @Module({
+  imports: [PaymentModule],
   controllers: [
     AdminGatewayController,
     AdminCatalogController,
@@ -43,6 +46,7 @@ import { AdminSessionGuard } from './admin-session.guard';
     SystemSettingsController,
     CommerceController,
     EntitlementOpsController,
+    AdminOrdersController,
   ],
   providers: [
     AdminLoginService,

@@ -131,6 +131,47 @@ export type {
   SkuPatch,
   SkuType,
 } from './commerce-config';
+export {
+  DEFAULT_INVENTORY_EXPIRE_DAYS,
+  ORDER_KINDS,
+  ORDER_PREPAY_TTL_MS,
+  ORDER_STATUSES,
+  PAY_CURRENCY,
+  PAY_NOTIFY_ACK,
+  WECHAT_PAY_BILL_RECONCILE_JOB,
+  addWholeDays,
+  buildOutTradeNo,
+  encodeOrderCursor,
+  isMockNotifyEnabled,
+  membershipEndsAt,
+  orderGrantRef,
+  parseAdminOrderQuery,
+  parseCreateOrderBody,
+  parseMockNotifyBody,
+  parseOrderListQuery,
+  parsePriceSnapshot,
+  parsePublicSkuList,
+  parseSkuCatalogQuery,
+  parseUpgradeQuoteBody,
+  quoteMemberUpgrade,
+  resolveOrderKind,
+  resolveWechatPayMode,
+} from './payment';
+export type {
+  AdminOrderItem,
+  CommerceSkuPublic,
+  OrderCreated,
+  OrderCursor,
+  OrderDetail,
+  OrderKind,
+  OrderMembership,
+  OrderStatus,
+  OrderSummary,
+  UpgradeQuote,
+  WechatPayMode,
+  WechatPayParams,
+  WechatPaySettings,
+} from './payment';
 export { readProcessLlmEnv, resolveLlmMode } from './llm-env';
 export type { LlmMode, LlmRuntimeEnv } from './llm-env';
 export { examDeadlineAt, gradeSelection, summarizeGrades } from './quiz-grade';

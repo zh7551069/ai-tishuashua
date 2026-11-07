@@ -7,7 +7,7 @@ import { configureHttp } from './app.setup';
 import { describeConfiguredServices, loadApiEnv } from './config/env';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const env = loadApiEnv(app.get(ConfigService));
 
   configureHttp(app);
@@ -47,6 +47,9 @@ async function bootstrap(): Promise<void> {
   console.log(`[api] integrations ${describeConfiguredServices(env)}`);
   if (env.wechatLoginMock) {
     console.warn('[api] WECHAT_LOGIN_MOCK=true，不会请求微信 code2session 或手机号接口');
+  }
+  if (env.nodeEnv !== 'production' && env.wechatPayMock) {
+    console.warn('[api] WECHAT_PAY_MOCK=true，下单不会请求微信支付');
   }
   if (env.llmMock) {
     console.warn('[api] LLM_MOCK=true，出题和课件提炼不会请求 DeepSeek 或通义');

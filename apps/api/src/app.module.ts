@@ -10,6 +10,7 @@ import { EntitlementModule } from './entitlement/entitlement.module';
 import { DatabaseModule } from './db/database.module';
 import { HealthModule } from './health/health.module';
 import { PackModule } from './pack/pack.module';
+import { PaymentModule } from './payment/payment.module';
 import { QuizModule } from './quiz/quiz.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { SessionModule } from './session/session.module';
@@ -31,6 +32,7 @@ import { WrongBookModule } from './wrong-book/wrong-book.module';
     CatalogModule,
     PackModule,
     EntitlementModule,
+    PaymentModule,
     QuizModule,
     WrongBookModule,
     CertificateModule,

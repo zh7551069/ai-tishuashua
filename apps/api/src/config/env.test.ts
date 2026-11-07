@@ -50,6 +50,33 @@ describe('loadApiEnv', () => {
     assert.equal(described.includes('admin '), false);
   });
 
+  test('支付只报告模式，日志不含密钥', () => {
+    const mock = loadApiEnv(
+      configWith({
+        WECHAT_PAY_MOCK: 'true',
+        WECHAT_PAY_API_V3_KEY: 'should-not-appear',
+        WECHAT_PAY_PRIVATE_KEY: 'should-not-appear-either',
+      }),
+    );
+    assert.equal(mock.wechatPayMock, true);
+    assert.equal(mock.wechatPayApiV3Key, 'should-not-appear');
+    const described = describeConfiguredServices(mock);
+    assert.equal(described.includes('should-not-appear'), false);
+    if ((process.env.NODE_ENV ?? '') === 'production') {
+      assert.match(described, /pay=missing/);
+    } else {
+      assert.match(described, /pay=mock/);
+    }
+
+    const forcedOff = loadApiEnv(configWith({ WECHAT_PAY_ENABLED: '0', WECHAT_PAY_MOCK: 'true' }));
+    assert.equal(forcedOff.wechatPayEnabled, 'off');
+    assert.match(describeConfiguredServices(forcedOff), /pay=off/);
+
+    const missing = loadApiEnv(configWith({ WECHAT_PAY_MOCK: 'yes' }));
+    assert.equal(missing.wechatPayMock, false);
+    assert.match(describeConfiguredServices(missing), /pay=missing/);
+  });
+
   test('限流默认开启，false 或 0 关闭，不信任代理', () => {
     const defaults = loadApiEnv(configWith({}));
     assert.equal(defaults.rateLimit.enabled, true);

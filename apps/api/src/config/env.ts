@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { resolveWechatPayMode } from '@tishuashua/shared';
 import { parseRateLimitSettings, type RateLimitSettings } from '../rate-limit/rate-limit.policy';
 
 export interface ApiEnv {
@@ -25,6 +26,21 @@ export interface ApiEnv {
   /** 仅当值为 true 或 1 时信任反向代理传来的客户端 IP。默认关闭。 */
   trustProxy: boolean;
   rateLimit: RateLimitSettings;
+  nodeEnv: string;
+  /** 空则下单用 WECHAT_APP_ID。 */
+  wechatPayAppId: string;
+  wechatPayMchId: string;
+  wechatPayMchSerialNo: string;
+  wechatPayPrivateKeyPath: string;
+  /** 与 PATH 二选一。日志和示例文件都不写正文。 */
+  wechatPayPrivateKey: string;
+  wechatPayApiV3Key: string;
+  wechatPayNotifyUrl: string;
+  wechatPayPlatformCertPath: string;
+  /** 仅当值为 true 或 1，且不是 production 时，下单走 mock。 */
+  wechatPayMock: boolean;
+  /** 只有 false 或 0 强制关闭。不填则配齐商户或 mock 即可下单。 */
+  wechatPayEnabled: 'unset' | 'on' | 'off';
 }
 
 function read(config: ConfigService, key: string): string {
@@ -60,7 +76,32 @@ export function loadApiEnv(config: ConfigService): ApiEnv {
     llmMock: ['true', '1'].includes(read(config, 'LLM_MOCK').toLowerCase()),
     trustProxy: ['true', '1'].includes(read(config, 'TRUST_PROXY').toLowerCase()),
     rateLimit: parseRateLimitSettings((key) => read(config, key)),
+    nodeEnv: process.env.NODE_ENV?.trim() || 'development',
+    wechatPayAppId: read(config, 'WECHAT_PAY_APP_ID'),
+    wechatPayMchId: read(config, 'WECHAT_PAY_MCH_ID'),
+    wechatPayMchSerialNo: read(config, 'WECHAT_PAY_MCH_SERIAL_NO'),
+    wechatPayPrivateKeyPath: read(config, 'WECHAT_PAY_PRIVATE_KEY_PATH'),
+    wechatPayPrivateKey: read(config, 'WECHAT_PAY_PRIVATE_KEY'),
+    wechatPayApiV3Key: read(config, 'WECHAT_PAY_API_V3_KEY'),
+    wechatPayNotifyUrl: read(config, 'WECHAT_PAY_NOTIFY_URL'),
+    wechatPayPlatformCertPath: read(config, 'WECHAT_PAY_PLATFORM_CERT_PATH'),
+    wechatPayMock: ['true', '1'].includes(read(config, 'WECHAT_PAY_MOCK').toLowerCase()),
+    wechatPayEnabled: readEnabledFlag(read(config, 'WECHAT_PAY_ENABLED')),
   };
+}
+
+function readEnabledFlag(value: string): 'unset' | 'on' | 'off' {
+  if (!value) {
+    return 'unset';
+  }
+  const normalized = value.toLowerCase();
+  if (normalized === 'true' || normalized === '1') {
+    return 'on';
+  }
+  if (normalized === 'false' || normalized === '0') {
+    return 'off';
+  }
+  return 'off';
 }
 
 /** 只报告是否已配置，避免把密钥打进日志。 */
@@ -77,5 +118,25 @@ export function describeConfiguredServices(env: ApiEnv): string {
   const llm = env.llmMock ? 'mock' : env.llmApiKey ? 'configured' : 'missing';
   const admin = env.adminUsername && env.adminPassword ? 'configured' : 'missing';
   const rateLimit = env.rateLimit.enabled ? 'on' : 'off';
-  return `wechat=${wechat} oss=${oss} llm=${llm} admin=${admin} rateLimit=${rateLimit}`;
+  const payMode = resolveWechatPayMode({
+    nodeEnv: env.nodeEnv,
+    enabledFlag: env.wechatPayEnabled,
+    mock: env.wechatPayMock,
+    appId: env.wechatPayAppId || env.wechatAppId,
+    mchId: env.wechatPayMchId,
+    mchSerialNo: env.wechatPayMchSerialNo,
+    hasPrivateKey: Boolean(env.wechatPayPrivateKeyPath || env.wechatPayPrivateKey),
+    apiV3Key: env.wechatPayApiV3Key,
+    notifyUrl: env.wechatPayNotifyUrl,
+    hasPlatformCert: Boolean(env.wechatPayPlatformCertPath),
+  });
+  const pay =
+    payMode === 'live'
+      ? 'configured'
+      : payMode === 'mock'
+        ? 'mock'
+        : env.wechatPayEnabled === 'off'
+          ? 'off'
+          : 'missing';
+  return `wechat=${wechat} oss=${oss} llm=${llm} admin=${admin} rateLimit=${rateLimit} pay=${pay}`;
 }
