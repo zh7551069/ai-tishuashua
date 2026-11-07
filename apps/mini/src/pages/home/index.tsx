@@ -127,7 +127,7 @@ export default function HomePage() {
         </View>
         <View
           className="u-avatar-wrap"
-          onClick={() => void Taro.navigateTo({ url: '/pages/settings/index' })}
+          onClick={() => void Taro.navigateTo({ url: '/pages/me/index' })}
         >
           <View className="u-avatar">
             <Text className="u-avatar-text">{nick.slice(0, 1)}</Text>
