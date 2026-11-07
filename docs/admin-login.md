@@ -161,4 +161,4 @@ pnpm test
 
 ## 相关页面
 
-用户只读见 [admin-users.md](admin-users.md)，出题会话只读见 [admin-quiz-sessions.md](admin-quiz-sessions.md)。目录维护见 [admin-catalog.md](admin-catalog.md)，错题只读见 [admin-wrong-book.md](admin-wrong-book.md)，课件上传只读见 [admin-courseware.md](admin-courseware.md)，证书与成绩只读见 [admin-certificates.md](admin-certificates.md)，限流见 [rate-limit.md](rate-limit.md)。
+用户只读见 [admin-users.md](admin-users.md)，出题会话只读见 [admin-quiz-sessions.md](admin-quiz-sessions.md)。目录维护见 [admin-catalog.md](admin-catalog.md)，错题只读见 [admin-wrong-book.md](admin-wrong-book.md)，课件上传只读见 [admin-courseware.md](admin-courseware.md)，证书与成绩只读见 [admin-certificates.md](admin-certificates.md)，免费用户题库优先见 [admin-system-settings.md](admin-system-settings.md)，限流见 [rate-limit.md](rate-limit.md)。

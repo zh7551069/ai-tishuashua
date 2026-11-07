@@ -25,23 +25,41 @@ export {
   normalizeQuizRequest,
   normalizeSelection,
   parseAiQuestions,
+  isFreeUser,
   parseCreateQuizSessionRequest,
   pickPublishedPrompt,
   pickPublishedVariantPrompt,
   preferVariantTypes,
   renderPrompt,
   sealVariantPrompt,
+  selectBankQuestions,
   takeWrongCarry,
   wrongCarryQuota,
 } from './quiz-engine';
 export type {
   AcceptedQuizSessionRequest,
   AiQuestionDraft,
+  BankCandidate,
   PaperDraft,
   PromptCandidate,
   PromptTemplateBody,
   WrongItemRecord,
 } from './quiz-engine';
+export { questionContentKey } from './question-content-key';
+export {
+  FREE_USER_BANK_FIRST_CACHE_KEY,
+  FREE_USER_BANK_FIRST_CACHE_TTL_SECONDS,
+  FREE_USER_BANK_FIRST_SETTING_KEY,
+  readFreeUserBankFirst,
+  readFreeUserBankFirstRecord,
+  SettingsCacheError,
+  writeFreeUserBankFirst,
+} from './system-settings';
+export type {
+  FreeUserBankFirstSetting,
+  SettingsCache,
+  SettingsDb,
+} from './system-settings';
 export { readProcessLlmEnv, resolveLlmMode } from './llm-env';
 export type { LlmMode, LlmRuntimeEnv } from './llm-env';
 export { examDeadlineAt, gradeSelection, summarizeGrades } from './quiz-grade';
@@ -65,6 +83,8 @@ export {
   QUIZ_SUBMIT_REASON_LABELS,
   QUIZ_TYPE_LABELS,
   QUIZ_TYPES,
+  BANK_INGEST_SOURCES,
+  BANK_STATUSES,
   QUESTION_SOURCES,
   VARIANT_QUIZ_COUNT,
 } from './quiz';
@@ -95,6 +115,8 @@ export type {
   QuizTimerPaper,
   QuizTimerPerQuestion,
   QuizTypeCode,
+  BankIngestSource,
+  BankStatus,
   QuestionSource,
   QuizSessionSource,
   SaveQuizAnswerRequest,

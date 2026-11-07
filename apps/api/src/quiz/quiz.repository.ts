@@ -11,6 +11,7 @@ import {
   examDeadlineAt,
   gradeSelection,
   normalizeSelection,
+  questionContentKey,
   summarizeGrades,
   type QuizMode,
   type QuizOption,
@@ -86,6 +87,7 @@ interface GradableQuestion {
   selected: string[];
   earnedScore: number;
   outcome: QuizOutcome;
+  bankQuestionId: string | null;
 }
 
 interface QuestionRow {
@@ -899,6 +901,7 @@ async function loadGradable(client: Queryable, sessionId: string): Promise<Grada
     analysis: string | null;
     kp_ids: string[] | null;
     score: number | string;
+    bank_question_id: string | null;
     selected: unknown;
   }>(
     `
@@ -911,6 +914,7 @@ async function loadGradable(client: Queryable, sessionId: string): Promise<Grada
         q.analysis,
         q.kp_ids,
         q.score,
+        q.bank_question_id,
         COALESCE(a.selected, '[]'::jsonb) AS selected
       FROM paper_questions q
       LEFT JOIN quiz_answers a ON a.question_id = q.id
@@ -940,6 +944,7 @@ async function loadGradable(client: Queryable, sessionId: string): Promise<Grada
       selected,
       earnedScore: graded.earnedScore,
       outcome: graded.outcome,
+      bankQuestionId: row.bank_question_id,
     });
   }
   return questions;
@@ -1002,7 +1007,7 @@ async function syncWrongItems(
       analysis: question.analysis,
       score: question.score,
     };
-    const key = wrongItemKey(snapshot);
+    const key = questionContentKey(snapshot);
     const match = byKey.get(key);
     if (question.outcome === 'correct') {
       if (match && match.status !== 'cleared') {
@@ -1018,12 +1023,19 @@ async function syncWrongItems(
       const inserted = await client.query<{ id: string }>(
         `
           INSERT INTO wrong_items (
-            id, user_id, cert_id, kp_ids, question_snapshot, status, wrong_count
+            id, user_id, cert_id, kp_ids, question_snapshot, status, wrong_count, bank_question_id
           )
-          VALUES ($5, $1, $2, $3::uuid[], $4::jsonb, 'pending', 1)
+          VALUES ($5, $1, $2, $3::uuid[], $4::jsonb, 'pending', 1, $6)
           RETURNING id
         `,
-        [userId, certId, question.kpIds, JSON.stringify(snapshot), randomUUID()],
+        [
+          userId,
+          certId,
+          question.kpIds,
+          JSON.stringify(snapshot),
+          randomUUID(),
+          question.bankQuestionId,
+        ],
       );
       const id = inserted.rows[0]?.id;
       if (id) {
@@ -1043,10 +1055,11 @@ async function syncWrongItems(
             wrong_count = wrong_count + 1,
             question_snapshot = $2::jsonb,
             kp_ids = $3::uuid[],
+            bank_question_id = COALESCE(bank_question_id, $4),
             updated_at = now()
         WHERE id = $1
       `,
-      [match.id, JSON.stringify(snapshot), question.kpIds],
+      [match.id, JSON.stringify(snapshot), question.kpIds, question.bankQuestionId],
     );
     match.status = 'pending';
     match.wrong_count = Number(match.wrong_count) + 1;
@@ -1064,19 +1077,6 @@ function preferWrongItem(next: WrongItemRow, current: WrongItemRow): boolean {
   return Number(next.wrong_count) > Number(current.wrong_count);
 }
 
-function wrongItemKey(snapshot: {
-  type: string;
-  stem: string;
-  options: readonly QuizOption[];
-  answer: readonly string[];
-}): string {
-  const options = snapshot.options
-    .map((option) => `${option.id}\u0000${option.text}`)
-    .join('\u0001');
-  const answer = [...snapshot.answer].sort().join('\u0001');
-  return `${snapshot.type}\u0002${snapshot.stem.trim()}\u0002${options}\u0002${answer}`;
-}
-
 function keyFromSnapshot(value: unknown): string | null {
   if (!value || typeof value !== 'object') {
     return null;
@@ -1090,7 +1090,7 @@ function keyFromSnapshot(value: unknown): string | null {
   if (typeof body.type !== 'string' || typeof body.stem !== 'string') {
     return null;
   }
-  return wrongItemKey({
+  return questionContentKey({
     type: body.type,
     stem: body.stem,
     options: parseOptions(body.options),

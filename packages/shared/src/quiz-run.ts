@@ -1,12 +1,15 @@
+import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import { type LlmProvider } from './constants';
 import { ApiErrorCode } from './errors';
 import { LlmCallError, requestAiQuestions } from './quiz-llm';
+import { questionContentKey } from './question-content-key';
 import {
   BUILTIN_QUIZ_PROMPT,
   BUILTIN_QUIZ_VARIANT_PROMPT,
   buildPromptVariables,
   buildVariantPromptVariables,
+  isFreeUser,
   mockAiQuestions,
   mockVariantQuestion,
   normalizeQuestionScores,
@@ -16,22 +19,27 @@ import {
   preferVariantTypes,
   renderPrompt,
   sealVariantPrompt,
+  selectBankQuestions,
   takeWrongCarry,
+  type BankCandidate,
   type PaperDraft,
   type PromptCandidate,
 } from './quiz-engine';
 import {
+  BANK_INGEST_SOURCES,
   QUIZ_DIFFICULTIES,
   QUIZ_MODES,
   QUIZ_SESSION_SOURCES,
   QUIZ_TYPES,
   VARIANT_QUIZ_COUNT,
+  type BankIngestSource,
   type QuizDifficulty,
   type QuizMode,
   type QuizOption,
   type QuizSessionSource,
   type QuizTypeCode,
 } from './quiz';
+import { readFreeUserBankFirst, type SettingsCache } from './system-settings';
 
 interface QueryResultLike {
   rows: unknown[];
@@ -74,11 +82,27 @@ export function createPgExecutor(pool: PgPoolLike): SqlExecutor {
   };
 }
 
+export interface GenerationStats {
+  wrongCarried: number;
+  bankDrawn: number;
+  aiGenerated: number;
+}
+
 export type GenerationOutcome =
-  | { status: 'ready' }
-  | { status: 'cancelled' }
+  | { status: 'ready'; stats: GenerationStats }
+  | { status: 'cancelled'; stats?: GenerationStats }
   | { status: 'skipped' }
-  | { status: 'failed'; code: string; message: string };
+  | { status: 'failed'; code: string; message: string; stats?: GenerationStats };
+
+/**
+ * 测试可以替身 isFreeUser，用来锁住「会员即使开关开也不抽库」。
+ * 不传 getFreeUserBankFirst 时直读 system_settings，不走缓存。
+ */
+export interface GenerationDeps {
+  getFreeUserBankFirst?: () => Promise<boolean>;
+  isFreeUser?: (user: { id: string }) => boolean;
+  settingsCache?: SettingsCache | null;
+}
 
 export type GenerationOptions =
   | { mode: 'mock'; beforePersist?: (ordinal: number) => Promise<void> }
@@ -122,17 +146,27 @@ interface GenerationContext {
   certName: string;
   domainId: string;
   domainName: string;
-  knowledgePoints: { id: string; name: string; promptHint: string }[];
+  knowledgePoints: { id: string; name: string; promptHint: string; textbookId: string | null }[];
+}
+
+interface BankWriteContext {
+  userId: string;
+  domainId: string;
+  certId: string;
+  difficulty: QuizDifficulty;
+  textbookByKp: ReadonlyMap<string, string | null>;
 }
 
 /**
  * 成卷只在全部题目写入且状态仍是本次 run 时变为 ready。
  * 取消或失败会删掉已写入的 PaperQuestion，不留半卷。
+ * 已经写入的 question_bank 保留。
  */
 export async function runQuizGeneration(
   db: SqlExecutor,
   sessionId: string,
   options: GenerationOptions,
+  deps?: GenerationDeps,
 ): Promise<GenerationOutcome> {
   const claim = await claimSession(db, sessionId);
   if (claim.kind === 'failed') {
@@ -145,6 +179,7 @@ export async function runQuizGeneration(
     return { status: claim.kind };
   }
 
+  let stats = emptyStats();
   try {
     if (options.mode === 'unconfigured') {
       return await failSession(
@@ -193,7 +228,10 @@ export async function runQuizGeneration(
       );
     }
 
-    const drafts = await buildDrafts(db, sessionId, context, options);
+    const built = await buildDrafts(db, sessionId, context, options, deps);
+    const drafts = built.drafts;
+    stats = built.stats;
+    const bankWrite = bankWriteContext(context);
     const scores = normalizeQuestionScores(
       drafts.map((draft) => draft.score),
       context.totalScore,
@@ -213,20 +251,38 @@ export async function runQuizGeneration(
       if (options.beforePersist) {
         await options.beforePersist(index + 1);
       }
-      const inserted = await insertQuestion(db, sessionId, claim.token, index + 1, draft, score);
+      const inserted = await insertQuestion(
+        db,
+        sessionId,
+        claim.token,
+        index + 1,
+        draft,
+        score,
+        bankWrite,
+      );
       if (!inserted) {
-        return await stopWithoutPaper(db, sessionId, claim.token);
+        return withStats(await stopWithoutPaper(db, sessionId, claim.token), stats);
       }
     }
 
-    const ready = await markReady(db, sessionId, claim.token, drafts.length, context.totalScore);
+    const ready = await markReady(
+      db,
+      sessionId,
+      claim.token,
+      drafts.length,
+      context.totalScore,
+      stats,
+    );
     if (!ready) {
-      return await stopWithoutPaper(db, sessionId, claim.token);
+      return withStats(await stopWithoutPaper(db, sessionId, claim.token), stats);
     }
-    return { status: 'ready' };
+    return { status: 'ready', stats };
   } catch (error) {
     const mapped = mapGenerationError(error);
-    return failSession(db, sessionId, claim.token, mapped.code, mapped.message);
+    return withStats(
+      await failSession(db, sessionId, claim.token, mapped.code, mapped.message),
+      stats,
+    );
   }
 }
 
@@ -235,12 +291,16 @@ async function buildDrafts(
   sessionId: string,
   context: GenerationContext,
   options: Exclude<GenerationOptions, { mode: 'unconfigured' }>,
-): Promise<PaperDraft[]> {
+  deps: GenerationDeps | undefined,
+): Promise<{ drafts: PaperDraft[]; stats: GenerationStats }> {
   if (context.source === 'variant') {
     if (context.mode !== 'practice' || context.questionCount !== VARIANT_QUIZ_COUNT) {
       throw new Error('题型变异只能练习且只有 1 题');
     }
-    return [await requestVariantQuestion(db, sessionId, context, options)];
+    return {
+      drafts: [await requestVariantQuestion(db, sessionId, context, options)],
+      stats: { wrongCarried: 0, bankDrawn: 0, aiGenerated: 1 },
+    };
   }
   const wrongItems = await loadWrongItems(db, context.userId, context.certId);
   const carry = takeWrongCarry(
@@ -249,14 +309,18 @@ async function buildDrafts(
     context.knowledgePoints.map((item) => item.id),
     context.types,
   );
-  const aiCount = context.questionCount - carry.length;
-  if (aiCount < 0) {
+  const need = context.questionCount - carry.length;
+  if (need < 0) {
     throw new Error('错题配额超过题量');
   }
+  const freeFirst = await resolveFreeUserBankFirst(db, context.userId, deps);
+  const bank = freeFirst && need > 0 ? await drawFromBank(db, sessionId, context, need, carry) : [];
+  const aiNeed = need - bank.length;
   const aiQuestions =
-    aiCount === 0 ? [] : await requestOriginalQuestions(db, sessionId, context, options, aiCount);
+    aiNeed === 0 ? [] : await requestOriginalQuestions(db, sessionId, context, options, aiNeed);
   const drafts: PaperDraft[] = [
     ...carry,
+    ...bank,
     ...aiQuestions.map((question) => ({
       type: question.type,
       stem: question.stem,
@@ -278,7 +342,159 @@ async function buildDrafts(
   if (drafts.length !== context.questionCount) {
     throw new Error('组卷题量不正确');
   }
-  return drafts;
+  return {
+    drafts,
+    stats: {
+      wrongCarried: carry.length,
+      bankDrawn: bank.length,
+      aiGenerated: aiQuestions.length,
+    },
+  };
+}
+
+async function resolveFreeUserBankFirst(
+  db: SqlExecutor,
+  userId: string,
+  deps: GenerationDeps | undefined,
+): Promise<boolean> {
+  const enabled = deps?.getFreeUserBankFirst
+    ? await deps.getFreeUserBankFirst()
+    : await readFreeUserBankFirst(db, deps?.settingsCache ?? null);
+  const free = (deps?.isFreeUser ?? isFreeUser)({ id: userId });
+  return enabled && free;
+}
+
+async function drawFromBank(
+  db: SqlQueryable,
+  sessionId: string,
+  context: GenerationContext,
+  need: number,
+  carry: readonly PaperDraft[],
+): Promise<PaperDraft[]> {
+  const seen = await loadSeenContentKeys(db, context.userId);
+  const usedContentKeys = new Set(
+    carry.map((draft) =>
+      questionContentKey({
+        type: draft.type,
+        stem: draft.stem,
+        options: draft.options,
+        answer: draft.answer,
+      }),
+    ),
+  );
+  const usedStems = new Set(carry.map((draft) => draft.stem.trim()));
+  const sessionKpIds = context.knowledgePoints.map((item) => item.id);
+  const loaded = await db.query(
+    `
+      SELECT id, kp_ids, type_code, stem, options, answer, analysis, difficulty, content_key
+      FROM question_bank
+      WHERE certificate_id = $1
+        AND status = 'online'
+        AND type_code = ANY($2::text[])
+        AND kp_ids && $3::uuid[]
+    `,
+    [context.certId, context.types, sessionKpIds],
+  );
+  const candidates: BankCandidate[] = [];
+  for (const item of loaded.rows) {
+    const row = item as {
+      id: string;
+      kp_ids: string[] | null;
+      type_code: string;
+      stem: string;
+      options: unknown;
+      answer: unknown;
+      analysis: string | null;
+      difficulty: string | null;
+      content_key: unknown;
+    };
+    const parsed = parseStoredQuestion(row.type_code, row.stem, row.options, row.answer);
+    const contentKey = contentKeyText(row.content_key);
+    if (!parsed || !contentKey) {
+      continue;
+    }
+    candidates.push({
+      id: row.id,
+      kpIds: row.kp_ids ?? [],
+      type: parsed.type,
+      stem: parsed.stem,
+      options: parsed.options,
+      answer: parsed.answer,
+      analysis: typeof row.analysis === 'string' ? row.analysis : '',
+      difficulty: isDifficulty(row.difficulty) ? row.difficulty : null,
+      contentKey,
+    });
+  }
+  return selectBankQuestions({
+    need,
+    sessionId,
+    difficulty: context.difficulty,
+    types: context.types,
+    sessionKpIds,
+    seenContentKeys: seen,
+    usedContentKeys,
+    usedStems,
+    candidates,
+  }).map((row) => ({
+    type: row.type,
+    stem: row.stem,
+    options: row.options,
+    answer: row.answer,
+    analysis: row.analysis,
+    score: 1,
+    knowledgePointIds: row.kpIds.map((id) => id.toLowerCase()),
+    source: 'bank' as const,
+    bankQuestionId: row.id,
+  }));
+}
+
+/** 近 30 天已交卷，并上该用户最近 3 场已交卷。窗口内的题干指纹不再抽。 */
+async function loadSeenContentKeys(db: SqlQueryable, userId: string): Promise<Set<string>> {
+  const result = await db.query(
+    `
+      SELECT pq.type_code, pq.stem, pq.options, pq.answer
+      FROM paper_questions pq
+      JOIN quiz_sessions s ON s.id = pq.session_id
+      WHERE s.user_id = $1
+        AND s.status = 'submitted'
+        AND s.submitted_at IS NOT NULL
+        AND (
+          s.submitted_at >= now() - interval '30 days'
+          OR s.id IN (
+            SELECT id
+            FROM quiz_sessions
+            WHERE user_id = $1
+              AND status = 'submitted'
+              AND submitted_at IS NOT NULL
+            ORDER BY submitted_at DESC, id DESC
+            LIMIT 3
+          )
+        )
+    `,
+    [userId],
+  );
+  const seen = new Set<string>();
+  for (const item of result.rows) {
+    const row = item as {
+      type_code: string;
+      stem: string;
+      options: unknown;
+      answer: unknown;
+    };
+    const parsed = parseStoredQuestion(row.type_code, row.stem, row.options, row.answer);
+    if (!parsed) {
+      continue;
+    }
+    seen.add(
+      questionContentKey({
+        type: parsed.type,
+        stem: parsed.stem,
+        options: parsed.options,
+        answer: parsed.answer,
+      }),
+    );
+  }
+  return seen;
 }
 
 async function requestOriginalQuestions(
@@ -551,7 +767,7 @@ async function loadContext(db: SqlQueryable, sessionId: string): Promise<Generat
         : [];
   const knowledge = await db.query(
     `
-      SELECT kp.id, kp.name, kp.prompt_hint
+      SELECT kp.id, kp.name, kp.prompt_hint, kp.textbook_id
       FROM pack_knowledge_points pkp
       JOIN knowledge_points kp ON kp.id = pkp.knowledge_point_id
       WHERE pkp.pack_id = $1
@@ -581,8 +797,18 @@ async function loadContext(db: SqlQueryable, sessionId: string): Promise<Generat
     domainId: row.domain_id,
     domainName: row.domain_name,
     knowledgePoints: knowledge.rows.map((item) => {
-      const point = item as { id: string; name: string; prompt_hint: string };
-      return { id: point.id, name: point.name, promptHint: point.prompt_hint };
+      const point = item as {
+        id: string;
+        name: string;
+        prompt_hint: string;
+        textbook_id: string | null;
+      };
+      return {
+        id: point.id,
+        name: point.name,
+        promptHint: point.prompt_hint,
+        textbookId: point.textbook_id ? point.textbook_id.toLowerCase() : null,
+      };
     }),
   };
 }
@@ -678,18 +904,21 @@ async function insertQuestion(
   ordinal: number,
   draft: PaperDraft,
   score: number,
+  bankWrite: BankWriteContext,
 ): Promise<boolean> {
   return db.transaction(async (tx) => {
     const row = await lockSession(tx, sessionId);
     if (!row || row.status !== 'generating' || row.runToken !== token) {
       return false;
     }
+    const bankQuestionId = await resolveBankQuestionId(tx, sessionId, draft, bankWrite);
     await tx.query(
       `
         INSERT INTO paper_questions (
-          id, session_id, ordinal, type_code, stem, options, answer, analysis, kp_ids, source, score
+          id, session_id, ordinal, type_code, stem, options, answer, analysis, kp_ids, source, score,
+          bank_question_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9::uuid[], $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9::uuid[], $10, $11, $12)
       `,
       [
         randomUUID(),
@@ -703,6 +932,7 @@ async function insertQuestion(
         draft.knowledgePointIds,
         draft.source,
         score,
+        bankQuestionId,
       ],
     );
     await tx.query(
@@ -719,6 +949,7 @@ async function markReady(
   token: string,
   total: number,
   totalScore: number,
+  stats: GenerationStats,
 ): Promise<boolean> {
   return db.transaction(async (tx) => {
     const row = await lockSession(tx, sessionId);
@@ -742,10 +973,11 @@ async function markReady(
             error_code = NULL,
             error_message = NULL,
             pack_snapshot = pack_snapshot || jsonb_build_object('totalScore', $3::int),
+            generation_stats = $4::jsonb,
             updated_at = now()
         WHERE id = $1
       `,
-      [sessionId, total, Math.round(totalScore)],
+      [sessionId, total, Math.round(totalScore), JSON.stringify(stats)],
     );
     return true;
   });
@@ -859,8 +1091,206 @@ async function lockSession(db: SqlQueryable, sessionId: string): Promise<Session
   };
 }
 
+/** 只删本会话试卷。不删 question_bank。 */
 async function deleteQuestions(db: SqlQueryable, sessionId: string): Promise<void> {
   await db.query(`DELETE FROM paper_questions WHERE session_id = $1`, [sessionId]);
+}
+
+async function resolveBankQuestionId(
+  db: SqlQueryable,
+  sessionId: string,
+  draft: PaperDraft,
+  bankWrite: BankWriteContext,
+): Promise<string | null> {
+  if (draft.source === 'bank') {
+    if (!draft.bankQuestionId) {
+      throw new Error('题库题缺少引用');
+    }
+    return draft.bankQuestionId;
+  }
+  if (draft.source === 'ai' || draft.source === 'ai_variant') {
+    return persistQuestionBank(db, sessionId, draft, bankWrite, draft.source);
+  }
+  const existing = await lookupBankId(db, bankWrite.certId, contentKeyOf(draft));
+  if (existing && draft.wrongItemId && isUuid(draft.wrongItemId)) {
+    await db.query(
+      `
+        UPDATE wrong_items
+        SET bank_question_id = $2
+        WHERE id = $1 AND user_id = $3 AND bank_question_id IS NULL
+      `,
+      [draft.wrongItemId, existing, bankWrite.userId],
+    );
+  }
+  return existing;
+}
+
+async function persistQuestionBank(
+  db: SqlQueryable,
+  sessionId: string,
+  draft: PaperDraft,
+  bankWrite: BankWriteContext,
+  source: BankIngestSource,
+): Promise<string> {
+  const kpId = draft.knowledgePointIds[0]?.toLowerCase();
+  if (!kpId) {
+    throw new Error('题目缺少知识点');
+  }
+  if (!(BANK_INGEST_SOURCES as readonly string[]).includes(source)) {
+    throw new Error('题库来源不正确');
+  }
+  const contentKey = contentKeyOf(draft);
+  const inserted = await db.query(
+    `
+      INSERT INTO question_bank (
+        id, domain_id, certificate_id, textbook_id, kp_ids, type_code, stem,
+        options, answer, analysis, difficulty, source, content_key,
+        origin_session_id, origin_user_id, status
+      )
+      VALUES (
+        $1, $2, $3, $4, $5::uuid[], $6, $7,
+        $8::jsonb, $9::jsonb, $10, $11, $12, $13,
+        $14, $15, 'online'
+      )
+      ON CONFLICT (certificate_id, content_key) DO NOTHING
+      RETURNING id
+    `,
+    [
+      randomUUID(),
+      bankWrite.domainId,
+      bankWrite.certId,
+      bankWrite.textbookByKp.get(kpId) ?? null,
+      draft.knowledgePointIds,
+      draft.type,
+      draft.stem,
+      JSON.stringify(draft.options),
+      JSON.stringify(draft.answer),
+      draft.analysis || null,
+      bankWrite.difficulty,
+      source,
+      contentKey,
+      sessionId,
+      bankWrite.userId,
+    ],
+  );
+  const created = inserted.rows[0] as { id: string } | undefined;
+  if (created?.id) {
+    return created.id;
+  }
+  const existing = await lookupBankId(db, bankWrite.certId, contentKey);
+  if (!existing) {
+    throw new Error('题库写入失败');
+  }
+  return existing;
+}
+
+async function lookupBankId(
+  db: SqlQueryable,
+  certId: string,
+  contentKey: Buffer,
+): Promise<string | null> {
+  const result = await db.query(
+    `
+      SELECT id
+      FROM question_bank
+      WHERE certificate_id = $1 AND content_key = $2
+      LIMIT 1
+    `,
+    [certId, contentKey],
+  );
+  const row = result.rows[0] as { id: string } | undefined;
+  return row?.id ?? null;
+}
+
+function bankWriteContext(context: GenerationContext): BankWriteContext {
+  return {
+    userId: context.userId,
+    domainId: context.domainId,
+    certId: context.certId,
+    difficulty: context.difficulty,
+    textbookByKp: new Map(
+      context.knowledgePoints.map((item) => [item.id.toLowerCase(), item.textbookId]),
+    ),
+  };
+}
+
+function contentKeyOf(draft: PaperDraft): Buffer {
+  return Buffer.from(
+    questionContentKey({
+      type: draft.type,
+      stem: draft.stem,
+      options: draft.options,
+      answer: draft.answer,
+    }),
+    'utf8',
+  );
+}
+
+function contentKeyText(value: unknown): string | null {
+  if (Buffer.isBuffer(value)) {
+    return value.toString('utf8');
+  }
+  if (value instanceof Uint8Array) {
+    return Buffer.from(value).toString('utf8');
+  }
+  if (typeof value === 'string' && value.startsWith('\\x')) {
+    return Buffer.from(value.slice(2), 'hex').toString('utf8');
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  return null;
+}
+
+function parseStoredQuestion(
+  type: string,
+  stem: string,
+  options: unknown,
+  answer: unknown,
+): { type: QuizTypeCode; stem: string; options: QuizOption[]; answer: string[] } | null {
+  if (!isQuizType(type) || typeof stem !== 'string' || stem.trim().length === 0) {
+    return null;
+  }
+  if (!Array.isArray(options)) {
+    return null;
+  }
+  const parsedOptions: QuizOption[] = [];
+  for (const item of options) {
+    if (!item || typeof item !== 'object') {
+      return null;
+    }
+    const id = 'id' in item && typeof item.id === 'string' ? item.id : '';
+    const text = 'text' in item && typeof item.text === 'string' ? item.text : '';
+    if (!id || !text) {
+      return null;
+    }
+    parsedOptions.push({ id, text });
+  }
+  if (!Array.isArray(answer) || parsedOptions.length === 0) {
+    return null;
+  }
+  const parsedAnswer = answer.filter((item): item is string => typeof item === 'string');
+  if (parsedAnswer.length !== answer.length || parsedAnswer.length === 0) {
+    return null;
+  }
+  return { type, stem, options: parsedOptions, answer: parsedAnswer };
+}
+
+function withStats(outcome: GenerationOutcome, stats: GenerationStats): GenerationOutcome {
+  if (outcome.status === 'skipped') {
+    return outcome;
+  }
+  return { ...outcome, stats };
+}
+
+function emptyStats(): GenerationStats {
+  return { wrongCarried: 0, bankDrawn: 0, aiGenerated: 0 };
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
 }
 
 function intersectTypes(

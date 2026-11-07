@@ -49,6 +49,22 @@ export interface PaperDraft {
   score: number;
   knowledgePointIds: string[];
   source: QuestionSource;
+  /** source=bank 时必填。ai / ai_variant 入库后回填。wrong_carry 可空。 */
+  bankQuestionId?: string | null;
+  /** 仅 wrong_carry。用来可选回填 wrong_items.bank_question_id，不参与消灭。 */
+  wrongItemId?: string | null;
+}
+
+export interface BankCandidate {
+  id: string;
+  kpIds: readonly string[];
+  type: QuizTypeCode;
+  stem: string;
+  options: QuizOption[];
+  answer: string[];
+  analysis: string;
+  difficulty: QuizDifficulty | null;
+  contentKey: string;
 }
 
 export interface AiQuestionDraft {
@@ -97,9 +113,93 @@ export function takeWrongCarry(
       ...parsed,
       knowledgePointIds: kpIds,
       source: 'wrong_carry',
+      wrongItemId: item.id,
     });
   }
   return carry;
+}
+
+/**
+ * 现网没有会员字段。商业化落地后改为「会员有效则 false」。
+ * 组卷只在本函数为 true 且 freeUserBankFirst 打开时抽题库。
+ */
+export function isFreeUser(_user: { id: string }): boolean {
+  return true;
+}
+
+/**
+ * 从已过滤的候选里抽题。调用方保证候选属于本证书且 status=online。
+ * 知识点没有交集的行丢掉，本切片不放宽到整张证书。
+ * 难度只软匹配：先拿难度相同的，不够再拿其余的。
+ * 排序用会话盐，同一会话重复计算顺序稳定。
+ */
+export function selectBankQuestions(input: {
+  need: number;
+  sessionId: string;
+  difficulty: QuizDifficulty;
+  types: readonly QuizTypeCode[];
+  sessionKpIds: readonly string[];
+  seenContentKeys: ReadonlySet<string>;
+  usedContentKeys: ReadonlySet<string>;
+  usedStems: ReadonlySet<string>;
+  candidates: readonly BankCandidate[];
+}): BankCandidate[] {
+  if (!Number.isInteger(input.need) || input.need <= 0) {
+    return [];
+  }
+  const types = new Set(input.types);
+  const sessionKps = new Set(input.sessionKpIds.map((id) => id.toLowerCase()));
+  const usedStems = new Set([...input.usedStems].map((stem) => stem.trim()));
+  const eligible: BankCandidate[] = [];
+  for (const row of input.candidates) {
+    if (!types.has(row.type)) {
+      continue;
+    }
+    const overlaps = row.kpIds.some((id) => sessionKps.has(id.toLowerCase()));
+    if (!overlaps) {
+      continue;
+    }
+    if (input.seenContentKeys.has(row.contentKey) || input.usedContentKeys.has(row.contentKey)) {
+      continue;
+    }
+    if (usedStems.has(row.stem.trim())) {
+      continue;
+    }
+    eligible.push(row);
+  }
+  const bySalt = (left: BankCandidate, right: BankCandidate) =>
+    sessionSalt(input.sessionId, left.id) - sessionSalt(input.sessionId, right.id) ||
+    left.id.localeCompare(right.id);
+  const preferred = eligible
+    .filter((row) => row.difficulty === input.difficulty)
+    .sort(bySalt);
+  const rest = eligible.filter((row) => row.difficulty !== input.difficulty).sort(bySalt);
+  const picked: BankCandidate[] = [];
+  const pickedKeys = new Set<string>();
+  const pickedStems = new Set<string>();
+  for (const row of [...preferred, ...rest]) {
+    if (picked.length >= input.need) {
+      break;
+    }
+    const stem = row.stem.trim();
+    if (pickedKeys.has(row.contentKey) || pickedStems.has(stem)) {
+      continue;
+    }
+    pickedKeys.add(row.contentKey);
+    pickedStems.add(stem);
+    picked.push(row);
+  }
+  return picked;
+}
+
+function sessionSalt(sessionId: string, bankId: string): number {
+  let hash = 2166136261;
+  const text = `${sessionId}\u0000${bankId}`;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
 /** 出题后把分值配平到证书总分。最大余数法，结果为整数且求和等于总分。 */

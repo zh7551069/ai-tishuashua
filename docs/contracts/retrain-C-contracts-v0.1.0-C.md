@@ -102,6 +102,7 @@ export const QUESTION_SOURCES = ['ai', 'wrong_carry', 'ai_variant'] as const;
 - 普通 AI 出题 / 复练同类 AI 部分：`ai`
 - 组卷带入未消灭错题：`wrong_carry`（复练同类仍可走既有 `takeWrongCarry`；变异卷 **禁止** wrong_carry，见 §5）
 - 题型变异生成题：`ai_variant`
+- 题目 `source` 另见 TB-17，增 `bank`。枚举以 `packages/shared` 的 `QUESTION_SOURCES` 与 [TB-17 契约](tb17-bank-persist-C-contracts-v0.1.0-C.md) 为准。本文件不改会话 `source`。
 
 ### 3.3 意图字段
 

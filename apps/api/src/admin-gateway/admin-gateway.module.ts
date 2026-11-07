@@ -5,6 +5,8 @@ import { AdminCatalogService } from '../admin-catalog/admin-catalog.service';
 import { AdminCertificateController } from '../admin-certificates/admin-certificates.controller';
 import { AdminCertificateRepository } from '../admin-certificates/admin-certificates.repository';
 import { AdminCertificateService } from '../admin-certificates/admin-certificates.service';
+import { SystemSettingsController } from '../admin-system-settings/system-settings.controller';
+import { SystemSettingsService } from '../admin-system-settings/system-settings.service';
 import { AdminQuizSessionController } from '../admin-quiz-sessions/admin-quiz-sessions.controller';
 import { AdminQuizSessionRepository } from '../admin-quiz-sessions/admin-quiz-sessions.repository';
 import { AdminQuizSessionService } from '../admin-quiz-sessions/admin-quiz-sessions.service';
@@ -30,6 +32,7 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminCertificateController,
     AdminUserController,
     AdminQuizSessionController,
+    SystemSettingsController,
   ],
   providers: [
     AdminLoginService,
@@ -46,6 +49,7 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminUserService,
     AdminQuizSessionRepository,
     AdminQuizSessionService,
+    SystemSettingsService,
   ],
 })
 export class AdminGatewayModule {}
