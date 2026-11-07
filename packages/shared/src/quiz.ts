@@ -150,6 +150,12 @@ export interface QuizQuestionView {
   source: QuestionSource;
   selected: string[];
   review: QuizQuestionReview | null;
+  /**
+   * 交卷后才附上。一题可挂多个知识点，名称与 kpIds 对齐，对不上为空串。
+   * 未交卷不带这两个字段。
+   */
+  kpIds?: string[];
+  kpNames?: string[];
 }
 
 export interface QuizResultView {
