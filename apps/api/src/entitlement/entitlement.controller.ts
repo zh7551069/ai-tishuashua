@@ -27,7 +27,7 @@ export class EntitlementController {
   @ApiOperation({
     summary: '当前权益',
     description:
-      '返回业务日、会员、日免、任务奖、未过期库存和终身提炼计数。允许顺带做 Asia/Shanghai 懒日切。',
+      '返回业务日、会员、日免、任务奖、未过期库存和终身提炼计数。balances.dailyFreeQuota 是当前日免配额（dailyFreeSessions，缺省 2），不是剩余。允许顺带做 Asia/Shanghai 懒日切。',
   })
   @ApiOkResponse({ description: 'EntitlementView' })
   me(@CurrentUser() user: UserSummary) {

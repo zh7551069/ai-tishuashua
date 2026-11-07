@@ -114,12 +114,12 @@ export async function holdSessionEntitlement(
   return reserveEntitlement(db, userId, { sessionId, qty: 1 }, now);
 }
 
-/** 懒日切。调用方必须已经处在事务里。 */
+/** 懒日切。调用方必须已经处在事务里。附带当前日免配额，不改余额。 */
 export async function ensureEntitlementDay(
   db: EntitlementDb,
   userId: string,
   now = new Date(),
-): Promise<AccountRow> {
+): Promise<AccountRow & { dailyFreeQuota: number }> {
   const today = businessDate(now);
   await db.query(`SELECT pg_advisory_xact_lock($1, hashtext($2::text))`, [USER_LOCK_KEY, userId]);
   const quota = await dailyFreeQuota(db);
@@ -148,10 +148,10 @@ export async function ensureEntitlementDay(
     if (!account) {
       throw new Error('权益账户创建后读不到');
     }
-    return account;
+    return withDailyFreeQuota(account, quota);
   }
   if (account.businessDate >= today) {
-    return account;
+    return withDailyFreeQuota(account, quota);
   }
   if (account.dailyFreeRemain > 0) {
     await insertLedger(db, {
@@ -202,7 +202,7 @@ export async function ensureEntitlementDay(
   if (!rolled) {
     throw new Error('日切后读不到权益账户');
   }
-  return rolled;
+  return withDailyFreeQuota(rolled, quota);
 }
 
 export async function readEntitlement(
@@ -227,6 +227,7 @@ export async function readEntitlement(
       dailyFreeRemain: account.dailyFreeRemain,
       dailyTaskRemain: account.dailyTaskRemain,
       inventoryRemain,
+      dailyFreeQuota: account.dailyFreeQuota,
     },
     refine: {
       lifetimeUsed: account.refineLifetimeUsed,
@@ -305,7 +306,7 @@ export async function reserveEntitlement(
 
   const spent = await spendOne(db, userId);
   if (!spent) {
-    const balances = await readBalances(db, userId);
+    const balances = await readBalances(db, userId, account.dailyFreeQuota);
     throw new EntitlementFlowError('ENTITLEMENT_EXHAUSTED', '今日免费场次已用完', {
       reason: 'exhausted',
       businessDate: account.businessDate,
@@ -746,13 +747,25 @@ async function lockAccount(db: EntitlementDb, userId: string): Promise<AccountRo
   return mapAccount(result.rows[0]);
 }
 
-async function readBalances(db: EntitlementDb, userId: string): Promise<EntitlementBalances> {
+async function readBalances(
+  db: EntitlementDb,
+  userId: string,
+  dailyFreeQuota: number,
+): Promise<EntitlementBalances> {
   const account = await lockAccount(db, userId);
   return {
     dailyFreeRemain: account?.dailyFreeRemain ?? 0,
     dailyTaskRemain: account?.dailyTaskRemain ?? 0,
     inventoryRemain: await sumInventory(db, userId),
+    dailyFreeQuota,
   };
+}
+
+function withDailyFreeQuota(
+  account: AccountRow,
+  dailyFreeQuota: number,
+): AccountRow & { dailyFreeQuota: number } {
+  return { ...account, dailyFreeQuota };
 }
 
 async function sumInventory(db: EntitlementDb, userId: string): Promise<number> {

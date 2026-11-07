@@ -4,6 +4,7 @@ import { QUIZ_TYPE_LABELS, type PackList, type WrongBookItem } from '@tishuashua
 import { useState } from 'react';
 import { Screen } from '../../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
+import { useExhaustedGate } from '../../../components/use-exhausted-gate';
 import { fetchKnowledgeTree } from '../../../services/catalog-api';
 import { isAuthFailure, withAuth } from '../../../services/guard';
 import { fetchPacks } from '../../../services/pack-api';
@@ -31,6 +32,7 @@ export default function WrongBookDetailPage() {
   const [packError, setPackError] = useState('');
   const [actionError, setActionError] = useState('');
   const [pendingAction, setPendingAction] = useState<'clear' | 'variant' | null>(null);
+  const gate = useExhaustedGate();
 
   const load = async () => {
     if (!itemId) {
@@ -81,7 +83,7 @@ export default function WrongBookDetailPage() {
   });
 
   const target: RetrainTarget | null = item && packs ? resolveRetrainTarget(item, packs) : null;
-  const canRetrain = Boolean(target?.ok) && pendingAction === null;
+  const canRetrain = Boolean(target?.ok) && pendingAction === null && !gate.sheetOpen;
   const pending = item?.status === 'pending';
   const help = helpText(item, target, packError, actionError);
   const showPackLink = Boolean(target && !target.ok && target.reason === 'no-pack');
@@ -124,29 +126,35 @@ export default function WrongBookDetailPage() {
   };
 
   const startVariant = async () => {
-    if (!item || !target?.ok || pendingAction) {
+    if (!item || !target?.ok || pendingAction || gate.sheetOpen) {
       return;
     }
     setActionError('');
     setPendingAction('variant');
     try {
       const pack = packs?.items.find((row) => row.id === target.packId);
-      const created = await withAuth((token) =>
-        createQuizSession(
-          token,
-          variantSessionInput({
-            packId: target.packId,
-            wrongItemId: item.id,
-            types: pack?.enabledQuestionTypeCodes,
-          }),
-        ),
-      );
-      if (!created) {
+      const result = await gate.run({
+        source: 'variant',
+        create: (token) =>
+          createQuizSession(
+            token,
+            variantSessionInput({
+              packId: target.packId,
+              wrongItemId: item.id,
+              types: pack?.enabledQuestionTypeCodes,
+            }),
+          ),
+      });
+      if (result.kind === 'error') {
+        setActionError(result.message);
+        return;
+      }
+      if (result.kind !== 'created') {
         return;
       }
       await Taro.navigateTo({
         url: variantProgressUrl({
-          sessionId: created.id,
+          sessionId: result.session.id,
           wrongItemId: item.id,
           packId: target.packId,
         }),
@@ -301,6 +309,7 @@ export default function WrongBookDetailPage() {
           </>
         ) : null}
       </View>
+      {gate.sheet}
     </Screen>
   );
 }

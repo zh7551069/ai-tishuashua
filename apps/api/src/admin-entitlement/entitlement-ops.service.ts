@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { BUSINESS_TZ, COMMERCE_AUDIT_ACTIONS } from '@tishuashua/shared';
-import { readDailyFreeSessions } from '@tishuashua/shared/commerce';
 import {
   EntitlementAdminError,
   grantEntitlement,
@@ -294,11 +293,18 @@ export class EntitlementOpsService {
       }
       const detail = await this.requireDetail(db, userId);
       for (const item of revoked) {
-        this.log(actor, userId, item.kind === 'lot' ? COMMERCE_AUDIT_ACTIONS.entitlementRevokeLot : COMMERCE_AUDIT_ACTIONS.entitlementVoidPending, {
-          lotId: item.kind === 'lot' ? item.id : null,
-          pendingId: item.kind === 'pending' ? item.id : null,
-          qty: item.kind === 'lot' ? item.beforeRemain : item.qty,
-        });
+        this.log(
+          actor,
+          userId,
+          item.kind === 'lot'
+            ? COMMERCE_AUDIT_ACTIONS.entitlementRevokeLot
+            : COMMERCE_AUDIT_ACTIONS.entitlementVoidPending,
+          {
+            lotId: item.kind === 'lot' ? item.id : null,
+            pendingId: item.kind === 'pending' ? item.id : null,
+            qty: item.kind === 'lot' ? item.beforeRemain : item.qty,
+          },
+        );
       }
       return { revoked, balances: detail.balances };
     });
@@ -400,14 +406,15 @@ export class EntitlementOpsService {
     return user;
   }
 
-  private async requireDetail(db: EntitlementDb, userId: string, now = new Date()): Promise<OpsDetail> {
+  private async requireDetail(
+    db: EntitlementDb,
+    userId: string,
+    now = new Date(),
+  ): Promise<OpsDetail> {
     const user = await this.requireUser(db, userId);
     const view = await readEntitlement(db, userId, now);
-    const quota = await readDailyFreeSessions(db, null);
     const pendingQty = await sumPending(db, userId);
-    const skuName = view.membership.skuCode
-      ? await readSkuName(db, view.membership.skuCode)
-      : null;
+    const skuName = view.membership.skuCode ? await readSkuName(db, view.membership.skuCode) : null;
     const entries = [
       ...(await listPendingEntries(db, userId)),
       ...(await listLotEntries(db, userId, now)),
@@ -434,7 +441,7 @@ export class EntitlementOpsService {
       timezone: BUSINESS_TZ,
       balances: {
         dailyFreeRemain: view.balances.dailyFreeRemain,
-        dailyFreeQuota: quota,
+        dailyFreeQuota: view.balances.dailyFreeQuota,
         dailyTaskRemain: view.balances.dailyTaskRemain,
         inventoryRemain: view.balances.inventoryRemain,
         pendingQty,

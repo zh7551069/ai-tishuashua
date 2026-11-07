@@ -22,6 +22,7 @@ import {
 import { useRef, useState } from 'react';
 import { Screen } from '../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
+import { useExhaustedGate } from '../../components/use-exhausted-gate';
 import { isAuthFailure, withAuth } from '../../services/guard';
 import { fetchPack } from '../../services/pack-api';
 import { queryValue } from '../../services/query';
@@ -53,6 +54,7 @@ export default function QuizSettingsPage() {
   const [perQuestionSeconds, setPerQuestionSeconds] = useState(DEFAULT_PER_QUESTION_SECONDS);
   const [mode, setMode] = useState<QuizMode>(DEFAULT_QUIZ_MODE);
   const [busy, setBusy] = useState(false);
+  const gate = useExhaustedGate();
 
   const load = async () => {
     if (!packId) {
@@ -108,6 +110,7 @@ export default function QuizSettingsPage() {
     typeMissing ||
     secondsInvalid ||
     busy ||
+    gate.sheetOpen ||
     kpMissing ||
     retrainPending;
   const enabledTypes = (pack?.enabledQuestionTypeCodes ?? []).filter((code): code is QuizTypeCode =>
@@ -137,27 +140,29 @@ export default function QuizSettingsPage() {
     }
     setBusy(true);
     try {
-      const created = await withAuth((token) =>
-        createQuizSession(token, {
-          packId: pack.id,
-          count,
-          difficulty,
-          types,
-          mode,
-          timer: !timerOn
-            ? { enabled: false }
-            : timerKind === 'per_question'
-              ? { enabled: true, kind: 'per_question', perQuestionSeconds }
-              : { enabled: true, kind: 'paper', paperMinutes },
-          ...(fromRetrain
-            ? { source: 'retrain_similar' as const, knowledgePointIds: kept ?? [] }
-            : {}),
-        }),
-      );
-      if (!created) {
+      const result = await gate.run({
+        source: fromRetrain ? 'retrain_similar' : 'normal',
+        create: (token) =>
+          createQuizSession(token, {
+            packId: pack.id,
+            count,
+            difficulty,
+            types,
+            mode,
+            timer: !timerOn
+              ? { enabled: false }
+              : timerKind === 'per_question'
+                ? { enabled: true, kind: 'per_question', perQuestionSeconds }
+                : { enabled: true, kind: 'paper', paperMinutes },
+            ...(fromRetrain
+              ? { source: 'retrain_similar' as const, knowledgePointIds: kept ?? [] }
+              : {}),
+          }),
+      });
+      if (result.kind !== 'created') {
         return;
       }
-      await Taro.navigateTo({ url: `/pages/quiz/progress/index?sessionId=${created.id}` });
+      await Taro.navigateTo({ url: `/pages/quiz/progress/index?sessionId=${result.session.id}` });
     } catch (caught) {
       if (isAuthFailure(caught)) {
         return;
@@ -385,6 +390,7 @@ export default function QuizSettingsPage() {
           </View>
         ) : null}
       </View>
+      {gate.sheet}
     </Screen>
   );
 }

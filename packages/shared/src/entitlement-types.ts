@@ -74,6 +74,11 @@ export interface EntitlementBalances {
   dailyFreeRemain: number;
   dailyTaskRemain: number;
   inventoryRemain: number;
+  /**
+   * 当前日免配额。读 `dailyFreeSessions`，没有合法正整数时为 2。
+   * 不是当日剩余，改配不回溯 `dailyFreeRemain`。
+   */
+  dailyFreeQuota: number;
 }
 
 export interface EntitlementMembership {
