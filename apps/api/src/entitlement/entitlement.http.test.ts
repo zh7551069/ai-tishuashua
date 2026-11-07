@@ -121,9 +121,11 @@ describe('entitlement gate', { concurrency: 1 }, () => {
     const user = await login('daily');
     const before = await balances(user.token);
     assert.equal(before.dailyFreeRemain, 2);
+    assert.equal(before.dailyFreeQuota, 2);
     const created = await createSession(user.token, user.packId);
     const held = await balances(user.token);
     assert.equal(held.dailyFreeRemain, 1);
+    assert.equal(held.dailyFreeQuota, 2);
     const outcome = await runQuizGeneration(createPgExecutor(requiredPool()), created.id, {
       mode: 'mock',
     });
@@ -219,6 +221,7 @@ describe('entitlement gate', { concurrency: 1 }, () => {
       dailyFreeRemain: 0,
       dailyTaskRemain: 0,
       inventoryRemain: 0,
+      dailyFreeQuota: 2,
     });
     assert.deepEqual(
       details.cta,
@@ -377,7 +380,33 @@ describe('entitlement gate', { concurrency: 1 }, () => {
     );
     try {
       const user = await login('quota');
-      assert.equal((await balances(user.token)).dailyFreeRemain, 4);
+      const granted = await balances(user.token);
+      assert.equal(granted.dailyFreeRemain, 4);
+      assert.equal(granted.dailyFreeQuota, 4);
+      await requiredPool().query(
+        `
+          UPDATE system_settings
+          SET value = '{"sessions":6}'::jsonb
+          WHERE key = 'dailyFreeSessions'
+        `,
+      );
+      const sameDay = await balances(user.token);
+      assert.equal(sameDay.dailyFreeRemain, 4);
+      assert.equal(sameDay.dailyFreeQuota, 6);
+      await requiredPool().query(
+        `UPDATE entitlement_accounts SET daily_free_remain = 0, daily_task_remain = 0 WHERE user_id = $1`,
+        [user.userId],
+      );
+      const response = await call('/quiz/sessions', user.token, {
+        method: 'POST',
+        body: JSON.stringify(sessionBody(user.packId)),
+      });
+      assert.equal(response.status, 402);
+      assert.equal(response.body.code, ApiErrorCode.ENTITLEMENT_EXHAUSTED);
+      const details = response.body.details as { balances: EntitlementView['balances'] };
+      assert.equal(details.balances.dailyFreeRemain, 0);
+      assert.equal(details.balances.dailyFreeQuota, 6);
+      assert.equal(await sessionCount(user.userId), 0);
     } finally {
       await requiredPool().query(`DELETE FROM system_settings WHERE key = 'dailyFreeSessions'`);
     }

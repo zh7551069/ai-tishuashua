@@ -15,6 +15,7 @@ import {
 } from '@tishuashua/shared';
 import { useRef, useState } from 'react';
 import { Screen } from '../../../components/Screen';
+import { useExhaustedGate } from '../../../components/use-exhausted-gate';
 import { isAuthFailure, withAuth } from '../../../services/guard';
 import { queryValue } from '../../../services/query';
 import { cancelQuizSession, createQuizSession, fetchQuizSession } from '../../../services/quiz-api';
@@ -38,6 +39,7 @@ export default function QuizProgressPage() {
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const gate = useExhaustedGate();
   const stopped = useRef(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -129,7 +131,7 @@ export default function QuizProgressPage() {
 
   const retryVariant = async () => {
     const nextPackId = session?.packId || packId;
-    if (retrying) {
+    if (retrying || gate.sheetOpen) {
       return;
     }
     if (!wrongItemId || !nextPackId) {
@@ -143,29 +145,35 @@ export default function QuizProgressPage() {
       const types = (session?.settings.types ?? []).filter((item): item is QuizTypeCode =>
         isQuizType(item),
       );
-      const created = await withAuth((token) =>
-        createQuizSession(
-          token,
-          variantSessionInput({
-            packId: nextPackId,
-            wrongItemId,
-            difficulty: session?.settings.difficulty,
-            types,
-          }),
-        ),
-      );
-      if (!created) {
+      const result = await gate.run({
+        source: 'variant',
+        create: (token) =>
+          createQuizSession(
+            token,
+            variantSessionInput({
+              packId: nextPackId,
+              wrongItemId,
+              difficulty: session?.settings.difficulty,
+              types,
+            }),
+          ),
+      });
+      if (result.kind === 'error') {
+        setError(result.message);
         return;
       }
-      createdId = created.id;
+      if (result.kind !== 'created') {
+        return;
+      }
+      createdId = result.session.id;
       setSession(null);
       setError('');
-      sessionIdRef.current = created.id;
-      setSessionId(created.id);
+      sessionIdRef.current = result.session.id;
+      setSessionId(result.session.id);
       stopped.current = false;
       await Taro.redirectTo({
         url: variantProgressUrl({
-          sessionId: created.id,
+          sessionId: result.session.id,
           wrongItemId,
           packId: nextPackId,
         }),
@@ -189,7 +197,7 @@ export default function QuizProgressPage() {
   };
 
   const retryNormal = async () => {
-    if (retrying) {
+    if (retrying || gate.sheetOpen) {
       return;
     }
     if (!session || session.status !== 'failed' || session.source !== 'normal' || !session.packId) {
@@ -209,27 +217,33 @@ export default function QuizProgressPage() {
     stopPolling();
     let createdId = '';
     try {
-      const created = await withAuth((token) =>
-        createQuizSession(token, {
-          packId: session.packId || '',
-          count,
-          difficulty: session.settings.difficulty,
-          types: session.settings.types,
-          mode: session.settings.mode,
-          timer: session.settings.timer,
-          source: 'normal',
-        }),
-      );
-      if (!created) {
+      const result = await gate.run({
+        source: 'normal',
+        create: (token) =>
+          createQuizSession(token, {
+            packId: session.packId || '',
+            count,
+            difficulty: session.settings.difficulty,
+            types: session.settings.types,
+            mode: session.settings.mode,
+            timer: session.settings.timer,
+            source: 'normal',
+          }),
+      });
+      if (result.kind === 'error') {
+        setError(result.message);
         return;
       }
-      createdId = created.id;
+      if (result.kind !== 'created') {
+        return;
+      }
+      createdId = result.session.id;
       setSession(null);
       setError('');
-      sessionIdRef.current = created.id;
-      setSessionId(created.id);
+      sessionIdRef.current = result.session.id;
+      setSessionId(result.session.id);
       stopped.current = false;
-      await Taro.redirectTo({ url: `/pages/quiz/progress/index?sessionId=${created.id}` });
+      await Taro.redirectTo({ url: `/pages/quiz/progress/index?sessionId=${result.session.id}` });
     } catch (caught) {
       if (isAuthFailure(caught)) {
         return;
@@ -294,7 +308,7 @@ export default function QuizProgressPage() {
               failed={failed}
               percent={percent}
               cancelling={cancelling}
-              retrying={retrying}
+              retrying={retrying || gate.sheetOpen}
               onCancel={() => void cancel()}
               onRetry={() => void retryVariant()}
               onBack={backToDetail}
@@ -307,7 +321,7 @@ export default function QuizProgressPage() {
               total={total}
               session={session}
               cancelling={cancelling}
-              retrying={retrying}
+              retrying={retrying || gate.sheetOpen}
               onCancel={() => void cancel()}
               onRetry={() => {
                 if (session?.status === 'failed') {
@@ -321,6 +335,7 @@ export default function QuizProgressPage() {
           )}
         </View>
       </View>
+      {gate.sheet}
     </Screen>
   );
 }

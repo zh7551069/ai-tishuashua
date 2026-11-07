@@ -1,17 +1,8 @@
 import Taro from '@tarojs/taro';
 import { miniApiBase } from './api-base';
+import { HttpError } from './http-error';
 
-export class HttpError extends Error {
-  readonly status: number;
-  readonly code?: string;
-
-  constructor(message: string, status: number, code?: string) {
-    super(message);
-    this.name = 'HttpError';
-    this.status = status;
-    this.code = code;
-  }
-}
+export { HttpError };
 
 export function apiRequest<T>(
   path: string,
@@ -44,10 +35,11 @@ async function request<T>(
   }
 
   const body = response.data as ApiErrorPayload;
-  throw new HttpError(body?.message || '请求失败', response.statusCode, body?.code);
+  throw new HttpError(body?.message || '请求失败', response.statusCode, body?.code, body?.details);
 }
 
 interface ApiErrorPayload {
   code?: string;
   message?: string;
+  details?: unknown;
 }

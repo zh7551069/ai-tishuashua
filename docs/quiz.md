@@ -274,13 +274,13 @@ AI 原创和题型变异在结构校验通过后写入独立表 `question_bank`�
 
 `POST /api/quiz/sessions` 在校验通过后、写入会话的同一事务里预扣 1 场。`normal`、`retrain_similar`、`variant` 都走这道门，1 题的变异也算 1 场。`wrongSet` 不预扣；创建请求仍返回 `400` / `VALIDATION_ERROR`，文案含「暂未开放」。
 
-非会员按日免、当日任务奖、库存加油包的顺序扣。库存按 `expires_at` 从近到远，没有过期时间的排在最后。三桶都不够时不写会话，返回 `402` / `ENTITLEMENT_EXHAUSTED`，响应里带 `details`（原因、业务日、三个余额和开通会员、购买加油包、做任务三个入口）。会员在 `ends_at` 之前不扣这三桶，预扣行仍会留下。
+非会员按日免、当日任务奖、库存加油包的顺序扣。库存按 `expires_at` 从近到远，没有过期时间的排在最后。三桶都不够时不写会话，返回 `402` / `ENTITLEMENT_EXHAUSTED`，响应里带 `details`（原因、业务日、三个余额和开通会员、购买加油包、做任务三个入口）。客户端遇 `ENTITLEMENT_EXHAUSTED` → 用尽半屏（TB-24）。会员在 `ends_at` 之前不扣这三桶，预扣行仍会留下。
 
 预扣成功后余额立刻减少，流水记 `reserve_hold`。成卷变成 `ready` 时再记 `deduct`（delta 为 0，避免和预扣双计；会员场的桶是 `membership`）。取消，或生成失败，把预扣退回，流水记 `release_restore`。同一天退回按原数加回余额。若业务日已经切走，日免和任务奖不再加进新的一天，这条 `release_restore` 的 delta 记 0，避免把昨天的预扣补成今天的额外场次。进入答题和交卷不再扣场。
 
 业务日是 Asia/Shanghai 的日历日。第一次读余额或出题时，如果还没有账户，或业务日已经过了，会清掉没用完的日免和任务奖，再发当日日免。默认每天 2 场。`system_settings.dailyFreeSessions` 的值是 `{ "sessions": 正整数 }`；没有合法值时仍用 2。TB-20 的裸正整数也还能读。后管改这个数不改用户当天已经发出的余额，下一次跨日发放才用新值。配置页见 [商业化配置](admin-commerce-config.md)。
 
-余额是 `GET /api/me/entitlement`。流水是 `GET /api/me/entitlement/ledger`，`limit` 默认 20、最大 50，可用 `cursor` 翻页。支付、微信下单和支付回调不在这一刀。Worker 注册了 `entitlement.day-reconcile`，目前只上报任务跑过，不改余额。
+余额是 `GET /api/me/entitlement`。`balances` 在三个剩余之外带当前 `dailyFreeQuota`（读 `dailyFreeSessions`，缺省 2；改配不回溯当日剩余）。402 `details.balances` 同样带这个字段。流水是 `GET /api/me/entitlement/ledger`，`limit` 默认 20、最大 50，可用 `cursor` 翻页。支付、微信下单和支付回调不在这一刀。Worker 注册了 `entitlement.day-reconcile`，目前只上报任务跑过，不改余额。
 
 ## 还没做
 

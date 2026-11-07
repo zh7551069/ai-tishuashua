@@ -1,0 +1,153 @@
+/* 对稿 design/bridge-export/mini-commerce-v2 用尽半屏。390 画板 px。不带 v2.0.0 角标。 */
+
+.exh-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 60;
+  background: rgba(17, 24, 39, 0.4);
+}
+
+.exh-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  height: 552px;
+  padding: 10px 24px calc(24px + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-radius: 26px 26px 0 0;
+  animation: exh-rise 0.22s ease-out;
+}
+
+@keyframes exh-rise {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.exh-handle {
+  width: 41px;
+  height: 7px;
+  margin-bottom: 27px;
+  background: #d1d5db;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.exh-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 12px;
+  background: #eff6ff;
+  border-radius: 28px;
+  flex-shrink: 0;
+}
+
+.exh-note {
+  width: 27px;
+  height: 17px;
+}
+
+.exh-title {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 26px;
+  text-align: center;
+}
+
+.exh-summary {
+  margin-top: 3px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  text-align: center;
+}
+
+.exh-sub {
+  margin-top: 6px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  text-align: center;
+}
+
+.exh-actions {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 19px;
+}
+
+.exh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  margin: 0;
+  padding: 0 8px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+  box-sizing: border-box;
+}
+
+.exh-btn::after {
+  border: none;
+}
+
+.exh-btn-member {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.exh-btn-pack {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+.exh-btn-task {
+  background: #eff6ff;
+  color: #2563eb;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+.exh-later {
+  margin-top: 16px;
+  padding: 8px 12px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  text-align: center;
+}
+
+.exh-stub {
+  padding: 48px 24px;
+}
+
+.exh-stub-title {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 26px;
+  text-align: center;
+}
