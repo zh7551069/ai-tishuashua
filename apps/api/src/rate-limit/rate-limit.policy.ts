@@ -208,7 +208,9 @@ export function classifyRoute(url: string, method: string): RateRoute {
     path.startsWith('/quiz') ||
     path.startsWith('/wrong-book') ||
     path.startsWith('/courseware') ||
-    path.startsWith('/auth/')
+    path.startsWith('/auth/') ||
+    path.startsWith('/commerce') ||
+    path.startsWith('/orders')
   ) {
     return { kind: 'wechat-api', expensive };
   }

@@ -41,6 +41,18 @@ export const ApiErrorCode = {
   ENTITLEMENT_EXHAUSTED: 'ENTITLEMENT_EXHAUSTED',
   /** 同一幂等键冲突且无法安全合并。HTTP 409。 */
   ENTITLEMENT_CONFLICT: 'ENTITLEMENT_CONFLICT',
+  /** 未配齐微信支付商户，且未打开 WECHAT_PAY_MOCK。HTTP 503。 */
+  PAY_NOT_CONFIGURED: 'PAY_NOT_CONFIGURED',
+  /** SKU 不存在或已停用。HTTP 409。 */
+  PAY_SKU_UNAVAILABLE: 'PAY_SKU_UNAVAILABLE',
+  /** 有效会员不能购买更低档位。HTTP 409。 */
+  PAY_DOWNGRADE_FORBIDDEN: 'PAY_DOWNGRADE_FORBIDDEN',
+  /** 回调金额和订单快照不一致。HTTP 400。 */
+  PAY_AMOUNT_MISMATCH: 'PAY_AMOUNT_MISMATCH',
+  /** 微信支付回调验签失败。HTTP 401。 */
+  PAY_SIGN_INVALID: 'PAY_SIGN_INVALID',
+  /** 订单状态不能这样迁移。HTTP 409。 */
+  PAY_ORDER_STATE: 'PAY_ORDER_STATE',
 } as const;
 
 export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];

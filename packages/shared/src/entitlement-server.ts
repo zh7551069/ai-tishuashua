@@ -522,7 +522,11 @@ export async function revokeInventoryLot(
   return { lotId, beforeRemain: remain, afterRemain: 0, ledgerRefId };
 }
 
-/** 同 refId + 类型只入账一次。支付回调不得调用。 */
+/**
+ * 同 refId + 类型只入账一次。
+ * 支付成功履约（TB-23）在同一事务里调用，refId 为 order:{out_trade_no}。
+ * 禁止绕过本函数改余额，或直接改 memberships.ends_at。
+ */
 export async function grantEntitlement(
   db: EntitlementDb,
   userId: string,

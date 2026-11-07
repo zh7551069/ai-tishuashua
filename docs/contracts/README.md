@@ -30,3 +30,4 @@
 | TB-20 权益账本与出题门禁 | [tb20-entitlement-C-contracts-v0.1.0-C.md](tb20-entitlement-C-contracts-v0.1.0-C.md) | active | 架构师 |
 | TB-21 后管配额 / SKU / 增长 | [tb21-admin-quota-sku-growth-C-contracts-v0.1.0-C.md](tb21-admin-quota-sku-growth-C-contracts-v0.1.0-C.md) | active | 架构师 |
 | TB-22 后管用户权益与补发·作废 | [tb22-admin-entitlement-grant-revoke-C-contracts-v0.1.0-C.md](tb22-admin-entitlement-grant-revoke-C-contracts-v0.1.0-C.md) | active | 架构师 |
+| TB-23 微信支付与订单回写 | [tb23-wechat-pay-order-C-contracts-v0.1.0-C.md](tb23-wechat-pay-order-C-contracts-v0.1.0-C.md) | active | 架构师 |
