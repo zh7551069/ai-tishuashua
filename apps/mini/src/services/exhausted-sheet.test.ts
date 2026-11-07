@@ -146,12 +146,12 @@ test('半屏和 stub 不支付、不带设计角标，路由已注册', () => {
     'src/components/use-exhausted-gate.tsx',
     'src/services/exhausted-sheet.ts',
     'src/services/commerce-api.ts',
-    'src/pages/commerce/member/index.tsx',
     'src/pages/commerce/session-pack/index.tsx',
     'src/pages/commerce/tasks/index.tsx',
   ].map((file) => readFileSync(join(miniRoot, file), 'utf8'));
   const joined = files.join('\n');
   assert.equal(/requestPayment|\/orders|wx\.requestPayment|POST \/api\/orders/.test(joined), false);
+  assert.equal(joined.includes('membership-pay'), false);
   assert.equal(joined.includes('v2.0.0'), false);
   assert.equal(files[3]?.includes('¥6'), false);
   const config = readFileSync(join(miniRoot, 'src/app.config.ts'), 'utf8');

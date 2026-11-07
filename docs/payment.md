@@ -109,3 +109,7 @@ Mock 的 `payParams.paySign` 固定为占位字符串 `mock`，给本地和 CI �
 4. 生产环境不要设置 `WECHAT_PAY_MOCK`。
 5. 平台证书文件挂到 `WECHAT_PAY_PLATFORM_CERT_PATH`。本刀不自动下载平台证书。
 6. 微信账单对账任务名预留为 `payment.wechat-bill-reconcile`，没有调度，也不会去拉账单。
+
+## 小程序会员定价（TB-25 / C9）
+
+会员定价页复用上面的 C7 下单与支付，不新开 HTTP endpoint。契约见 [TB-25 C](contracts/tb25-miniapp-membership-pricing-C-contracts-v0.1.0-C.md)。页面是 `pages/commerce/member/index`（对稿 `122:4`）。调用壳在 `apps/mini/src/services/membership-pay.ts`：拉 `GET /api/commerce/skus?type=member`，升级先 `POST /api/orders/upgrade-quote`，再 `POST /api/orders`，然后 `wx.requestPayment` 或 dev `POST /api/dev/pay/mock-notify`，轮询至 `paid` 后刷新 `GET /api/me/entitlement`。半屏仍不支付。加油包入口只导航到 C10。金额以服务端为准。
