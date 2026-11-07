@@ -1,5 +1,24 @@
 /* 我 / 设置。尺寸对齐 design/bridge-export/me-settings-20261107（390）。 */
 
+/* .u-nav-center 是 justify-content:center。返回和右侧占位会挤到标题两侧。
+   这条线把返回钉在导航栏左侧，标题仍绝对定位、水平居中。 */
+.u-nav.ms-nav {
+  position: relative;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.u-nav.ms-nav .u-back {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+}
+
+.u-nav.ms-nav .u-nav-side {
+  margin-left: auto;
+}
+
 .ms-body {
   display: flex;
   flex-direction: column;

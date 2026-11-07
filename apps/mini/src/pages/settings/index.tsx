@@ -126,6 +126,7 @@ export default function SettingsPage() {
       back
       centerTitle
       navPlain
+      navClassName="ms-nav"
       title="设置"
       bodyFill={failed}
       backMark={failed ? <Text className="ms-back-plain">‹</Text> : <BridgeBack />}

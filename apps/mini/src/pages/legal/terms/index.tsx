@@ -16,6 +16,7 @@ export default function TermsPage() {
       back
       centerTitle
       navPlain
+      navClassName="ms-nav"
       title="用户协议"
       backMark={<Text className="ms-back-plain">‹</Text>}
     >
