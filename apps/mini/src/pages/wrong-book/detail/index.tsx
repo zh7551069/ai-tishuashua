@@ -1,10 +1,10 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Button, Image, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import { QUIZ_TYPE_LABELS, type PackList, type WrongBookItem } from '@tishuashua/shared';
 import { useState } from 'react';
 import { Screen } from '../../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
-import { formatSubmittedAt } from '../../../services/format';
+import { fetchKnowledgeTree } from '../../../services/catalog-api';
 import { isAuthFailure, withAuth } from '../../../services/guard';
 import { fetchPacks } from '../../../services/pack-api';
 import { queryValue } from '../../../services/query';
@@ -18,11 +18,15 @@ import {
   type RetrainTarget,
 } from '../../../services/retrain';
 import { clearWrongItem, fetchWrongItem } from '../../../services/wrong-book-api';
+import iconChevron from './assets/icon-chevron.png';
+import './index.css';
+import { detailMeta, detailOptionFace, detailSources, type DetailSource } from './present';
 
 export default function WrongBookDetailPage() {
   const itemId = queryValue(useRouter().params.id);
   const [item, setItem] = useState<WrongBookItem | null>(null);
   const [packs, setPacks] = useState<PackList | null>(null);
+  const [sources, setSources] = useState<DetailSource[]>([]);
   const [error, setError] = useState('');
   const [packError, setPackError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -45,13 +49,23 @@ export default function WrongBookDetailPage() {
         } catch (caught) {
           nextPackError = caught instanceof Error ? caught.message : '刷题包加载失败';
         }
-        return { item: nextItem, packs: nextPacks, packError: nextPackError };
+        let nextSources: DetailSource[] = [];
+        if (nextItem.kpIds.length > 0) {
+          try {
+            const tree = await fetchKnowledgeTree(token, nextItem.certId);
+            nextSources = detailSources(nextItem.kpIds, tree);
+          } catch {
+            nextSources = [];
+          }
+        }
+        return { item: nextItem, packs: nextPacks, packError: nextPackError, sources: nextSources };
       });
       if (!data) {
         return;
       }
       setItem(data.item);
       setPacks(data.packs);
+      setSources(data.sources);
       setPackError(data.packError);
       setActionError('');
     } catch (caught) {
@@ -70,6 +84,8 @@ export default function WrongBookDetailPage() {
   const canRetrain = Boolean(target?.ok) && pendingAction === null;
   const pending = item?.status === 'pending';
   const help = helpText(item, target, packError, actionError);
+  const showPackLink = Boolean(target && !target.ok && target.reason === 'no-pack');
+  const footExtra = Boolean(help) || showPackLink;
 
   const clear = async () => {
     if (!itemId || pendingAction) {
@@ -146,28 +162,35 @@ export default function WrongBookDetailPage() {
     }
   };
 
+  const openSource = () => {
+    void Taro.showToast({ title: '即将开放', icon: 'none' });
+  };
+
   return (
     <Screen
       back
       centerTitle
+      navPlain
+      navClassName="wd-nav"
+      background="#f8f9fb"
       title="错题详情"
+      footerClassName={footExtra ? 'wd-foot wd-foot-help' : 'wd-foot'}
       right={
         item ? (
-          <Text className={pending ? 'u-tag u-tag-orange' : 'u-tag u-tag-gray'}>
+          <Text className={pending ? 'wd-status wd-status-pending' : 'wd-status wd-status-cleared'}>
             {pending ? '未消灭' : '已消灭'}
           </Text>
         ) : null
       }
       footer={
         item ? (
-          <View>
-            <View className="u-foot-row">
-              <Button className="u-btn-ghost" disabled={!canRetrain} onClick={openSimilar}>
+          <View className="wd-foot-stack">
+            <View className="wd-row">
+              <Button className="wd-btn wd-btn-ghost" disabled={!canRetrain} onClick={openSimilar}>
                 复练同类
               </Button>
-              <View className="u-foot-gap" />
               <Button
-                className="u-btn"
+                className="wd-btn wd-btn-primary"
                 disabled={!canRetrain}
                 loading={pendingAction === 'variant'}
                 onClick={() => void startVariant()}
@@ -175,10 +198,10 @@ export default function WrongBookDetailPage() {
                 题型变异
               </Button>
             </View>
-            {help ? <Text className="u-help-alert">{help}</Text> : null}
-            {target && !target.ok && target.reason === 'no-pack' ? (
+            {help ? <Text className="wd-help">{help}</Text> : null}
+            {showPackLink ? (
               <Text
-                className="u-link u-help-link"
+                className="wd-pack-link"
                 onClick={() => void Taro.navigateTo({ url: '/pages/pack/domain/index' })}
               >
                 去创建刷题包
@@ -188,7 +211,7 @@ export default function WrongBookDetailPage() {
         ) : null
       }
     >
-      <View className="u-pad u-detail">
+      <View className="wd-body">
         {!item && !error ? <LoadingBlock label="正在加载错题" /> : null}
         {error ? (
           <ErrorBlock
@@ -198,64 +221,84 @@ export default function WrongBookDetailPage() {
           />
         ) : null}
         {item ? (
-          <View>
-            <Text className="u-note">
-              {item.certName} · {formatSubmittedAt(item.updatedAt)}
-            </Text>
-            <View className="u-chips">
-              <Text className={typeClass(item.type)}>
+          <>
+            <Text className="wd-meta">{detailMeta(item)}</Text>
+            <View className="wd-pills">
+              <Text className="wd-pill wd-pill-type">
                 {item.type ? QUIZ_TYPE_LABELS[item.type] : '题目'}
               </Text>
-              <Text className="u-tag u-tag-red">错过 {item.wrongCount} 次</Text>
+              <Text className="wd-pill wd-pill-ai">AI 生成题</Text>
             </View>
-            <Text className="u-stem">{item.stem}</Text>
-            {item.options.map((option) => {
-              const right = item.answer.includes(option.id);
-              return (
-                <View key={option.id} className={right ? 'u-option u-option-right' : 'u-option'}>
-                  <Text className={right ? 'u-letter u-letter-right' : 'u-letter'}>
-                    {option.id}
-                  </Text>
-                  <View className="u-card-copy">
-                    <Text
-                      className="u-option-text"
-                      style={{ color: right ? '#16a34a' : '#111827' }}
-                    >
-                      {option.text}
-                    </Text>
-                    {right ? <Text className="u-note u-right">正确答案</Text> : null}
+            <Text className="wd-stem">{item.stem}</Text>
+            <View className="wd-options">
+              {item.options.map((option) => {
+                const face = detailOptionFace({
+                  type: item.type,
+                  // 详情契约只有标准答案，没有用户当时的选项。
+                  selected: [],
+                  answer: item.answer,
+                  optionId: option.id,
+                });
+                return (
+                  <View key={option.id} className={`wd-opt wd-opt-${face.tone}`}>
+                    <View className="wd-opt-main">
+                      <View className={`wd-letter wd-letter-${face.tone}`}>
+                        <Text className={`wd-letter-text wd-letter-text-${face.tone}`}>
+                          {option.id}
+                        </Text>
+                      </View>
+                      <Text className={`wd-opt-text wd-opt-text-${face.tone}`}>{option.text}</Text>
+                    </View>
+                    {face.tags.length > 0 ? (
+                      <View className="wd-tagline">
+                        {face.tags.map((tag) => (
+                          <Text key={tag.text} className={`wd-opt-tag wd-opt-tag-${tag.tone}`}>
+                            {tag.text}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+            <View className="wd-parse">
+              <View className="wd-pills">
+                <Text className="wd-pill wd-pill-parse">AI 解析</Text>
+              </View>
+              <Text className="wd-parse-body">{item.analysis || '这道题没有解析。'}</Text>
+            </View>
+            <View className="wd-block">
+              <Text className="wd-h">相关知识点</Text>
+              <KnowledgePoints item={item} packs={packs} target={target} />
+            </View>
+            <View className="wd-block">
+              <Text className="wd-h">知识点出处</Text>
+              {sources.length === 0 ? <Text className="wd-muted">暂无出处</Text> : null}
+              {sources.map((source) => (
+                <View key={source.key} className="wd-source" onClick={openSource}>
+                  <View className="wd-accent" />
+                  <View className="wd-source-copy">
+                    <Text className="wd-source-title">{source.title}</Text>
+                    {source.subtitle ? (
+                      <Text className="wd-source-sub">{source.subtitle}</Text>
+                    ) : null}
+                  </View>
+                  <View className="wd-chev">
+                    <Image className="wd-chev-ico" src={iconChevron} mode="aspectFit" />
                   </View>
                 </View>
-              );
-            })}
-            <View className="u-analysis">
-              <View className="u-analysis-bar" />
-              <View className="u-analysis-copy">
-                <Text className="u-analysis-title">解析</Text>
-                <Text className="u-analysis-body">{item.analysis || '这道题没有解析。'}</Text>
-              </View>
+              ))}
             </View>
-            <Text className="u-section">相关知识点</Text>
-            <KnowledgePoints item={item} packs={packs} target={target} />
             {pending ? (
-              <View className="u-panel">
-                <Text className="u-label">标记已消灭</Text>
-                <Text className="u-note">只改变这道错题的状态。复练或变异答对不会自动消灭。</Text>
-                <Button
-                  className="u-btn-ghost"
-                  style={{ marginTop: '8px', width: '100%' }}
-                  disabled={pendingAction !== null}
-                  loading={pendingAction === 'clear'}
-                  onClick={() => void clear()}
-                >
-                  标记已消灭
-                </Button>
+              <View className="wd-clear" onClick={() => void clear()}>
+                <Text className={pendingAction ? 'wd-clear-text wd-clear-busy' : 'wd-clear-text'}>
+                  {pendingAction === 'clear' ? '正在标记…' : '标记已消灭'}
+                </Text>
               </View>
-            ) : (
-              <Text className="u-meta">这道题已经消灭。仍可以复练同类或题型变异。</Text>
-            )}
-            {help ? <View style={{ height: '25px' }} /> : null}
-          </View>
+            ) : null}
+            <View className="wd-tail" />
+          </>
         ) : null}
       </View>
     </Screen>
@@ -268,22 +311,22 @@ function KnowledgePoints(props: {
   target: RetrainTarget | null;
 }) {
   if (props.item.kpIds.length === 0) {
-    return <Text className="u-meta">暂无可用知识点</Text>;
+    return <Text className="wd-muted">暂无可用知识点</Text>;
   }
   if (
     props.target &&
     !props.target.ok &&
     (props.target.reason === 'empty-kp' || props.target.reason === 'kp-unavailable')
   ) {
-    return <Text className="u-meta">暂无可用知识点</Text>;
+    return <Text className="wd-muted">暂无可用知识点</Text>;
   }
   const ids = props.target?.ok
     ? props.target.kpIds
     : props.item.kpIds.map((id) => id.toLowerCase());
   return (
-    <View className="u-chips">
+    <View className="wd-chips">
       {ids.map((id) => (
-        <Text key={id} className="u-chip">
+        <Text key={id} className="wd-chip">
           {knowledgeLabel(props.item, props.packs, id)}
         </Text>
       ))}
@@ -323,14 +366,4 @@ function helpText(
     return target.message;
   }
   return actionError;
-}
-
-function typeClass(type: WrongBookItem['type']): string {
-  if (type === 'multi') {
-    return 'u-tag u-tag-violet';
-  }
-  if (type === 'judge') {
-    return 'u-tag u-tag-orange';
-  }
-  return 'u-tag u-tag-blue';
 }
