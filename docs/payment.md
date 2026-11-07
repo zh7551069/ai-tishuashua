@@ -113,3 +113,7 @@ Mock 的 `payParams.paySign` 固定为占位字符串 `mock`，给本地和 CI �
 ## 小程序会员定价（TB-25 / C9）
 
 会员定价页复用上面的 C7 下单与支付，不新开 HTTP endpoint。契约见 [TB-25 C](contracts/tb25-miniapp-membership-pricing-C-contracts-v0.1.0-C.md)。页面是 `pages/commerce/member/index`（对稿 `122:4`）。调用壳在 `apps/mini/src/services/membership-pay.ts`：拉 `GET /api/commerce/skus?type=member`，升级先 `POST /api/orders/upgrade-quote`，再 `POST /api/orders`，然后 `wx.requestPayment` 或 dev `POST /api/dev/pay/mock-notify`，轮询至 `paid` 后刷新 `GET /api/me/entitlement`。半屏仍不支付。加油包入口只导航到 C10。金额以服务端为准。
+
+## 小程序场次加油包（TB-26 / C10）
+
+C10 加油包页复用 C7 下单/支付；`orderKind=purchase`；不调 `upgrade-quote`。不新开 HTTP endpoint。契约见 [TB-26 C](contracts/tb26-miniapp-session-boost-C-contracts-v0.1.0-C.md)，UI 评审见 [TB-26 三行](delivery/tb26-ui-tech-review-20261107.md)。页面是 `pages/commerce/session-pack/index`（对稿 `122:6`）。调用壳在 `apps/mini/src/services/session-pack-pay.ts`：拉 `GET /api/commerce/skus?type=session_pack`，`POST /api/orders` 只传 `purchase`，然后 `wx.requestPayment` 或 dev `POST /api/dev/pay/mock-notify`，轮询至 `paid` 后刷新 `GET /api/me/entitlement` 并看 `inventoryRemain`。半屏仍不支付。金额以服务端为准。

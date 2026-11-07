@@ -1,0 +1,187 @@
+/* 对稿 design/bridge-export/mini-commerce-v2 购买场次加油包。390 画板 px。不带版本角标。 */
+
+.pack-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  background: rgba(17, 27, 56, 0.6);
+  backdrop-filter: blur(1.5px);
+}
+
+.pack-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-height: 464px;
+  max-height: 86%;
+  padding: 10px 24px calc(16px + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-radius: 14px 14px 0 0;
+}
+
+.pack-handle {
+  width: 41px;
+  height: 7px;
+  margin: 0 auto 19px;
+  background: #d1d5db;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.pack-title {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 26px;
+  flex-shrink: 0;
+}
+
+.pack-body {
+  flex: 1;
+  min-height: 0;
+  margin-top: 16px;
+  overflow: auto;
+}
+
+.pack-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 100px;
+  margin-top: 8px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #fffbeb;
+  box-shadow: inset 0 0 0 1px #fde68a;
+  box-sizing: border-box;
+}
+
+.pack-list .pack-card:first-child {
+  margin-top: 0;
+}
+
+.pack-card-on {
+  box-shadow: inset 0 0 0 1.5px #ea580c;
+}
+
+.pack-mark {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.pack-ring {
+  width: 32px;
+  height: 32px;
+}
+
+.pack-note {
+  position: absolute;
+  left: 5px;
+  top: 10px;
+  width: 22px;
+  height: 13px;
+}
+
+.pack-copy {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  margin-left: 16px;
+}
+
+.pack-name {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.pack-sub {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.pack-price {
+  margin-left: 8px;
+  color: #ea580c;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 35px;
+  flex-shrink: 0;
+}
+
+.pack-rules {
+  margin-top: 18px;
+}
+
+.pack-rule {
+  display: block;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.pack-member {
+  display: block;
+  margin-top: 8px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.pack-actions {
+  flex-shrink: 0;
+  padding-top: 16px;
+}
+
+.pack-pay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  margin: 0;
+  padding: 0 8px;
+  border-radius: 14px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 23px;
+  box-sizing: border-box;
+}
+
+.pack-pay::after {
+  border: none;
+}
+
+.pack-pay[disabled] {
+  background: #2563eb;
+  color: #ffffff;
+  opacity: 0.55;
+}
+
+.pack-close {
+  display: block;
+  margin-top: 12px;
+  padding: 4px 0;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  text-align: center;
+}
