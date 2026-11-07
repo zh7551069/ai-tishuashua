@@ -9,7 +9,6 @@ import {
   ENTITLEMENT_DAY_RECONCILE_CRON,
   ENTITLEMENT_DAY_RECONCILE_JOB,
   businessDate,
-  holdSessionEntitlement,
   isEntitlementDevGrantEnabled,
   parseDailyFreeQuota,
   parseGrantCommand,
@@ -19,6 +18,7 @@ import {
   runEntitlementDayReconcile,
   sessionConsumesEntitlement,
 } from '@tishuashua/shared';
+import { holdSessionEntitlement } from '@tishuashua/shared/entitlement';
 
 const repoRoot = join(__dirname, '../../../..');
 
@@ -122,6 +122,15 @@ describe('entitlement rules', () => {
     assert.match(source, /entitlement\.day-reconcile/);
     assert.match(source, /Asia\/Shanghai/);
     assert.equal(/unifiedorder|pay\/wx|mch_id/i.test(source), false);
+    const barrel = readFileSync(join(repoRoot, 'packages/shared/src/index.ts'), 'utf8');
+    const browserTypes = readFileSync(
+      join(repoRoot, 'packages/shared/src/entitlement-types.ts'),
+      'utf8',
+    );
+    assert.equal(barrel.includes('entitlement-server'), false);
+    assert.equal(barrel.includes('node:crypto'), false);
+    assert.equal(browserTypes.includes('node:crypto'), false);
+    assert.equal(/\bSELECT\b/i.test(browserTypes), false);
   });
 
   test('本刀没有支付或微信回调代码', () => {

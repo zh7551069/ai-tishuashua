@@ -276,7 +276,7 @@ AI 原创和题型变异在结构校验通过后写入独立表 `question_bank`�
 
 非会员按日免、当日任务奖、库存加油包的顺序扣。库存按 `expires_at` 从近到远，没有过期时间的排在最后。三桶都不够时不写会话，返回 `402` / `ENTITLEMENT_EXHAUSTED`，响应里带 `details`（原因、业务日、三个余额和开通会员、购买加油包、做任务三个入口）。会员在 `ends_at` 之前不扣这三桶，预扣行仍会留下。
 
-预扣成功后余额立刻减少，流水记 `reserve_hold`。成卷变成 `ready` 时再记 `deduct`（delta 为 0，避免和预扣双计；会员场的桶是 `membership`）。取消，或生成失败，把预扣退回，流水记 `release_restore`。进入答题和交卷不再扣场。
+预扣成功后余额立刻减少，流水记 `reserve_hold`。成卷变成 `ready` 时再记 `deduct`（delta 为 0，避免和预扣双计；会员场的桶是 `membership`）。取消，或生成失败，把预扣退回，流水记 `release_restore`。同一天退回按原数加回余额。若业务日已经切走，日免和任务奖不再加进新的一天，这条 `release_restore` 的 delta 记 0，避免把昨天的预扣补成今天的额外场次。进入答题和交卷不再扣场。
 
 业务日是 Asia/Shanghai 的日历日。第一次读余额或出题时，如果还没有账户，或业务日已经过了，会清掉没用完的日免和任务奖，再发当日日免。默认每天 2 场。若 `system_settings` 里有正整数键 `dailyFreeSessions`，用那个值。本刀不写后管配置页。
 

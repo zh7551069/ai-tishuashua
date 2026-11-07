@@ -12,7 +12,6 @@ import {
   gradeSelection,
   normalizeSelection,
   questionContentKey,
-  releaseEntitlement,
   summarizeGrades,
   type QuizMode,
   type QuizOption,
@@ -27,6 +26,7 @@ import {
   type QuizSubmitReason,
   type QuizTypeCode,
 } from '@tishuashua/shared';
+import { releaseEntitlement } from '@tishuashua/shared/entitlement';
 import { randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import { rethrowDatabaseError } from '../common/database-error';

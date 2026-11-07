@@ -9,7 +9,6 @@ import {
   BUILTIN_QUIZ_VARIANT_PROMPT,
   buildPromptVariables,
   buildVariantPromptVariables,
-  isFreeUser,
   mockAiQuestions,
   mockVariantQuestion,
   normalizeQuestionScores,
@@ -39,7 +38,7 @@ import {
   type QuizSessionSource,
   type QuizTypeCode,
 } from './quiz';
-import { commitEntitlement, releaseEntitlement } from './entitlement';
+import { commitEntitlement, isFreeUser, releaseEntitlement } from './entitlement-server';
 import { readFreeUserBankFirst, type SettingsCache } from './system-settings';
 
 interface QueryResultLike {

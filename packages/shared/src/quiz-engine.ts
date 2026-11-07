@@ -1,5 +1,4 @@
 import { WRONG_QUESTION_RATIO_MAX } from './constants';
-import { isMemberActive, type EntitlementDb } from './entitlement';
 import { PACK_KNOWLEDGE_POINT_MAX } from './pack';
 import {
   DEFAULT_PAPER_MINUTES,
@@ -118,14 +117,6 @@ export function takeWrongCarry(
     });
   }
   return carry;
-}
-
-/**
- * 免费用户才抽题库。会员生效（memberships.ends_at 晚于现在）返回 false。
- * 只读会员态，不扣场，也不改抽题顺序。组卷仍要同时打开 freeUserBankFirst。
- */
-export async function isFreeUser(user: { id: string }, db: EntitlementDb): Promise<boolean> {
-  return !(await isMemberActive(db, user.id));
 }
 
 /**

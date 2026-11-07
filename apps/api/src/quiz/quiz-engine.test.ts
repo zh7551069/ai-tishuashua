@@ -15,7 +15,6 @@ import {
   normalizeQuizRequest,
   normalizeSelection,
   parseAiQuestions,
-  isFreeUser,
   parseCreateQuizSessionRequest,
   pickPublishedPrompt,
   questionContentKey,
@@ -29,6 +28,7 @@ import {
   wrongCarryQuota,
   type PromptCandidate,
 } from '@tishuashua/shared';
+import { isFreeUser } from '@tishuashua/shared/entitlement';
 
 describe('quiz generation rules', () => {
   test('错题入卷不超过 floor(count × 50%)', () => {

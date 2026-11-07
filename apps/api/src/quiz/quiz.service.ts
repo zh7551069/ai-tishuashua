@@ -2,7 +2,6 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import {
   ApiErrorCode,
   QUIZ_TYPES,
-  holdSessionEntitlement,
   parseCreateQuizSessionRequest,
   readProcessLlmEnv,
   resolveLlmMode,
@@ -10,6 +9,7 @@ import {
   type QuizSessionView,
   type QuizTypeCode,
 } from '@tishuashua/shared';
+import { holdSessionEntitlement } from '@tishuashua/shared/entitlement';
 import { randomUUID } from 'node:crypto';
 import { ApiException } from '../common/api.exception';
 import { EntitlementService } from '../entitlement/entitlement.service';

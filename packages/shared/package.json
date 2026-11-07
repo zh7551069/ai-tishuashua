@@ -17,12 +17,17 @@
     "./courseware": {
       "types": "./dist/courseware-entry.d.ts",
       "default": "./dist/courseware-entry.js"
+    },
+    "./entitlement": {
+      "types": "./dist/entitlement-server.d.ts",
+      "default": "./dist/entitlement-server.js"
     }
   },
   "typesVersions": {
     "*": {
       "generation": ["dist/generation.d.ts"],
-      "courseware": ["dist/courseware-entry.d.ts"]
+      "courseware": ["dist/courseware-entry.d.ts"],
+      "entitlement": ["dist/entitlement-server.d.ts"]
     }
   },
   "scripts": {

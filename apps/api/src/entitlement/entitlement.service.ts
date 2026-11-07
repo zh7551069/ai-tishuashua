@@ -1,6 +1,6 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { ApiErrorCode } from '@tishuashua/shared';
 import {
-  ApiErrorCode,
   EntitlementFlowError,
   commitEntitlement,
   grantEntitlement,
@@ -16,7 +16,7 @@ import {
   type EntitlementLedgerPage,
   type EntitlementView,
   type GrantResult,
-} from '@tishuashua/shared';
+} from '@tishuashua/shared/entitlement';
 import { ApiException } from '../common/api.exception';
 import { rethrowDatabaseError } from '../common/database-error';
 import { DatabaseService } from '../db/database.service';
