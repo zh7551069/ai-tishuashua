@@ -15,3 +15,6 @@ apps/mini/.swc/
 apps/mini/.temp/
 apps/mini/deploy_versions/
 apps/mini/project.private.config.json
+
+# 微信开发者工具本地私有配置（仓库根若误开也会生成）
+project.private.config.json
