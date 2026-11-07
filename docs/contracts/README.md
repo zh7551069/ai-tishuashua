@@ -33,3 +33,4 @@
 | TB-23 微信支付与订单回写      | [tb23-wechat-pay-order-C-contracts-v0.1.0-C.md](tb23-wechat-pay-order-C-contracts-v0.1.0-C.md)                             | active | 架构师 |
 | TB-24 小程序用尽半屏          | [tb24-miniapp-exhausted-sheet-C-contracts-v0.1.0-C.md](tb24-miniapp-exhausted-sheet-C-contracts-v0.1.0-C.md)               | active | 架构师 |
 | TB-25 小程序会员定价          | [tb25-miniapp-membership-pricing-C-contracts-v0.1.0-C.md](tb25-miniapp-membership-pricing-C-contracts-v0.1.0-C.md)         | active | 架构师 |
+| TB-26 小程序场次加油包        | [tb26-miniapp-session-boost-C-contracts-v0.1.0-C.md](tb26-miniapp-session-boost-C-contracts-v0.1.0-C.md)                   | active | 架构师 |
