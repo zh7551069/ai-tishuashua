@@ -1,12 +1,6 @@
 import { Button, Image, Text, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import {
-  QUIZ_OUTCOME_LABELS,
-  QUIZ_TYPE_LABELS,
-  type PackView,
-  type QuizQuestionView,
-  type QuizSessionView,
-} from '@tishuashua/shared';
+import { type PackView, type QuizSessionView } from '@tishuashua/shared';
 import { useEffect, useState } from 'react';
 import { Screen } from '../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
@@ -16,6 +10,8 @@ import { fetchQuizSession } from '../../services/quiz-api';
 import iconChevron from './assets/icon-chevron.png';
 import iconClose from './assets/icon-close.png';
 import iconStar from './assets/icon-star.png';
+import { ReviewView } from './review';
+import './review.css';
 import {
   bannerFor,
   celebrateFor,
@@ -149,15 +145,23 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
     <Screen
       back
       centerTitle
-      navClassName="sc-nav"
-      footerClassName={plain && !review ? 'sc-foot sc-foot-plain' : 'sc-foot'}
+      navClassName={review ? 'sc-nav sc-nav-review' : 'sc-nav'}
+      footerClassName={
+        review ? 'sc-foot sc-foot-review' : plain ? 'sc-foot sc-foot-plain' : 'sc-foot'
+      }
       background="#f8f9fb"
       title={review ? '错题回顾' : '答题结果'}
-      backMark={<Image className="sc-close" src={iconClose} mode="aspectFit" />}
-      onBack={leave}
+      backMark={
+        review ? (
+          <Text className="wr-back-mark">‹</Text>
+        ) : (
+          <Image className="sc-close" src={iconClose} mode="aspectFit" />
+        )
+      }
+      onBack={review ? () => setReview(false) : leave}
       right={
         review ? (
-          <Text className="sc-review-count">{wrong.length} 题</Text>
+          <Text className="wr-count">{wrong.length} 题</Text>
         ) : badge ? (
           <View className={badge.exam ? 'sc-badge sc-badge-exam' : 'sc-badge'}>
             <Text className={badge.exam ? 'sc-badge-text sc-badge-text-exam' : 'sc-badge-text'}>
@@ -169,7 +173,7 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
       footer={
         session && result && tone ? (
           review ? (
-            <Button className="u-btn-ghost" onClick={() => setReview(false)}>
+            <Button className="wr-back" hoverClass="none" onClick={() => setReview(false)}>
               返回结果
             </Button>
           ) : (
@@ -214,7 +218,7 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
           />
         ) : null}
         {session && review ? (
-          <ReviewList
+          <ReviewView
             session={session}
             questions={wrong}
             open={openAnalysis}
@@ -458,87 +462,4 @@ function Celebrate(props: {
       </View>
     </View>
   );
-}
-
-function ReviewList(props: {
-  session: QuizSessionView;
-  questions: QuizQuestionView[];
-  open: Record<string, boolean>;
-  onToggle: (id: string) => void;
-}) {
-  return (
-    <View>
-      <View className="u-panel">
-        <Text className="u-kicker-sm">来自本卷</Text>
-        <Text className="u-card-title">
-          {props.session.context.certName || props.session.context.packName} ·{' '}
-          {props.session.mode === 'exam' ? '考试' : '练习'}模式
-        </Text>
-      </View>
-      {props.questions.length === 0 ? <Text className="u-meta">本卷没有错题。</Text> : null}
-      {props.questions.map((question) => (
-        <View key={question.id} className="u-panel">
-          <View className="u-q-head">
-            <View className="u-chips">
-              <Text className="u-tag u-tag-gray">第 {question.ordinal} 题</Text>
-              <Text className={typeTag(question.type)}>{QUIZ_TYPE_LABELS[question.type]}</Text>
-            </View>
-            {question.review ? (
-              <Text className="u-note">{QUIZ_OUTCOME_LABELS[question.review.outcome]}</Text>
-            ) : null}
-          </View>
-          <Text className="u-stem">{question.stem}</Text>
-          <View className="u-compare">
-            <Text className="u-compare-label u-mine">你的答案</Text>
-            <Text className="u-compare-value u-mine">
-              {answerLine(question, question.selected)}
-            </Text>
-            <Text className="u-compare-label u-right" style={{ marginTop: '8px' }}>
-              正确答案
-            </Text>
-            <Text className="u-compare-value u-right">
-              {answerLine(question, question.review?.answer ?? [])}
-            </Text>
-          </View>
-          <View className="u-parse-btn" onClick={() => props.onToggle(question.id)}>
-            <Text>{props.open[question.id] ? '收起解析' : '查看解析'}</Text>
-            <Text>{props.open[question.id] ? '▾' : '›'}</Text>
-          </View>
-          {props.open[question.id] ? (
-            <View className="u-analysis">
-              <View className="u-analysis-bar" />
-              <View className="u-analysis-copy">
-                <Text className="u-analysis-title">解析</Text>
-                <Text className="u-analysis-body">
-                  {question.review?.analysis || '这道题没有解析。'}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function answerLine(question: QuizQuestionView, ids: string[]): string {
-  if (ids.length === 0) {
-    return '未作答';
-  }
-  return ids
-    .map((id) => {
-      const option = question.options.find((item) => item.id === id);
-      return option ? `${id} · ${option.text}` : id;
-    })
-    .join('  ');
-}
-
-function typeTag(type: QuizQuestionView['type']): string {
-  if (type === 'multi') {
-    return 'u-tag u-tag-violet';
-  }
-  if (type === 'judge') {
-    return 'u-tag u-tag-orange';
-  }
-  return 'u-tag u-tag-blue';
 }
