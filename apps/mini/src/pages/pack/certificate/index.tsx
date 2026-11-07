@@ -1,17 +1,38 @@
-import { Input, Text, View } from '@tarojs/components';
+import { Image, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import type { CertificateSummary } from '@tishuashua/shared';
 import { useMemo, useState } from 'react';
+import { BridgeSteps } from '../../../components/BridgeSteps';
 import { Screen } from '../../../components/Screen';
-import { Steps } from '../../../components/Steps';
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { fetchCertificates, fetchDomains, fetchKnowledgeTree } from '../../../services/catalog-api';
 import { withAuth } from '../../../services/guard';
 import { queryValue } from '../../../services/query';
 import { countKnowledgePoints } from '../../../ui/knowledge-meta';
+import iconBack from '../assets/icon-back.png';
+import iconChevron from '../assets/icon-chevron.png';
+import iconSearch from '../assets/icon-search.png';
+import { PackSearch } from '../PackSearch';
+
+function readInset(): number {
+  try {
+    return Taro.getSystemInfoSync().statusBarHeight ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+function goBack() {
+  void Taro.navigateBack({
+    fail: () => {
+      void Taro.reLaunch({ url: '/pages/home/index' });
+    },
+  });
+}
 
 export default function CertificatePage() {
   const domainId = queryValue(useRouter().params.domainId);
+  const [inset] = useState(readInset);
   const [items, setItems] = useState<CertificateSummary[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [domainName, setDomainName] = useState('');
@@ -76,85 +97,88 @@ export default function CertificatePage() {
   }, [items, query]);
 
   const emptyShell = ready && items.length === 0;
-  const body = (
-    <View className={emptyShell ? 'u-pad u-pad-pick u-pad-fill' : 'u-pad u-pad-pick'}>
-      {error ? null : (
-        <View className="u-search">
-          <Text className="u-search-mark">⌕</Text>
-          <Input
-            className="u-search-input"
-            placeholder={emptyShell ? '搜索' : '搜索证书'}
-            placeholderStyle="color:#9ca3af"
-            value={query}
-            onInput={(event) => setQuery(event.detail.value)}
-          />
-        </View>
-      )}
-      {!ready && !error ? <LoadingBlock skeleton /> : null}
-      {error ? (
-        <ErrorBlock
-          detail={error}
-          onRetry={() => void load()}
-          onBack={() => void Taro.navigateBack()}
-        />
-      ) : null}
-      {ready && visible.length === 0 ? (
-        <EmptyBlock
-          fill={emptyShell}
-          title="暂无证书"
-          detail={query ? '换个关键词搜索' : '该领域下暂无可用证书'}
-          action={query ? '清除搜索' : '返回领域'}
-          onAction={() => (query ? setQuery('') : void Taro.navigateBack())}
-        />
-      ) : null}
-      {ready && visible.length > 0 ? (
-        <Text className="u-section u-section-first">
-          {domainName || '证书'} · {visible.length} 个证书
-        </Text>
-      ) : null}
-      {ready && !error
-        ? visible.map((item) => (
-            <View
-              key={item.id}
-              className="u-pick"
-              onClick={() => {
-                void Taro.navigateTo({
-                  url: `/pages/pack/knowledge/index?domainId=${domainId}&certId=${item.id}`,
-                });
-              }}
-            >
-              <View className="u-card-copy">
-                <Text className="u-card-title">{item.name}</Text>
-                {counts[item.id] === undefined ? null : (
-                  <Text className="u-card-sub">{counts[item.id]} 个知识点</Text>
-                )}
-              </View>
-              <Text className="u-chev">›</Text>
-            </View>
-          ))
-        : null}
-    </View>
-  );
-
-  if (emptyShell) {
-    return (
-      <Screen
-        back
-        title="选择证书"
-        subtitle="选领域 → 证书 → 知识点"
-        subtitleTone="muted"
-        titleSize="page"
-        bodyFill
-      >
-        {body}
-      </Screen>
-    );
-  }
+  const headStyle = { marginTop: `-${inset}px`, paddingTop: `${inset}px` };
 
   return (
-    <Screen back title="选择证书" subtitle={domainName ? `领域 · ${domainName}` : undefined}>
-      {error ? null : <Steps current={2} />}
-      {body}
+    <Screen bare background="#f5f6f8" bodyFill>
+      <View className="cert-sheet">
+        <View className="cert-head" style={headStyle}>
+          {emptyShell ? (
+            <View className="cert-empty-head">
+              <Text className="cert-empty-title">选择证书</Text>
+              <Text className="cert-empty-sub">选领域 → 证书 → 知识点</Text>
+            </View>
+          ) : (
+            <View className="cert-nav">
+              <View className="cert-back" onClick={goBack}>
+                <Image className="cert-back-ico" src={iconBack} mode="aspectFit" />
+              </View>
+              <View className="cert-nav-copy">
+                <Text className="cert-title">选择证书</Text>
+                {domainName ? <Text className="cert-sub">领域 · {domainName}</Text> : null}
+              </View>
+            </View>
+          )}
+          {emptyShell || error ? null : <BridgeSteps current={2} numWeight="bold" />}
+          {error ? null : (
+            <View className="cert-search-wrap">
+              <PackSearch
+                placeholder={emptyShell ? '搜索' : '搜索证书'}
+                value={query}
+                onChange={setQuery}
+                icon={emptyShell ? undefined : iconSearch}
+              />
+            </View>
+          )}
+        </View>
+        <View className="cert-list">
+          {!ready && !error ? <LoadingBlock skeleton /> : null}
+          {error ? (
+            <ErrorBlock
+              className="pack-state"
+              detail={error}
+              onRetry={() => void load()}
+              onBack={goBack}
+            />
+          ) : null}
+          {ready && visible.length === 0 ? (
+            <EmptyBlock
+              fill={emptyShell}
+              className="pack-state"
+              title="暂无证书"
+              detail={query ? '换个关键词搜索' : '该领域下暂无可用证书'}
+              action={query ? '清除搜索' : '返回领域'}
+              onAction={() => (query ? setQuery('') : goBack())}
+            />
+          ) : null}
+          {ready && visible.length > 0 ? (
+            <Text className="cert-section">
+              {domainName || '证书'} · {visible.length} 个证书
+            </Text>
+          ) : null}
+          {ready && !error
+            ? visible.map((item) => (
+                <View
+                  key={item.id}
+                  className="cert-card"
+                  onClick={() => {
+                    void Taro.navigateTo({
+                      url: `/pages/pack/knowledge/index?domainId=${domainId}&certId=${item.id}`,
+                    });
+                  }}
+                >
+                  <View className="cert-card-copy">
+                    <Text className="cert-card-title">{item.name}</Text>
+                    {counts[item.id] === undefined ? null : (
+                      <Text className="cert-card-sub">{counts[item.id]} 个知识点</Text>
+                    )}
+                  </View>
+                  <Image className="cert-chev" src={iconChevron} mode="aspectFit" />
+                </View>
+              ))
+            : null}
+        </View>
+      </View>
     </Screen>
   );
 }
