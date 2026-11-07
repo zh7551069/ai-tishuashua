@@ -50,6 +50,9 @@ export const COMMERCE_AUDIT_ACTIONS = {
   skuUpdate: 'commerce.sku.update',
   skuDisable: 'commerce.sku.disable',
   skuEnable: 'commerce.sku.enable',
+  entitlementGrant: 'commerce.entitlement.grant',
+  entitlementRevokeLot: 'commerce.entitlement.revoke_lot',
+  entitlementVoidPending: 'commerce.entitlement.void_pending',
 } as const;
 
 export interface CommerceQuotaView {

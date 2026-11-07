@@ -1472,14 +1472,141 @@ pre {
   margin-bottom: 16px;
 }
 
+.entitlement-notice {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+}
+
+.entitlement-notice strong {
+  color: #c2410c;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.entitlement-search {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.entitlement-search input {
+  width: min(360px, 100%);
+  height: 34px;
+  margin-top: 0;
+  padding: 6px 12px;
+}
+
+.entitlement-hits {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.entitlement-hits li {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.entitlement-who {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.entitlement-who h2 {
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.entitlement-who p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.entitlement-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill.info {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.entitlement-buckets {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.entitlement-buckets div {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--page);
+}
+
+.entitlement-buckets span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.entitlement-buckets strong {
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.entitlement-table-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.entitlement-warn {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 12px;
+}
+
+.audit-drawer {
+  width: min(760px, 100%);
+}
+
 @media (max-width: 720px) {
   .commerce-head,
   .commerce-split,
-  .commerce-lock {
+  .commerce-lock,
+  .entitlement-who,
+  .entitlement-table-head {
     display: block;
   }
 
   .commerce-actions {
     margin-top: 12px;
+  }
+
+  .entitlement-buckets {
+    grid-template-columns: 1fr 1fr;
   }
 }

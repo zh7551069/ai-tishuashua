@@ -2,7 +2,7 @@
 
 TB-21 / C5。契约是 [tb21-admin-quota-sku-growth-C-contracts-v0.1.0-C.md](contracts/tb21-admin-quota-sku-growth-C-contracts-v0.1.0-C.md)。UI 评审见 [tb21-ui-tech-review-20261107.md](delivery/tb21-ui-tech-review-20261107.md)，结论通过、必改 0。
 
-这一刀做后管全局配额、权益 SKU 和增长任务配置。样式对照 `design/bridge-export/admin-commerce-v2/`（帧 13:86 / 13:3 / 13:476 / 13:169）。同包里的用户权益和补发画板不在本刀。
+这一刀做后管全局配额、权益 SKU 和增长任务配置。样式对照 `design/bridge-export/admin-commerce-v2/`（帧 13:86 / 13:3 / 13:476 / 13:169）。用户权益、补发和作废在 TB-22，见 [admin-entitlement-ops.md](admin-entitlement-ops.md)。
 
 需要后管 Bearer。没有会话，或拿微信用户 token 来调，都是 `401` / `UNAUTHORIZED`。
 
@@ -15,7 +15,7 @@ TB-21 / C5。契约是 [tb21-admin-quota-sku-growth-C-contracts-v0.1.0-C.md](con
 | 权益 SKU | `/commerce/skus` |
 | 全局配额 | `/commerce/quota` |
 | 增长任务 | `/commerce/growth` |
-| 用户权益 | 灰置，不进页面。补发留给 C6 |
+| 用户权益 | `/commerce/entitlements`（TB-22，已可点） |
 
 「系统 / 免费用户题库优先」仍在 `/settings`。配额页里的开关调用的是同一条 `GET|PUT /api/admin/system-settings/freeUserBankFirst`，没有第二套键。
 
@@ -93,8 +93,8 @@ TB-21 / C5。契约是 [tb21-admin-quota-sku-growth-C-contracts-v0.1.0-C.md](con
 
 写操作插入 `admin_audit_logs`（actor、action、target、before、after）。动作包括 `commerce.quota.update`、`commerce.quota.reset`、`commerce.growth.update`、`commerce.growth.reset`、`commerce.sku.create`、`commerce.sku.update`、`commerce.sku.disable`、`commerce.sku.enable`。
 
-没有审计列表接口。那是 C6。
+审计列表在 TB-22：`GET /api/admin/commerce/audit`。本刀的配额、SKU、增长写入仍进同一张 `admin_audit_logs`。
 
 ## 不做
 
-不建收款、下单或回调表。没有统一下单，没有商户密钥，没有 C 端支付页，没有补发或作废接口。
+不建收款、下单或回调表。没有统一下单，没有商户密钥，没有 C 端支付页。补发和作废不在本刀，见 TB-22。

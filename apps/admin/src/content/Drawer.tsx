@@ -4,6 +4,7 @@ export function Drawer(props: {
   open: boolean;
   title: string;
   scrim?: 'soft' | 'strong';
+  wide?: boolean;
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -16,7 +17,7 @@ export function Drawer(props: {
       onMouseDown={props.onClose}
     >
       <div
-        className="drawer"
+        className={props.wide ? 'drawer audit-drawer' : 'drawer'}
         role="dialog"
         aria-modal="true"
         aria-label={props.title}

@@ -444,6 +444,84 @@ export async function releaseEntitlement(db: EntitlementDb, sessionId: string): 
   );
 }
 
+export class EntitlementAdminError extends Error {
+  readonly kind: 'not_found' | 'conflict';
+
+  constructor(kind: 'not_found' | 'conflict', message: string) {
+    super(message);
+    this.name = 'EntitlementAdminError';
+    this.kind = kind;
+  }
+}
+
+export interface RevokeInventoryLotResult {
+  lotId: string;
+  beforeRemain: number;
+  afterRemain: 0;
+  ledgerRefId: string;
+}
+
+/**
+ * 作废一笔未过期且仍有剩余的库存批次。
+ * remain 改为 0，并追加 admin_revoke（delta = −原 remain）。
+ * 调用方必须已经处在事务里。不再次作废；已耗尽或已过期抛冲突。
+ */
+export async function revokeInventoryLot(
+  db: EntitlementDb,
+  userId: string,
+  lotId: string,
+  now = new Date(),
+): Promise<RevokeInventoryLotResult> {
+  const account = await ensureEntitlementDay(db, userId, now);
+  const locked = await db.query(
+    `
+      SELECT id, user_id, remain, expires_at, bucket
+      FROM entitlement_lots
+      WHERE id = $1
+      FOR UPDATE
+    `,
+    [lotId],
+  );
+  const row = locked.rows[0] as
+    | {
+        id: string;
+        user_id: string;
+        remain: number;
+        expires_at: unknown;
+        bucket: string;
+      }
+    | undefined;
+  if (!row || row.user_id !== userId || row.bucket !== 'inventory') {
+    throw new EntitlementAdminError('not_found', '库存批次不存在');
+  }
+  const remain = Number(row.remain);
+  if (!Number.isInteger(remain) || remain <= 0) {
+    throw new EntitlementAdminError('conflict', '批次已无剩余');
+  }
+  if (isLotExpired(row.expires_at, now)) {
+    throw new EntitlementAdminError('conflict', '批次已过期');
+  }
+  const updated = await db.query(
+    `UPDATE entitlement_lots SET remain = 0 WHERE id = $1 AND user_id = $2 AND remain > 0`,
+    [lotId, userId],
+  );
+  if ((updated.rowCount ?? 0) < 1) {
+    throw new EntitlementAdminError('conflict', '批次已无剩余');
+  }
+  const ledgerRefId = `lot:${lotId}:${randomUUID()}`;
+  await insertLedger(db, {
+    userId,
+    delta: -remain,
+    bucket: 'inventory',
+    reason: 'admin_revoke',
+    refType: 'admin_revoke',
+    refId: ledgerRefId,
+    bizDate: account.businessDate,
+    lotId,
+  });
+  return { lotId, beforeRemain: remain, afterRemain: 0, ledgerRefId };
+}
+
 /** 同 refId + 类型只入账一次。支付回调不得调用。 */
 export async function grantEntitlement(
   db: EntitlementDb,
@@ -896,4 +974,12 @@ function toIso(value: unknown): string | null {
 
 function isUniqueViolation(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === '23505';
+}
+
+function isLotExpired(value: unknown, now: Date): boolean {
+  if (!value) {
+    return false;
+  }
+  const time = value instanceof Date ? value.getTime() : new Date(String(value)).getTime();
+  return Number.isFinite(time) && time <= now.getTime();
 }
