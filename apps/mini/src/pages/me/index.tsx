@@ -116,7 +116,15 @@ export default function MePage() {
   };
 
   return (
-    <Screen back centerTitle navPlain title="我" bodyFill={failed} backMark={<BridgeBack />}>
+    <Screen
+      back
+      centerTitle
+      navPlain
+      navClassName="ms-nav"
+      title="我"
+      bodyFill={failed}
+      backMark={<BridgeBack />}
+    >
       <View className={failed ? `ms-error-fill ms-theme-${themeId}` : `ms-theme-${themeId}`}>
         {!ready && !error ? (
           <View className="ms-body">

@@ -19,7 +19,7 @@ export default function ThemePage() {
   };
 
   return (
-    <Screen back centerTitle navPlain title="主题色" backMark={<ThemeBack />}>
+    <Screen back centerTitle navPlain navClassName="ms-nav" title="主题色" backMark={<ThemeBack />}>
       <View className={`ms-theme-${themeId}`}>
         <View className="ms-body ms-body-theme">
           <View className="ms-card ms-intro">

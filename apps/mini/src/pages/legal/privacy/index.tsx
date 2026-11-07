@@ -18,6 +18,7 @@ export default function PrivacyPage() {
       back
       centerTitle
       navPlain
+      navClassName="ms-nav"
       title="隐私政策"
       backMark={<Text className="ms-back-plain">‹</Text>}
     >
