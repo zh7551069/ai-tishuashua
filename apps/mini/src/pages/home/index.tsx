@@ -51,6 +51,22 @@ export default function HomePage() {
   const unavailableOthers =
     current && !current.unavailable ? (packs?.items.filter((item) => item.unavailable) ?? []) : [];
   const emptyHome = ready && !error && !current;
+  const mixedHome = Boolean(current && !current.unavailable && unavailableOthers.length > 0);
+  const greetClass = emptyHome
+    ? 'u-greet u-greet-empty'
+    : current?.unavailable || mixedHome
+      ? 'u-greet u-greet-board'
+      : 'u-greet';
+  const subClass = current?.unavailable
+    ? 'u-greet-sub u-greet-sub-warn'
+    : mixedHome
+      ? 'u-greet-sub u-greet-sub-mix'
+      : 'u-greet-sub';
+  const padClass = emptyHome
+    ? 'u-pad u-pad-home u-pad-fill'
+    : current?.unavailable || mixedHome
+      ? 'u-pad u-pad-home u-pad-home-tight'
+      : 'u-pad u-pad-home';
 
   const run = async (task: (token: string) => Promise<void>) => {
     const token = readToken();
@@ -91,10 +107,11 @@ export default function HomePage() {
     <Screen
       bare
       bodyFill={emptyHome}
+      footerClassName="home-foot"
       footer={
         ready && current ? (
           <Button
-            className="u-btn"
+            className={current.unavailable ? 'u-btn u-btn-off' : 'u-btn'}
             disabled={current.unavailable || busy}
             onClick={() => openQuiz(current)}
           >
@@ -103,12 +120,10 @@ export default function HomePage() {
         ) : null
       }
     >
-      <View className="u-greet">
+      <View className={greetClass}>
         <View className="u-greet-copy">
           <Text className="u-greet-title">你好，{nick}</Text>
-          <Text className={current?.unavailable ? 'u-greet-sub u-greet-sub-warn' : 'u-greet-sub'}>
-            {homeSub(ready, current, packs?.items ?? [])}
-          </Text>
+          <Text className={subClass}>{homeSub(ready, current, packs?.items ?? [])}</Text>
         </View>
         <View
           className="u-avatar-wrap"
@@ -120,13 +135,13 @@ export default function HomePage() {
           <Text className="u-avatar-label">我</Text>
         </View>
       </View>
-      <View className={emptyHome ? 'u-pad u-pad-home u-pad-fill' : 'u-pad u-pad-home'}>
+      <View className={padClass}>
         {!ready && !error ? <LoadingBlock label="正在加载刷题包" /> : null}
         {error ? <ErrorBlock detail={error} onRetry={() => void load()} /> : null}
         {emptyHome ? (
           <EmptyBlock
             fill
-            titleSize="lg"
+            className="home-empty"
             title="暂无刷题包"
             detail="选择领域与证书，创建你的第一个刷题包"
             action="去选包"
@@ -140,6 +155,7 @@ export default function HomePage() {
             canSwitch={(packs?.items.length ?? 0) > 1}
             busy={busy}
             onOpenSheet={() => setSheetOpen(true)}
+            mixed={mixedHome}
             onDelete={setPendingDelete}
             onCreate={openDomain}
           />
@@ -229,6 +245,7 @@ function PackHome(props: {
   others: PackView[];
   canSwitch: boolean;
   busy: boolean;
+  mixed: boolean;
   onOpenSheet: () => void;
   onDelete: (pack: PackView) => void;
   onCreate: () => void;
@@ -236,87 +253,95 @@ function PackHome(props: {
   const pack = props.pack;
   const chips = pack.knowledgePoints.slice(0, 2);
   const extra = pack.knowledgePointCount - chips.length;
+  const packClass = pack.unavailable
+    ? 'home-pack home-pack-off'
+    : props.mixed
+      ? 'home-pack home-pack-mix'
+      : 'home-pack';
   return (
     <View>
-      <View className={pack.unavailable ? 'u-pack u-pack-off' : 'u-pack'}>
-        {pack.unavailable ? null : <View className="u-pack-accent" />}
-        <View className="u-pack-label-row">
-          <Text className={pack.unavailable ? 'u-kicker u-kicker-dim' : 'u-kicker'}>
-            当前刷题包
+      <View className={packClass}>
+        <View className="home-pack-accent" />
+        <View className="home-pack-body">
+          <View className="home-label">
+            <Text className="home-kicker">当前刷题包</Text>
+            {pack.unavailable ? (
+              <Text className="home-flag">不可用</Text>
+            ) : (
+              <Text className="home-switch" onClick={props.onOpenSheet}>
+                切换
+              </Text>
+            )}
+          </View>
+          <Text className="home-title">{pack.certName || pack.name}</Text>
+          <Text className="home-meta">
+            {pack.domainName} · {pack.knowledgePointCount} 个知识点
           </Text>
           {pack.unavailable ? (
-            <Text className="u-off-flag">不可用</Text>
+            <View className="home-reason">
+              <Text className="home-reason-title">关联证书已下架</Text>
+              <Text className="home-reason-sub">此包仅可删除，不可修改或继续刷题</Text>
+            </View>
           ) : (
-            <Text className="u-link" onClick={props.onOpenSheet}>
-              切换
-            </Text>
+            <View className="home-chips">
+              {chips.map((item) => (
+                <Text key={item.id} className="home-chip">
+                  {item.name}
+                </Text>
+              ))}
+              {extra > 0 ? (
+                <Text className={props.mixed ? 'home-chip' : 'home-chip home-chip-more'}>
+                  +{extra}
+                </Text>
+              ) : null}
+            </View>
           )}
         </View>
-        <Text className={pack.unavailable ? 'u-h1 u-h1-dim' : 'u-h1'}>
-          {pack.certName || pack.name}
-        </Text>
-        <Text className={pack.unavailable ? 'u-meta u-meta-dim' : 'u-meta'}>
-          {pack.domainName} · {pack.knowledgePointCount} 个知识点
-        </Text>
-        {pack.unavailable ? (
-          <View className="u-warn-box">
-            <Text className="u-warn-title">关联证书已下架</Text>
-            <Text className="u-warn-sub">此包仅可删除，不可修改或继续刷题</Text>
-          </View>
-        ) : (
-          <View className="u-chips">
-            {chips.map((item) => (
-              <Text key={item.id} className="u-chip">
-                {item.name}
-              </Text>
-            ))}
-            {extra > 0 ? <Text className="u-chip">+{extra}</Text> : null}
-          </View>
-        )}
       </View>
       {pack.unavailable ? (
         <View>
-          <Button
-            className="u-btn-outline-danger"
-            style={{ marginTop: '12px' }}
-            disabled={props.busy}
-            onClick={() => props.onDelete(pack)}
-          >
-            删除此刷题包
-          </Button>
-          <Button className="u-btn" style={{ marginTop: '10px' }} onClick={props.onCreate}>
-            新建刷题包
-          </Button>
-          <Text className="u-text-btn" onClick={props.onCreate}>
-            重新选择领域
-          </Text>
-          {props.canSwitch ? (
-            <Text className="u-text-btn" onClick={props.onOpenSheet}>
-              切换刷题包
+          <View className="home-actions">
+            <Button
+              className="u-btn home-btn-danger"
+              disabled={props.busy}
+              onClick={() => props.onDelete(pack)}
+            >
+              删除此刷题包
+            </Button>
+            <Button className="u-btn home-btn-create" onClick={props.onCreate}>
+              新建刷题包
+            </Button>
+            <Text className="home-relink" onClick={props.onCreate}>
+              重新选择领域
             </Text>
-          ) : null}
-          <View className="u-faq">
-            <Text className="u-faq-q">为什么不可用？</Text>
-            <Text className="u-faq-a">证书下架后，已选包保留记录但无法再刷题</Text>
+            {props.canSwitch ? (
+              <Text className="home-relink" onClick={props.onOpenSheet}>
+                切换刷题包
+              </Text>
+            ) : null}
+          </View>
+          <View className="home-faq">
+            <Text className="home-faq-q">为什么不可用？</Text>
+            <Text className="home-faq-a">证书下架后，已选包保留记录但无法再刷题</Text>
           </View>
         </View>
       ) : null}
       {props.others.map((item) => (
-        <View key={item.id} className="u-off-row">
-          <View className="u-pack-label-row">
-            <Text className="u-off-name">{item.certName || item.name}</Text>
-            <Text className="u-off-flag">不可用</Text>
+        <View key={item.id} className="home-off">
+          <View className="home-off-top">
+            <Text className="home-off-name">{item.certName || item.name}</Text>
+            <Text className="home-flag">不可用</Text>
           </View>
-          <Text className="u-off-meta">证书已下架 · 仅可删除</Text>
-          <Text className="u-off-del" onClick={() => props.onDelete(item)}>
+          <Text className="home-off-meta">证书已下架 · 仅可删除</Text>
+          <Text className="home-off-del" onClick={() => props.onDelete(item)}>
             删除
           </Text>
         </View>
       ))}
       {props.others.length > 0 ? (
-        <View className="u-mix">
-          <Text className="u-mix-title">还有 {props.others.length} 个不可用刷题包</Text>
-          <Text className="u-mix-sub">建议删除以保持列表清晰</Text>
+        <View className="home-mix">
+          <Text className="home-mix-title">还有 {props.others.length} 个不可用刷题包</Text>
+          <Text className="home-mix-sub">建议删除以保持列表清晰</Text>
         </View>
       ) : null}
     </View>

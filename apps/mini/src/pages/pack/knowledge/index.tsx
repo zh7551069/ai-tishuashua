@@ -190,6 +190,8 @@ export default function KnowledgePage() {
         subtitle={tree.certificateName}
         subtitleTone="muted"
         titleSize="lg"
+        navClassName="edit-nav"
+        footerClassName="edit-foot"
         onBack={() => setSavedPack(null)}
         footer={
           <Button
@@ -202,18 +204,24 @@ export default function KnowledgePage() {
           </Button>
         }
       >
-        <View className="u-pad u-pad-kp">
-          <View className="u-saved-row">
-            <View className="u-saved-pill">
-              <View className="u-saved-mark">
-                <View className="u-saved-tick" />
-              </View>
-              <Text className="u-saved-text">已保存到刷题包</Text>
+        <View className="edit-pack">
+          <View className="edit-toast">
+            <View className="edit-toast-mark">
+              <View className="edit-toast-tick" />
             </View>
+            <Text className="edit-toast-text">已保存到刷题包</Text>
           </View>
-          <View className="u-saved-list">
+          <View className="edit-list">
             {points.map((point) => (
-              <PointRow key={point.id} name={point.name} meta={knowledgeStatLabel(point.id)} on />
+              <View key={point.id} className="edit-card">
+                <View className="edit-check">
+                  <Text className="edit-check-mark">✓</Text>
+                </View>
+                <View className="edit-card-copy">
+                  <Text className="edit-card-title">{point.name}</Text>
+                  <Text className="edit-card-meta">{knowledgeStatLabel(point.id)}</Text>
+                </View>
+              </View>
             ))}
           </View>
         </View>
@@ -221,7 +229,8 @@ export default function KnowledgePage() {
     );
   }
 
-  const tip = ready && visible.length > 0 ? selectionTip(tree?.nodes ?? [], selected, collapsed) : '';
+  const tip =
+    ready && visible.length > 0 ? selectionTip(tree?.nodes ?? [], selected, collapsed) : '';
 
   return (
     <Screen

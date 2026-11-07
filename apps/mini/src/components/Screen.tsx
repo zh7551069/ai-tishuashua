@@ -29,6 +29,8 @@ export function Screen(props: {
   background?: string;
   /** 追加在 .u-foot 上，给单页底栏对齐画板。 */
   footerClassName?: string;
+  /** 追加在 .u-nav 上，给单页顶栏对齐画板。 */
+  navClassName?: string;
   children?: ReactNode;
 }) {
   const [inset] = useState(readInset);
@@ -69,13 +71,14 @@ export function Screen(props: {
     >
       {props.bare ? null : (
         <View
-          className={
-            props.centerTitle
-              ? 'u-nav u-nav-center'
-              : props.navPlain
-                ? 'u-nav u-nav-plain'
-                : 'u-nav'
-          }
+          className={[
+            'u-nav',
+            props.centerTitle ? 'u-nav-center' : '',
+            props.navPlain ? 'u-nav-plain' : '',
+            props.navClassName ?? '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
         >
           {props.back ? (
             <View className="u-back" onClick={back}>

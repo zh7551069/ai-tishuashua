@@ -42,9 +42,13 @@ export function PackSheet(props: {
     }
   };
 
+  const sheetClass = hasUnavailable
+    ? 'u-sheet u-sheet-pack u-sheet-pack-gray'
+    : 'u-sheet u-sheet-pack';
+
   return (
     <View
-      className="u-sheet-mask u-mask-dim"
+      className={hasUnavailable ? 'u-sheet-mask u-mask-strong' : 'u-sheet-mask u-mask-dim'}
       onClick={() => {
         if (pending) {
           return;
@@ -52,7 +56,7 @@ export function PackSheet(props: {
         props.onClose();
       }}
     >
-      <View className="u-sheet u-sheet-pack" onClick={(event) => event.stopPropagation()}>
+      <View className={sheetClass} onClick={(event) => event.stopPropagation()}>
         <View className="u-sheet-handle" />
         <Text className="u-sheet-title">切换刷题包</Text>
         <ScrollView scrollY className="u-sheet-cards">
@@ -77,7 +81,7 @@ export function PackSheet(props: {
               >
                 <View className="u-card-copy">
                   <Text
-                    className={item.unavailable ? 'u-sheet-name u-kp-name-dim' : 'u-sheet-name'}
+                    className={item.unavailable ? 'u-sheet-name u-sheet-name-dim' : 'u-sheet-name'}
                   >
                     {item.name}
                   </Text>
@@ -103,24 +107,22 @@ export function PackSheet(props: {
                   >
                     删除
                   </Text>
-                ) : on ? (
-                  <View className="u-sheet-side">
-                    <View className="u-tickbox u-tickbox-on">
-                      <View className="u-tick" />
-                    </View>
-                    <Text
-                      className="u-more"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setMenuId(menuId === item.id ? null : item.id);
-                      }}
-                    >
-                      ⋯
-                    </Text>
-                  </View>
                 ) : (
-                  <View className="u-tickbox" />
+                  <View className={on ? 'sheet-dot sheet-dot-on' : 'sheet-dot'}>
+                    {on ? <Text className="sheet-dot-mark">✓</Text> : null}
+                  </View>
                 )}
+                {!item.unavailable && on ? (
+                  <Text
+                    className="u-more"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setMenuId(menuId === item.id ? null : item.id);
+                    }}
+                  >
+                    ⋯
+                  </Text>
+                ) : null}
                 {menuId === item.id ? (
                   <View className="u-menu" onClick={(event) => event.stopPropagation()}>
                     <Text
@@ -179,12 +181,7 @@ export function PackSheet(props: {
             </Button>
           </View>
         ) : (
-          <Button
-            className="u-btn"
-            style={{ marginTop: '4px' }}
-            disabled={props.busy}
-            onClick={props.onCreate}
-          >
+          <Button className="u-btn u-btn-sheet" disabled={props.busy} onClick={props.onCreate}>
             新建刷题包
           </Button>
         )}
