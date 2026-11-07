@@ -135,7 +135,7 @@ export default function DomainPage() {
               <Text className="domain-hello">你好，备考人</Text>
               <View
                 className="domain-me"
-                onClick={() => void Taro.navigateTo({ url: '/pages/settings/index' })}
+                onClick={() => void Taro.navigateTo({ url: '/pages/me/index' })}
               >
                 <Text className="domain-me-text">我</Text>
               </View>

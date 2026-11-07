@@ -1,5 +1,6 @@
 import { Text, View } from '@tarojs/components';
 import { Screen } from '../../../components/Screen';
+import '../../../ui/me-settings.css';
 
 const PARAGRAPHS = [
   '题刷刷是面向在职备考的刷题工具。你点击「微信一键登录」即表示已阅读并同意本协议和《隐私政策》。',
@@ -11,7 +12,13 @@ const PARAGRAPHS = [
 
 export default function TermsPage() {
   return (
-    <Screen back centerTitle title="用户协议">
+    <Screen
+      back
+      centerTitle
+      navPlain
+      title="用户协议"
+      backMark={<Text className="ms-back-plain">‹</Text>}
+    >
       <View className="u-legal">
         <Text className="u-legal-h">题刷刷用户协议</Text>
         <Text className="u-legal-p">生效日期：2026-11-03。</Text>

@@ -1,5 +1,6 @@
 import { Text, View } from '@tarojs/components';
 import { Screen } from '../../../components/Screen';
+import '../../../ui/me-settings.css';
 
 const PARAGRAPHS = [
   '为建立账号和保持登录，我们处理微信 openId，以及微信在可用时返回的 unionId。昵称只有你在登录页主动填写才会保存。本小程序不采集、不上传头像。',
@@ -13,7 +14,13 @@ const PARAGRAPHS = [
 
 export default function PrivacyPage() {
   return (
-    <Screen back centerTitle title="隐私政策">
+    <Screen
+      back
+      centerTitle
+      navPlain
+      title="隐私政策"
+      backMark={<Text className="ms-back-plain">‹</Text>}
+    >
       <View className="u-legal">
         <Text className="u-legal-h">题刷刷隐私政策</Text>
         <Text className="u-legal-p">生效日期：2026-11-03。</Text>
