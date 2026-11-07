@@ -6,7 +6,8 @@ import { useState } from 'react';
 import { Screen } from '../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
 import { fetchCurrentUser } from '../../services/auth-api';
-import { withAuth } from '../../services/guard';
+import { fetchEntitlement, fetchMemberSkus } from '../../services/commerce-api';
+import { isAuthFailure, withAuth } from '../../services/guard';
 import { checkInToday, readCheckin, readThemeId, type ThemeId } from '../../services/local-prefs';
 import {
   APP_FOOTER,
@@ -22,6 +23,15 @@ import {
   type CheckinState,
   type WeekDot,
 } from '../../services/me-model';
+import {
+  ME_MEMBER_ROUTE,
+  ME_SESSION_LEDGER_ROUTE,
+  ME_TASKS_ROUTE,
+  presentMeCheckin,
+  presentMeEntitlement,
+  type MeEntitlementPresent,
+  type MeMemberSkuName,
+} from '../../services/me-entitlement-present';
 import { fetchPacks } from '../../services/pack-api';
 import { fetchQuizScores } from '../../services/quiz-api';
 import { fetchWrongBook } from '../../services/wrong-book-api';
@@ -30,12 +40,14 @@ import {
   CheckMark,
   Chevron,
   GearGlyph,
+  ListGlyph,
   PackGlyph,
   ProfileChevron,
   RecordGlyph,
   WrongGlyph,
 } from '../../ui/glyphs';
 import '../../ui/me-settings.css';
+import { MeGrowthRow, MeStatusCard } from './commerce-blocks';
 
 type Snapshot = {
   user: UserSummary;
@@ -52,6 +64,7 @@ export default function MePage() {
   const [today, setToday] = useState(() => dayKey(new Date()));
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [checkin, setCheckin] = useState<CheckinState>(EMPTY_CHECKIN);
+  const [commerce, setCommerce] = useState<MeEntitlementPresent | null>(null);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
 
@@ -59,13 +72,15 @@ export default function MePage() {
     setError('');
     try {
       const loaded = await withAuth(async (token) => {
-        const [user, packs, scores, wrongs] = await Promise.all([
+        const [user, packs, scores, wrongs, entitlement, memberNames] = await Promise.all([
           fetchCurrentUser(token),
           fetchPacks(token),
           fetchQuizScores(token),
           fetchWrongBook(token, 'pending'),
+          fetchEntitlement(token),
+          readMemberNames(token),
         ]);
-        return { user, packs, scores, wrongs };
+        return { user, packs, scores, wrongs, entitlement, memberNames };
       });
       if (!loaded) {
         return;
@@ -84,10 +99,16 @@ export default function MePage() {
           day,
         ),
       });
+      const presented = presentMeEntitlement(loaded.entitlement, loaded.memberNames);
+      if (!presented) {
+        throw new Error('权益暂时无法识别');
+      }
+      setCommerce(presented);
       setCheckin(readCheckin());
       setReady(true);
     } catch (caught) {
       setReady(false);
+      setCommerce(null);
       setError(caught instanceof Error ? caught.message : '加载失败');
     }
   };
@@ -101,6 +122,7 @@ export default function MePage() {
   });
 
   const view = snapshot ? buildCenter({ ...snapshot, checkin, today }) : null;
+  const checkinCopy = commerce ? presentMeCheckin(commerce.active, Boolean(view?.checked)) : null;
   const failed = Boolean(error) && !ready;
 
   const onCheckIn = () => {
@@ -139,11 +161,14 @@ export default function MePage() {
             onBack={() => void Taro.navigateBack()}
           />
         ) : null}
-        {ready && snapshot && view ? (
+        {ready && snapshot && view && commerce && checkinCopy ? (
           <MeBody
             nick={displayNick(snapshot.user.nick)}
             initial={avatarChar(snapshot.user.nick)}
             view={view}
+            commerce={commerce}
+            checkinButton={checkinCopy.button}
+            checkinNote={checkinCopy.note}
             onCheckIn={onCheckIn}
           />
         ) : null}
@@ -152,7 +177,15 @@ export default function MePage() {
   );
 }
 
-function MeBody(props: { nick: string; initial: string; view: CenterView; onCheckIn: () => void }) {
+function MeBody(props: {
+  nick: string;
+  initial: string;
+  view: CenterView;
+  commerce: MeEntitlementPresent;
+  checkinButton: string;
+  checkinNote: string;
+  onCheckIn: () => void;
+}) {
   const { view } = props;
   return (
     <View className="ms-body">
@@ -166,6 +199,7 @@ function MeBody(props: { nick: string; initial: string; view: CenterView; onChec
         </View>
         <ProfileChevron />
       </View>
+      <MeStatusCard commerce={props.commerce} onOpenMember={() => open(ME_MEMBER_ROUTE)} />
       <View className="ms-card ms-stats">
         <Stat label="刷题数" value={String(view.questions)} unit="道" muted={view.questions <= 0} />
         <View className="ms-vdiv" />
@@ -188,13 +222,13 @@ function MeBody(props: { nick: string; initial: string; view: CenterView; onChec
             </View>
           ))}
         </View>
-        <Text className="ms-checkin-note">{view.note}</Text>
+        <Text className="ms-checkin-note">{props.checkinNote}</Text>
         <View
           className={view.checked ? 'ms-cta ms-brand-soft ms-brand-line' : 'ms-cta ms-brand-bg'}
           onClick={props.onCheckIn}
         >
           <Text className={view.checked ? 'ms-cta-text ms-brand-fg' : 'ms-cta-text'}>
-            {view.checked ? '今日已签到' : '今日签到'}
+            {props.checkinButton}
           </Text>
         </View>
       </View>
@@ -206,7 +240,15 @@ function MeBody(props: { nick: string; initial: string; view: CenterView; onChec
           <Text className="ms-go-text">去首页刷题</Text>
         </View>
       ) : null}
+      <MeGrowthRow active={props.commerce.active} onOpenTasks={() => open(ME_TASKS_ROUTE)} />
       <View className="ms-card">
+        <MenuRow
+          glyph={<ListGlyph />}
+          title="场次明细"
+          meta={props.commerce.ledgerMeta}
+          onClick={() => open(ME_SESSION_LEDGER_ROUTE)}
+        />
+        <View className="ms-line" />
         <MenuRow
           glyph={<WrongGlyph />}
           title="错题本"
@@ -295,6 +337,18 @@ function MenuRow(props: {
 
 function open(url: string) {
   void Taro.navigateTo({ url });
+}
+
+async function readMemberNames(token: string): Promise<MeMemberSkuName[]> {
+  try {
+    const skus = await fetchMemberSkus(token);
+    return skus.map((sku) => ({ code: sku.code, name: sku.name }));
+  } catch (caught) {
+    if (isAuthFailure(caught)) {
+      throw caught;
+    }
+    return [];
+  }
 }
 
 function activePack(items: PackView[], activeId: string | null): PackView | null {

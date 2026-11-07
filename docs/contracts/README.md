@@ -34,3 +34,4 @@
 | TB-24 小程序用尽半屏          | [tb24-miniapp-exhausted-sheet-C-contracts-v0.1.0-C.md](tb24-miniapp-exhausted-sheet-C-contracts-v0.1.0-C.md)               | active | 架构师 |
 | TB-25 小程序会员定价          | [tb25-miniapp-membership-pricing-C-contracts-v0.1.0-C.md](tb25-miniapp-membership-pricing-C-contracts-v0.1.0-C.md)         | active | 架构师 |
 | TB-26 小程序场次加油包        | [tb26-miniapp-session-boost-C-contracts-v0.1.0-C.md](tb26-miniapp-session-boost-C-contracts-v0.1.0-C.md)                   | active | 架构师 |
+| TB-27 小程序「我」非会员/会员 | [tb27-miniapp-me-member-states-C-contracts-v0.1.0-C.md](tb27-miniapp-me-member-states-C-contracts-v0.1.0-C.md)             | active | 架构师 |

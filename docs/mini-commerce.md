@@ -1,6 +1,18 @@
 # 小程序商业化页
 
-会员定价（TB-25 / C9）和场次加油包（TB-26 / C10）都复用 [微信支付与订单](payment.md) 里的 C7 链路，不新开 HTTP endpoint。半屏（TB-24）只负责导航，不下单、不拉起支付。
+会员定价（TB-25 / C9）和场次加油包（TB-26 / C10）都复用 [微信支付与订单](payment.md) 里的 C7 链路，不新开 HTTP endpoint。半屏（TB-24）和「我」页（TB-27 / C11）只负责导航，不下单、不拉起支付。
+
+## 「我」页（C11）
+
+C11 只增强既有 `pages/me/index`。会员是否生效、到期日、今日剩余场次读 `GET /api/me/entitlement`，不写死配额、库存、到期或价格。档名可用 `skuCode` 约定映射，或只读 `GET /api/commerce/skus?type=member` 的名称；目录失败不挡住页面。本页不拉账本。
+
+- 开通、续费、升级：`navigateTo` `pages/commerce/member/index`（TB-25）。
+- 加油包：三帧没有单独入口行。购买仍走 TB-26 `pages/commerce/session-pack/index`（半屏和会员页已能到达）。
+- 场次明细：入口进 `pages/commerce/session-ledger/index`。没有账本粗算时，非会员只显示库存；会员显示「会员不限场 · 明细可查」。全量列表归 TB-28，当前路由只占位。
+- 每日分享、邀请有礼：入口进 `pages/commerce/tasks/index`。发奖归 C13。签到仍写本地，不调用 grant。
+- 本页禁止 `wx.requestPayment`、`POST /api/orders`、mock-notify 和 `upgrade-quote`。
+
+对稿帧 `122:5` / `122:11` / `122:7`。UI 评审见 [TB-27 三行](delivery/tb27-ui-tech-review-20261107.md)。契约：[TB-27 C](contracts/tb27-miniapp-me-member-states-C-contracts-v0.1.0-C.md)。
 
 ## 场次加油包（C10）
 
