@@ -92,11 +92,7 @@ export function ScoreList(props: { tick: number }) {
       title="练习记录"
       background="#f8f9fb"
       navClassName="pr-nav"
-      backMark={
-        <View className="pr-back-clip">
-          <Image className="pr-back-ico" src={iconBack} mode="aspectFit" />
-        </View>
-      }
+      backMark={<Image className="u-back-ico" src={iconBack} mode="aspectFit" />}
     >
       {guest ? (
         <EmptyState
