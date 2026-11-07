@@ -2,7 +2,7 @@ import { Text, View } from '@tarojs/components';
 import { Screen } from './Screen';
 import './exhausted-sheet.css';
 
-/** C9 / C10 / C13 占位。不能在这里下单或拉起支付。 */
+/** 商业化占位。不能在这里下单或拉起支付。 */
 export function CommerceStub(props: { title: string }) {
   return (
     <Screen back centerTitle navPlain title={props.title}>

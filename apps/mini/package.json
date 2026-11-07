@@ -15,7 +15,7 @@
     "build": "taro build --type weapp",
     "build:weapp": "taro build --type weapp",
     "typecheck": "tsc --noEmit --pretty false",
-    "test": "node --import tsx --test src/services/exhausted-sheet.test.ts src/services/membership-pay.test.ts src/services/session-pack-pay.test.ts"
+    "test": "node --import tsx --test src/services/exhausted-sheet.test.ts src/services/membership-pay.test.ts src/services/session-pack-pay.test.ts src/services/me-entitlement-present.test.ts"
   },
   "browserslist": [
     "defaults and fully supports es6-module",

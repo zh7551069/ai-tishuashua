@@ -32,6 +32,7 @@ import iconThemeBack from '../assets/me-settings/1vs11hq.svg';
 import iconCheck from '../assets/me-settings/en9r46.svg';
 import iconThemeCheck from '../assets/me-settings/2mxwk2.svg';
 import iconKnob from '../assets/me-settings/pipbxa.svg';
+import iconList from '../assets/me-commerce/list.svg';
 
 type Layer = { src: string; l: number; t: number; w: number; h: number };
 
@@ -82,6 +83,12 @@ export function PackGlyph() {
         { src: iconPackFlap, l: 1, t: 3, w: 7.3, h: 3.6 },
       ]}
     />
+  );
+}
+
+export function ListGlyph() {
+  return (
+    <Stack box="ms-box-18" layers={[{ src: iconList, l: 0, t: 2, w: 18, h: 14 }]} />
   );
 }
 
