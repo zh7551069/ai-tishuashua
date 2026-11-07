@@ -8,6 +8,7 @@ import {
   type GenerateQuizJobPayload,
 } from '@tishuashua/shared';
 import { Worker, type ConnectionOptions } from 'bullmq';
+import Redis from 'ioredis';
 import { Pool } from 'pg';
 import { loadWorkerEnv } from './config/env';
 import { handleExtractCourseware } from './processors/extract-courseware';
@@ -18,6 +19,7 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QueueConsumerService.name);
   private workers: Worker[] = [];
   private pool: Pool | null = null;
+  private settingsRedis: Redis | null = null;
 
   constructor(private readonly config: ConfigService) {}
 
@@ -61,9 +63,17 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
       this.logger.error(error.message);
     });
     const pool = this.pool;
+    const settingsRedis = new Redis(env.redisUrl, {
+      connectTimeout: 3000,
+      maxRetriesPerRequest: 1,
+    });
+    settingsRedis.on('error', (error: Error) => {
+      this.logger.error(error.message);
+    });
+    this.settingsRedis = settingsRedis;
     const generateWorker = new Worker<GenerateQuizJobPayload>(
       JOB_GENERATE_QUIZ,
-      (job) => handleGenerateQuiz(job, pool),
+      (job) => handleGenerateQuiz(job, pool, settingsRedis),
       { connection, concurrency: 2, lockDuration: 10 * 60 * 1000 },
     );
     generateWorker.on('error', (error: Error) => {
@@ -85,6 +95,8 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy(): Promise<void> {
     await Promise.all(this.workers.map((worker) => worker.close()));
+    this.settingsRedis?.disconnect();
+    this.settingsRedis = null;
     await this.pool?.end().catch(() => undefined);
     this.pool = null;
   }

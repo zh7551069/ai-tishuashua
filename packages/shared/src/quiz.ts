@@ -25,8 +25,16 @@ export type QuizSessionStatus = (typeof QUIZ_SESSION_STATUSES)[number];
 export const QUIZ_SESSION_SOURCES = ['normal', 'retrain_similar', 'variant', 'wrongSet'] as const;
 export type QuizSessionSource = (typeof QUIZ_SESSION_SOURCES)[number];
 
-export const QUESTION_SOURCES = ['ai', 'wrong_carry', 'ai_variant'] as const;
+export const QUESTION_SOURCES = ['ai', 'wrong_carry', 'ai_variant', 'bank'] as const;
 export type QuestionSource = (typeof QUESTION_SOURCES)[number];
+
+/** 写入 question_bank 的来源。抽题和错题带入不是入库事件。 */
+export const BANK_INGEST_SOURCES = ['ai', 'ai_variant'] as const;
+export type BankIngestSource = (typeof BANK_INGEST_SOURCES)[number];
+
+/** 题库行状态。本切片写入一律 online，抽题只抽 online。 */
+export const BANK_STATUSES = ['online', 'offline'] as const;
+export type BankStatus = (typeof BANK_STATUSES)[number];
 
 /** 题型变异固定 1 道，不进入普通题量枚举。 */
 export const VARIANT_QUIZ_COUNT = 1;

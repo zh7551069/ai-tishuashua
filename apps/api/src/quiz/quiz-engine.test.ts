@@ -15,8 +15,11 @@ import {
   normalizeQuizRequest,
   normalizeSelection,
   parseAiQuestions,
+  isFreeUser,
   parseCreateQuizSessionRequest,
   pickPublishedPrompt,
+  questionContentKey,
+  selectBankQuestions,
   pickPublishedVariantPrompt,
   preferVariantTypes,
   renderPrompt,
@@ -475,15 +478,155 @@ describe('quiz generation rules', () => {
       ),
     ].join('\n');
     assert.ok(variantCall.length > 0 && loader.length > 0);
-    assert.equal(/embedding|user_uploads|courseware|vector/i.test(variantCall), false);
+    assert.equal(/embedding|user_uploads|courseware|vector|drawFromBank/i.test(variantCall), false);
     assert.equal(/embedding|user_uploads|courseware|vector/i.test(loader), false);
     assert.match(loader, /FROM wrong_items/);
     assert.equal(loader.includes('answer'), false);
     assert.match(source, /禁止回退整包/);
   });
+
+  test('题干指纹与错题键同构，会员闸门现网恒为免费', () => {
+    const options = [
+      { id: 'B', text: '乙' },
+      { id: 'A', text: '甲' },
+    ];
+    const forward = questionContentKey({
+      type: 'multi',
+      stem: '  题干  ',
+      options,
+      answer: ['B', 'A'],
+    });
+    const reversed = questionContentKey({
+      type: 'multi',
+      stem: '题干',
+      options,
+      answer: ['A', 'B'],
+    });
+    assert.equal(forward, reversed);
+    assert.equal(forward, `multi\u0002题干\u0002B\u0000乙\u0001A\u0000甲\u0002A\u0001B`);
+    assert.equal(isFreeUser({ id: '00000000-0000-4000-8000-000000000001' }), true);
+
+    const migration = readFileSync(
+      join(__dirname, '../../migrations/008_question_bank_and_settings.sql'),
+      'utf8',
+    );
+    assert.match(migration, /freeUserBankFirst/);
+    assert.match(migration, /"enabled": false/);
+    assert.match(migration, /CREATE TABLE IF NOT EXISTS question_bank/);
+    assert.equal(migration.includes('wrong_items'), true);
+    assert.equal(/INSERT INTO question_bank/i.test(migration), false);
+  });
+
+  test('抽题库：同知识点、软难度、避复，不配比', () => {
+    const sessionKps = ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'];
+    const other = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const base = {
+      need: 1,
+      sessionId: 'session-1',
+      difficulty: 'medium' as const,
+      types: ['single' as const],
+      sessionKpIds: sessionKps,
+      seenContentKeys: new Set<string>(),
+      usedContentKeys: new Set<string>(),
+      usedStems: new Set<string>(),
+    };
+    const medium = bankRow('m', sessionKps, 'medium', '中等题');
+    const hard = bankRow('h', sessionKps, 'hard', '困难题');
+    const unseen = bankRow('u', sessionKps, null, '无难度');
+    const picked = selectBankQuestions({
+      ...base,
+      need: 1,
+      candidates: [hard, medium],
+    });
+    assert.deepEqual(
+      picked.map((row) => row.id),
+      ['m'],
+    );
+    const both = selectBankQuestions({
+      ...base,
+      need: 2,
+      candidates: [hard, medium],
+    });
+    assert.deepEqual(
+      both.map((row) => row.stem),
+      ['中等题', '困难题'],
+    );
+    const soft = selectBankQuestions({
+      ...base,
+      need: 2,
+      candidates: [hard, unseen],
+    });
+    assert.equal(soft.length, 2);
+    assert.equal(
+      selectBankQuestions({
+        ...base,
+        candidates: [bankRow('off-kp', [other], 'medium', '偏题')],
+      }).length,
+      0,
+    );
+    assert.equal(
+      selectBankQuestions({
+        ...base,
+        types: ['judge'],
+        candidates: [medium],
+      }).length,
+      0,
+    );
+    assert.equal(
+      selectBankQuestions({
+        ...base,
+        seenContentKeys: new Set([medium.contentKey]),
+        candidates: [medium, hard],
+      })[0]?.id,
+      'h',
+    );
+    assert.equal(
+      selectBankQuestions({
+        ...base,
+        usedStems: new Set(['中等题']),
+        candidates: [medium, hard],
+      })[0]?.id,
+      'h',
+    );
+    const stableA = selectBankQuestions({
+      ...base,
+      need: 2,
+      candidates: [hard, medium, unseen],
+    }).map((row) => row.id);
+    const stableB = selectBankQuestions({
+      ...base,
+      need: 2,
+      candidates: [unseen, hard, medium],
+    }).map((row) => row.id);
+    assert.deepEqual(stableA, stableB);
+  });
 });
 
 const KP = '11111111-1111-4111-8111-111111111111';
+
+function bankRow(
+  id: string,
+  kpIds: string[],
+  difficulty: 'easy' | 'medium' | 'hard' | null,
+  stem: string,
+) {
+  const options = [
+    { id: 'A', text: '甲' },
+    { id: 'B', text: '乙' },
+  ];
+  const answer = ['A'];
+  return {
+    id,
+    kpIds,
+    type: 'single' as const,
+    stem,
+    options,
+    answer,
+    analysis: '',
+    difficulty,
+    contentKey: questionContentKey({ type: 'single', stem, options, answer }),
+  };
+}
 
 function wrongItem(index: number, kpIds: string[]) {
   return {

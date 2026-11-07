@@ -49,7 +49,7 @@ export class QuizSessionController {
   @Post()
   @ApiOperation({
     summary: '创建出题任务',
-    description: `校验刷题包后写入会话并投递 ${JOB_GENERATE_QUIZ}。source 缺省 normal。retrain_similar 必须带 knowledgePointIds，只覆盖本次出题，不改刷题包。variant 必须带 wrongItemId，题量只能是 1，模式只能是练习，且不带入未消灭错题。wrongSet 暂未开放。未消灭错题入卷不超过 ${WRONG_QUESTION_RATIO_MAX}，其余由模型原创。证书已下架返回 PACK_UNAVAILABLE。未配置模型且未打开 LLM_MOCK 时返回 LLM_NOT_CONFIGURED。`,
+    description: `校验刷题包后写入会话并投递 ${JOB_GENERATE_QUIZ}。source 缺省 normal。retrain_similar 必须带 knowledgePointIds，只覆盖本次出题，不改刷题包。variant 必须带 wrongItemId，题量只能是 1，模式只能是练习，且不带入未消灭错题。wrongSet 暂未开放。未消灭错题入卷不超过 ${WRONG_QUESTION_RATIO_MAX}。免费用户在后管打开 freeUserBankFirst 时，其余题优先从题库抽取，不够再由模型原创。开关关闭或会员仍走模型，新生成的题都会入库。请求体不接受该开关。证书已下架返回 PACK_UNAVAILABLE。未配置模型且未打开 LLM_MOCK 时返回 LLM_NOT_CONFIGURED。`,
   })
   @ApiBody({ type: CreateQuizSessionDto })
   @ApiCreatedResponse({ type: QuizSessionViewDto })

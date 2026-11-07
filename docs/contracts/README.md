@@ -25,4 +25,5 @@
 
 | 契约 | 路径 | 状态 | 负责人 |
 |------|------|------|--------|
-| （待补充） | | draft / active | 架构师 |
+| 复练同类 / 题型变异 | [retrain-C-contracts-v0.1.0-C.md](retrain-C-contracts-v0.1.0-C.md) | active | 架构师 |
+| TB-17 题库落库与题库优先 | [tb17-bank-persist-C-contracts-v0.1.0-C.md](tb17-bank-persist-C-contracts-v0.1.0-C.md) | active | 架构师 |

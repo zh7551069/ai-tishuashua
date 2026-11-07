@@ -6,11 +6,19 @@ import { type INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   ApiErrorCode,
+  questionContentKey,
   type QuizQuestionView,
   type QuizSessionView,
   type WechatLoginResponse,
 } from '@tishuashua/shared';
-import { LlmCallError, createPgExecutor, runQuizGeneration } from '@tishuashua/shared/generation';
+import {
+  LlmCallError,
+  createPgExecutor,
+  runQuizGeneration,
+  type GenerationDeps,
+  type GenerationOptions,
+  type GenerationStats,
+} from '@tishuashua/shared/generation';
 import Redis from 'ioredis';
 import { Pool } from 'pg';
 import { AppModule } from '../app.module';
@@ -45,6 +53,10 @@ const ctx: {
   packId: string;
   offlinePackId: string;
   limitedPackId: string;
+  extraUserIds: string[];
+  extraCertIds: string[];
+  extraTextbookIds: string[];
+  extraKpIds: string[];
   fixture?: Fixture;
 } = {
   ready: false,
@@ -57,6 +69,10 @@ const ctx: {
   packId: '',
   offlinePackId: '',
   limitedPackId: '',
+  extraUserIds: [],
+  extraCertIds: [],
+  extraTextbookIds: [],
+  extraKpIds: [],
 };
 
 describe('quiz generation', { concurrency: 1 }, () => {
@@ -118,23 +134,33 @@ describe('quiz generation', { concurrency: 1 }, () => {
   after(async () => {
     const pool = ctx.pool;
     if (pool && ctx.fixture) {
-      const users = [ctx.userA, ctx.userB].filter(Boolean);
+      const users = [ctx.userA, ctx.userB, ...ctx.extraUserIds].filter(Boolean);
       if (users.length > 0) {
         await pool
           .query('DELETE FROM users WHERE id = ANY($1::uuid[])', [users])
           .catch(() => undefined);
       }
       await pool
+        .query('DELETE FROM question_bank WHERE domain_id = $1', [ctx.fixture.domainId])
+        .catch(() => undefined);
+      await pool
         .query('DELETE FROM knowledge_points WHERE id = ANY($1::uuid[])', [
-          [ctx.fixture.kp1, ctx.fixture.kp2, ctx.fixture.limitedKp],
+          [ctx.fixture.kp1, ctx.fixture.kp2, ctx.fixture.limitedKp, ...ctx.extraKpIds],
         ])
         .catch(() => undefined);
       await pool
-        .query('DELETE FROM textbooks WHERE id = $1', [ctx.fixture.textbookId])
+        .query('DELETE FROM textbooks WHERE id = ANY($1::uuid[])', [
+          [ctx.fixture.textbookId, ...ctx.extraTextbookIds],
+        ])
         .catch(() => undefined);
       await pool
         .query('DELETE FROM certificates WHERE id = ANY($1::uuid[])', [
-          [ctx.fixture.certId, ctx.fixture.offlineCertId, ctx.fixture.limitedCertId],
+          [
+            ctx.fixture.certId,
+            ctx.fixture.offlineCertId,
+            ctx.fixture.limitedCertId,
+            ...ctx.extraCertIds,
+          ],
         ])
         .catch(() => undefined);
       await pool
@@ -333,10 +359,9 @@ describe('quiz generation', { concurrency: 1 }, () => {
   test('生成过程中取消或模型失败都不留题目', async (t) => {
     if (!ready(t)) return;
     const pool = requiredPool();
-    const executor = createPgExecutor(pool);
 
     const cancelled = await createSession(ctx.packId);
-    const cancelOutcome = await runQuizGeneration(executor, cancelled.id, {
+    const cancelOutcome = await runGeneration(cancelled.id, {
       mode: 'mock',
       beforePersist: async (ordinal) => {
         if (ordinal === 3) {
@@ -351,7 +376,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
     assert.equal(await questionCount(cancelled.id), 0);
 
     const invalid = await createSession(ctx.packId);
-    const invalidOutcome = await runQuizGeneration(executor, invalid.id, {
+    const invalidOutcome = await runGeneration(invalid.id, {
       mode: 'live',
       provider: 'deepseek',
       apiKey: 'test-key',
@@ -372,7 +397,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
       ctx.fixture?.certId,
     ]);
     try {
-      const offlineOutcome = await runQuizGeneration(executor, unavailable.id, { mode: 'mock' });
+      const offlineOutcome = await runGeneration(unavailable.id, { mode: 'mock' });
       assert.equal(offlineOutcome.status, 'failed');
       if (offlineOutcome.status === 'failed') {
         assert.equal(offlineOutcome.code, ApiErrorCode.PACK_UNAVAILABLE);
@@ -385,7 +410,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
     }
 
     const broken = await createSession(ctx.packId);
-    const brokenOutcome = await runQuizGeneration(executor, broken.id, {
+    const brokenOutcome = await runGeneration(broken.id, {
       mode: 'live',
       provider: 'tongyi',
       apiKey: 'test-key',
@@ -995,7 +1020,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
     assert.deepEqual(meta?.knowledge_point_ids, [fixture.kp1]);
     assert.deepEqual(await packBinding(ctx.packId), before);
 
-    const outcome = await runQuizGeneration(createPgExecutor(pool), pending.id, { mode: 'mock' });
+    const outcome = await runGeneration(pending.id, { mode: 'mock' });
     assert.equal(outcome.status, 'ready');
     const readyPaper = await call(`/quiz/sessions/${pending.id}`, ctx.tokenA);
     const paper = readyPaper.body as unknown as QuizSessionView;
@@ -1008,7 +1033,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
     assert.match(question?.stem ?? '', /待变异|变异/);
     assert.equal(JSON.stringify(paper).includes('VARIANT_ANALYSIS_SENTINEL'), false);
 
-    const revived = await runQuizGeneration(createPgExecutor(pool), pending.id, { mode: 'mock' });
+    const revived = await runGeneration(pending.id, { mode: 'mock' });
     assert.equal(revived.status, 'skipped');
 
     const stored = await storedQuestions(pending.id);
@@ -1041,7 +1066,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
       body: JSON.stringify(variantPayload(ctx.packId, wrongId)),
     });
     const failedId = (failed.body as unknown as QuizSessionView).id;
-    const broken = await runQuizGeneration(createPgExecutor(pool), failedId, {
+    const broken = await runGeneration(failedId, {
       mode: 'live',
       provider: 'deepseek',
       apiKey: 'test',
@@ -1068,7 +1093,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
     if (broken.status === 'failed') {
       assert.equal(broken.code, ApiErrorCode.LLM_INVALID_OUTPUT);
     }
-    const again = await runQuizGeneration(createPgExecutor(pool), failedId, { mode: 'mock' });
+    const again = await runGeneration(failedId, { mode: 'mock' });
     assert.equal(again.status, 'failed');
     const retry = await call('/quiz/sessions', ctx.tokenA, {
       method: 'POST',
@@ -1076,7 +1101,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
     });
     const retryId = (retry.body as unknown as QuizSessionView).id;
     assert.notEqual(retryId, failedId);
-    const retried = await runQuizGeneration(createPgExecutor(pool), retryId, { mode: 'mock' });
+    const retried = await runGeneration(retryId, { mode: 'mock' });
     assert.equal(retried.status, 'ready');
   });
 
@@ -1118,7 +1143,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
       assert.equal(created.status, 201, JSON.stringify(created.body));
       const sessionId = (created.body as unknown as QuizSessionView).id;
       let captured = { system: '', user: '' };
-      const outcome = await runQuizGeneration(createPgExecutor(pool), sessionId, {
+      const outcome = await runGeneration(sessionId, {
         mode: 'live',
         provider: 'deepseek',
         apiKey: 'test',
@@ -1152,6 +1177,323 @@ describe('quiz generation', { concurrency: 1 }, () => {
     } finally {
       await pool.query('DELETE FROM prompt_templates WHERE id = $1', [promptId]);
     }
+  });
+
+  test('开关关不抽库，新 AI 题仍入库', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    await seedBank(iso, 4, '关');
+    const before = await bankCount(iso.certId);
+    const created = await createSessionFor(iso.token, iso.packId);
+    const outcome = await runGeneration(created.id, { mode: 'mock' });
+    assert.equal(outcome.status, 'ready');
+    if (outcome.status === 'ready') {
+      assert.equal(outcome.stats.bankDrawn, 0);
+      assert.equal(outcome.stats.aiGenerated, 10);
+      assert.equal(outcome.stats.wrongCarried, 0);
+    }
+    const stored = await storedQuestions(created.id);
+    assert.equal(
+      stored.every((question) => question.source === 'ai' && question.bank_question_id),
+      true,
+    );
+    assert.equal(await bankCount(iso.certId), before + 10);
+    const stats = await storedStats(created.id);
+    assert.equal(stats?.aiGenerated, 10);
+    const textbooks = await requiredPool().query<{ textbook_id: string | null }>(
+      `SELECT textbook_id FROM question_bank WHERE certificate_id = $1 AND stem LIKE $2`,
+      [iso.certId, `%${created.id.slice(0, 8)}%`],
+    );
+    assert.equal(
+      textbooks.rows.every((row) => row.textbook_id === iso.textbookId),
+      true,
+    );
+  });
+
+  test('开关开且库足够时不再调用 AI', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    const seeded = await seedBank(iso, 10, '足');
+    const before = await bankCount(iso.certId);
+    const created = await createSessionFor(iso.token, iso.packId);
+    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    assert.equal(outcome.status, 'ready');
+    if (outcome.status === 'ready') {
+      assert.equal(outcome.stats.bankDrawn, 10);
+      assert.equal(outcome.stats.aiGenerated, 0);
+    }
+    const stored = await storedQuestions(created.id);
+    assert.equal(stored.length, 10);
+    assert.equal(
+      stored.every((question) => question.source === 'bank'),
+      true,
+    );
+    assert.deepEqual(
+      stored.map((question) => question.bank_question_id).sort(),
+      seeded.map((item) => item.id).sort(),
+    );
+    assert.equal(await bankCount(iso.certId), before);
+  });
+
+  test('开关开且库不足时 AI 补齐并入库', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    await seedBank(iso, 3, '不足');
+    const created = await createSessionFor(iso.token, iso.packId);
+    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    assert.equal(outcome.status, 'ready');
+    if (outcome.status === 'ready') {
+      assert.equal(outcome.stats.bankDrawn, 3);
+      assert.equal(outcome.stats.aiGenerated, 7);
+    }
+    const stored = await storedQuestions(created.id);
+    assert.equal(stored.length, 10);
+    assert.equal(stored.filter((question) => question.source === 'bank').length, 3);
+    assert.equal(stored.filter((question) => question.source === 'ai').length, 7);
+    assert.equal(await bankCount(iso.certId), 10);
+  });
+
+  test('会员替身即使开关开也不抽库，AI 题仍入库', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    await seedBank(iso, 10, '会员');
+    const before = await bankCount(iso.certId);
+    const created = await createSessionFor(iso.token, iso.packId);
+    const outcome = await runGeneration(
+      created.id,
+      { mode: 'mock' },
+      { getFreeUserBankFirst: async () => true, isFreeUser: () => false },
+    );
+    assert.equal(outcome.status, 'ready');
+    if (outcome.status === 'ready') {
+      assert.equal(outcome.stats.bankDrawn, 0);
+      assert.equal(outcome.stats.aiGenerated, 10);
+    }
+    const stored = await storedQuestions(created.id);
+    assert.equal(
+      stored.every((question) => question.source === 'ai'),
+      true,
+    );
+    assert.equal(await bankCount(iso.certId), before + 10);
+  });
+
+  test('近 30 天或近 3 场出现过的题不再抽，更早的可以', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    const recent = await insertBank(iso, '近期做过');
+    const old = await insertBank(iso, '四十天前做过');
+    const now = Date.now();
+    await insertSubmitted(iso, new Date(now - 40 * 24 * 60 * 60 * 1000), old);
+    await insertSubmitted(iso, new Date(now - 3 * 60 * 60 * 1000), null);
+    await insertSubmitted(iso, new Date(now - 2 * 60 * 60 * 1000), null);
+    await insertSubmitted(iso, new Date(now - 60 * 60 * 1000), recent);
+    const created = await createSessionFor(iso.token, iso.packId);
+    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    assert.equal(outcome.status, 'ready');
+    if (outcome.status === 'ready') {
+      assert.equal(outcome.stats.bankDrawn, 1);
+      assert.equal(outcome.stats.aiGenerated, 9);
+    }
+    const stored = await storedQuestions(created.id);
+    assert.equal(stored.filter((question) => question.bank_question_id === old.id).length, 1);
+    assert.equal(stored.some((question) => question.bank_question_id === recent.id), false);
+  });
+
+  test('取消或失败清掉半卷，但保留已入库的题', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    const created = await createSessionFor(iso.token, iso.packId);
+    const outcome = await runGeneration(created.id, {
+      mode: 'mock',
+      beforePersist: async (ordinal) => {
+        if (ordinal === 2) {
+          throw new Error('中断');
+        }
+      },
+    });
+    assert.equal(outcome.status, 'failed');
+    assert.equal(await questionCount(created.id), 0);
+    assert.equal(await bankCount(iso.certId), 1);
+  });
+
+  test('变异不抽库，成功题以 ai_variant 入库', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    await seedBank(iso, 6, '变异库');
+    const before = await bankCount(iso.certId);
+    const wrongId = await insertWrong({
+      userId: iso.userId,
+      certId: iso.certId,
+      kpIds: [iso.kpId],
+      stem: '变异原题干',
+    });
+    const response = await call('/quiz/sessions', iso.token, {
+      method: 'POST',
+      body: JSON.stringify(variantPayload(iso.packId, wrongId)),
+    });
+    assert.equal(response.status, 201, JSON.stringify(response.body));
+    const created = response.body as unknown as QuizSessionView;
+    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    assert.equal(outcome.status, 'ready');
+    if (outcome.status === 'ready') {
+      assert.equal(outcome.stats.bankDrawn, 0);
+      assert.equal(outcome.stats.aiGenerated, 1);
+      assert.equal(outcome.stats.wrongCarried, 0);
+    }
+    const stored = await storedQuestions(created.id);
+    assert.equal(stored.length, 1);
+    assert.equal(stored[0]?.source, 'ai_variant');
+    assert.ok(stored[0]?.bank_question_id);
+    assert.equal(await bankCount(iso.certId), before + 1);
+    const ingested = await requiredPool().query<{ source: string }>(
+      `SELECT source FROM question_bank WHERE id = $1`,
+      [stored[0]?.bank_question_id],
+    );
+    assert.equal(ingested.rows[0]?.source, 'ai_variant');
+  });
+
+  test('同一指纹再次入库沿用首条', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    const questions = fixedQuestions(iso.kpId, 'same');
+    const first = await createSessionFor(iso.token, iso.packId);
+    const second = await createSessionFor(iso.token, iso.packId);
+    const options: GenerationOptions = {
+      mode: 'live',
+      provider: 'deepseek',
+      apiKey: 'test-key',
+      baseUrl: 'http://127.0.0.1:9',
+      completeAi: async () => ({ questions }),
+    };
+    const firstOutcome = await runGeneration(first.id, options);
+    const secondOutcome = await runGeneration(second.id, options);
+    assert.equal(firstOutcome.status, 'ready');
+    assert.equal(secondOutcome.status, 'ready');
+    assert.equal(await bankCount(iso.certId), 10);
+    const left = (await storedQuestions(first.id)).map((question) => question.bank_question_id).sort();
+    const right = (await storedQuestions(second.id)).map((question) => question.bank_question_id).sort();
+    assert.deepEqual(left, right);
+  });
+
+  test('错题带入配额不变，答对仍按指纹消灭', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    await seedBank(iso, 12, '错题旁');
+    const wrongIds: string[] = [];
+    for (let index = 0; index < 8; index += 1) {
+      wrongIds.push(
+        await insertWrong({
+          userId: iso.userId,
+          certId: iso.certId,
+          kpIds: [iso.kpId],
+          stem: `未消灭配额${index}`,
+        }),
+      );
+    }
+    const created = await createSessionFor(iso.token, iso.packId);
+    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    assert.equal(outcome.status, 'ready');
+    if (outcome.status === 'ready') {
+      assert.equal(outcome.stats.wrongCarried, 5);
+      assert.equal(outcome.stats.bankDrawn, 5);
+      assert.equal(outcome.stats.aiGenerated, 0);
+    }
+    const stored = await storedQuestions(created.id);
+    assert.equal(stored.filter((question) => question.source === 'wrong_carry').length, 5);
+    assert.equal(stored.filter((question) => question.source === 'bank').length, 5);
+    const carried = stored.find((question) => question.source === 'wrong_carry');
+    assert.ok(carried);
+    await call(`/quiz/sessions/${created.id}/start`, iso.token, { method: 'POST' });
+    await call(`/quiz/sessions/${created.id}/answers`, iso.token, {
+      method: 'POST',
+      body: JSON.stringify({ questionId: carried.id, selected: carried.answer }),
+    });
+    const submitted = await call(`/quiz/sessions/${created.id}/submit`, iso.token, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    assert.equal(submitted.status, 200, JSON.stringify(submitted.body));
+    const cleared = await requiredPool().query<{ status: string; stem: string }>(
+      `
+        SELECT status, question_snapshot->>'stem' AS stem
+        FROM wrong_items
+        WHERE id = ANY($1::uuid[])
+      `,
+      [wrongIds],
+    );
+    const clearedRows = cleared.rows.filter((row) => row.status === 'cleared');
+    assert.deepEqual(
+      clearedRows.map((row) => row.stem),
+      [carried.stem],
+    );
+    assert.equal(cleared.rows.filter((row) => row.status === 'pending').length, 7);
+  });
+
+  test('别的知识点、下架题和难度不符都不会把库抽空', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    const otherKp = randomUUID();
+    ctx.extraKpIds.push(otherKp);
+    await requiredPool().query(
+      `
+        INSERT INTO knowledge_points (
+          id, textbook_id, parent_id, code, name, kind, prompt_hint, level, status, sort_order
+        )
+        VALUES ($1, $2, NULL, $3, '别的知识点', 'knowledge_point', '不要抽到', 1, 'online', 2)
+      `,
+      [otherKp, iso.textbookId, `bank-other-${otherKp.slice(0, 8)}`],
+    );
+    await insertBank({ ...iso, kpId: otherKp }, '偏题');
+    await insertBank({ ...iso, status: 'offline' }, '下架题');
+    const hard = await insertBank({ ...iso, difficulty: 'hard' }, '困难题');
+    const created = await createSessionFor(iso.token, iso.packId);
+    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    assert.equal(outcome.status, 'ready');
+    if (outcome.status === 'ready') {
+      assert.equal(outcome.stats.bankDrawn, 1);
+      assert.equal(outcome.stats.aiGenerated, 9);
+    }
+    const stored = await storedQuestions(created.id);
+    assert.deepEqual(
+      stored.filter((question) => question.source === 'bank').map((question) => question.bank_question_id),
+      [hard.id],
+    );
+  });
+
+  test('独立知识点入库时教材为空', async (t) => {
+    if (!ready(t)) return;
+    const iso = await isolatedPack();
+    const kpId = randomUUID();
+    ctx.extraKpIds.push(kpId);
+    const suffix = kpId.slice(0, 8);
+    await requiredPool().query(
+      `
+        INSERT INTO knowledge_points (
+          id, textbook_id, parent_id, code, name, kind, prompt_hint, level, status, sort_order
+        )
+        VALUES ($1, NULL, NULL, $2, '独立知识点', 'knowledge_point', '不挂教材', 1, 'online', 1)
+      `,
+      [kpId, `solo-kp-${suffix}`],
+    );
+    await requiredPool().query(
+      `INSERT INTO knowledge_point_certificates (knowledge_point_id, certificate_id) VALUES ($1, $2)`,
+      [kpId, iso.certId],
+    );
+    const packId = await createPack(iso.token, iso.certId, [kpId]);
+    const created = await createSessionFor(iso.token, packId, { count: 10 });
+    const outcome = await runGeneration(created.id, { mode: 'mock' });
+    assert.equal(outcome.status, 'ready');
+    const rows = await requiredPool().query<{ textbook_id: string | null; domain_id: string; kp_ids: string[] }>(
+      `SELECT textbook_id, domain_id, kp_ids FROM question_bank WHERE origin_session_id = $1`,
+      [created.id],
+    );
+    assert.equal(rows.rows.length, 10);
+    assert.equal(
+      rows.rows.every(
+        (row) => row.textbook_id === null && row.domain_id === iso.domainId && row.kp_ids[0] === kpId,
+      ),
+      true,
+    );
   });
 });
 
@@ -1303,7 +1645,7 @@ async function generate(
   extra?: Record<string, unknown>,
 ): Promise<QuizSessionView & { questions: QuizQuestionView[] }> {
   const created = await createSession(packId, extra);
-  const outcome = await runQuizGeneration(createPgExecutor(requiredPool()), created.id, {
+  const outcome = await runGeneration(created.id, {
     mode: 'mock',
   });
   assert.equal(outcome.status, 'ready');
@@ -1347,6 +1689,17 @@ async function saveSelection(
   assert.equal(response.status, 200, JSON.stringify(response.body));
 }
 
+function runGeneration(
+  sessionId: string,
+  options: GenerationOptions,
+  deps?: GenerationDeps,
+): ReturnType<typeof runQuizGeneration> {
+  return runQuizGeneration(createPgExecutor(requiredPool()), sessionId, options, {
+    getFreeUserBankFirst: async () => false,
+    ...deps,
+  });
+}
+
 async function storedQuestions(sessionId: string): Promise<
   {
     id: string;
@@ -1356,6 +1709,7 @@ async function storedQuestions(sessionId: string): Promise<
     score: number;
     source: string;
     kp_ids: string[];
+    bank_question_id: string | null;
     options: { id: string; text: string }[];
   }[]
 > {
@@ -1367,10 +1721,11 @@ async function storedQuestions(sessionId: string): Promise<
     score: number | string;
     source: string;
     kp_ids: string[] | null;
+    bank_question_id: string | null;
     options: unknown;
   }>(
     `
-      SELECT id, type_code, stem, answer, score, source, kp_ids, options
+      SELECT id, type_code, stem, answer, score, source, kp_ids, bank_question_id, options
       FROM paper_questions
       WHERE session_id = $1
       ORDER BY ordinal
@@ -1387,6 +1742,7 @@ async function storedQuestions(sessionId: string): Promise<
     score: Number(row.score),
     source: row.source,
     kp_ids: row.kp_ids ?? [],
+    bank_question_id: row.bank_question_id,
     options: Array.isArray(row.options)
       ? row.options.flatMap((item) => {
           if (!item || typeof item !== 'object' || !('id' in item) || !('text' in item)) {
@@ -1607,4 +1963,218 @@ async function infraAvailable(databaseUrl: string, redisUrl: string): Promise<bo
     await pool.end().catch(() => undefined);
     redis.disconnect();
   }
+}
+
+interface IsoPack {
+  token: string;
+  userId: string;
+  packId: string;
+  certId: string;
+  textbookId: string;
+  kpId: string;
+  domainId: string;
+}
+
+interface BankSeed {
+  id: string;
+  stem: string;
+  type: string;
+  options: { id: string; text: string }[];
+  answer: string[];
+}
+
+async function isolatedPack(): Promise<IsoPack> {
+  const fixture = requiredFixture();
+  const certId = randomUUID();
+  const textbookId = randomUUID();
+  const kpId = randomUUID();
+  const suffix = certId.slice(0, 8);
+  const pool = requiredPool();
+  await pool.query(
+    `
+      INSERT INTO certificates (
+        id, domain_id, code, name, status, total_score, pass_score, enabled_question_type_codes, sort_order
+      )
+      VALUES ($1, $2, $3, '题库证书', 'online', 100, 60, ARRAY['single','multi','judge']::text[], 9)
+    `,
+    [certId, fixture.domainId, `bank-cert-${suffix}`],
+  );
+  await pool.query(
+    `INSERT INTO textbooks (id, code, name, status, sort_order) VALUES ($1, $2, '题库教材', 'online', 1)`,
+    [textbookId, `bank-book-${suffix}`],
+  );
+  await pool.query(
+    `INSERT INTO textbook_certificates (textbook_id, certificate_id) VALUES ($1, $2)`,
+    [textbookId, certId],
+  );
+  await pool.query(
+    `
+      INSERT INTO knowledge_points (
+        id, textbook_id, parent_id, code, name, kind, prompt_hint, level, status, sort_order
+      )
+      VALUES ($1, $2, NULL, $3, '题库知识点', 'knowledge_point', '围绕概念出原创题', 1, 'online', 1)
+    `,
+    [kpId, textbookId, `bank-kp-${suffix}`],
+  );
+  ctx.extraCertIds.push(certId);
+  ctx.extraTextbookIds.push(textbookId);
+  ctx.extraKpIds.push(kpId);
+  const logged = await login(`bank-${suffix}`);
+  ctx.extraUserIds.push(logged.user.id);
+  const packId = await createPack(logged.token, certId, [kpId]);
+  return {
+    token: logged.token,
+    userId: logged.user.id,
+    packId,
+    certId,
+    textbookId,
+    kpId,
+    domainId: fixture.domainId,
+  };
+}
+
+async function createSessionFor(
+  token: string,
+  packId: string,
+  extra?: Record<string, unknown>,
+): Promise<QuizSessionView> {
+  const response = await call('/quiz/sessions', token, {
+    method: 'POST',
+    body: JSON.stringify(payload(packId, extra)),
+  });
+  assert.equal(response.status, 201, JSON.stringify(response.body));
+  return response.body as unknown as QuizSessionView;
+}
+
+async function seedBank(iso: IsoPack, count: number, label: string): Promise<BankSeed[]> {
+  const rows: BankSeed[] = [];
+  for (let index = 0; index < count; index += 1) {
+    rows.push(await insertBank(iso, `${label}-${index}`));
+  }
+  return rows;
+}
+
+async function insertBank(
+  iso: IsoPack & { status?: 'online' | 'offline'; difficulty?: 'easy' | 'medium' | 'hard' },
+  stem: string,
+): Promise<BankSeed> {
+  const type = 'single';
+  const options = [
+    { id: 'A', text: '甲' },
+    { id: 'B', text: '乙' },
+    { id: 'C', text: '丙' },
+    { id: 'D', text: '丁' },
+  ];
+  const answer = ['A'];
+  const id = randomUUID();
+  await requiredPool().query(
+    `
+      INSERT INTO question_bank (
+        id, domain_id, certificate_id, textbook_id, kp_ids, type_code, stem, options, answer,
+        analysis, difficulty, source, content_key, status
+      )
+      VALUES (
+        $1, $2, $3, $4, $5::uuid[], $6, $7, $8::jsonb, $9::jsonb,
+        '库解析', $10, 'ai', $11, $12
+      )
+    `,
+    [
+      id,
+      iso.domainId,
+      iso.certId,
+      iso.textbookId,
+      [iso.kpId],
+      type,
+      stem,
+      JSON.stringify(options),
+      JSON.stringify(answer),
+      iso.difficulty ?? 'medium',
+      Buffer.from(questionContentKey({ type, stem, options, answer }), 'utf8'),
+      iso.status ?? 'online',
+    ],
+  );
+  return { id, stem, type, options, answer };
+}
+
+async function insertSubmitted(iso: IsoPack, submittedAt: Date, bank: BankSeed | null): Promise<void> {
+  const sessionId = randomUUID();
+  await requiredPool().query(
+    `
+      INSERT INTO quiz_sessions (
+        id, user_id, pack_id, pack_snapshot, mode, settings, status, source,
+        question_count, generated_count, submit_reason, submitted_at
+      )
+      VALUES (
+        $1, $2, $3, '{}'::jsonb, 'practice', '{}'::jsonb, 'submitted', 'normal',
+        1, 1, 'manual', $4
+      )
+    `,
+    [sessionId, iso.userId, iso.packId, submittedAt],
+  );
+  if (!bank) {
+    return;
+  }
+  await requiredPool().query(
+    `
+      INSERT INTO paper_questions (
+        id, session_id, ordinal, type_code, stem, options, answer, analysis, kp_ids, source, score,
+        bank_question_id
+      )
+      VALUES ($1, $2, 1, $3, $4, $5::jsonb, $6::jsonb, '库解析', $7::uuid[], 'bank', 1, $8)
+    `,
+    [
+      randomUUID(),
+      sessionId,
+      bank.type,
+      bank.stem,
+      JSON.stringify(bank.options),
+      JSON.stringify(bank.answer),
+      [iso.kpId],
+      bank.id,
+    ],
+  );
+}
+
+async function bankCount(certId: string): Promise<number> {
+  const result = await requiredPool().query<{ count: number }>(
+    `SELECT count(*)::int AS count FROM question_bank WHERE certificate_id = $1`,
+    [certId],
+  );
+  return result.rows[0]?.count ?? 0;
+}
+
+async function storedStats(sessionId: string): Promise<GenerationStats | null> {
+  const result = await requiredPool().query<{ generation_stats: GenerationStats | null }>(
+    `SELECT generation_stats FROM quiz_sessions WHERE id = $1`,
+    [sessionId],
+  );
+  return result.rows[0]?.generation_stats ?? null;
+}
+
+function fixedQuestions(kpId: string, salt: string): Record<string, unknown>[] {
+  return Array.from({ length: 10 }, (_item, index) => {
+    const type = index % 3 === 1 ? 'multi' : index % 3 === 2 ? 'judge' : 'single';
+    const options =
+      type === 'judge'
+        ? [
+            { id: 'T', text: '正确' },
+            { id: 'F', text: '错误' },
+          ]
+        : [
+            { id: 'A', text: `甲${index}` },
+            { id: 'B', text: `乙${index}` },
+            { id: 'C', text: `丙${index}` },
+            { id: 'D', text: `丁${index}` },
+          ];
+    const answer = type === 'multi' ? ['A', 'B'] : type === 'judge' ? ['T'] : ['A'];
+    return {
+      type,
+      stem: `幂等题${salt}-${index}`,
+      options,
+      answer,
+      analysis: '解析',
+      score: 1,
+      knowledgePointId: kpId,
+    };
+  });
 }

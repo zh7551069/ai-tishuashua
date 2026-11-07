@@ -10,6 +10,7 @@ import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { QuizSessionsPage } from './pages/QuizSessionsPage';
+import { SystemSettingsPage } from './pages/SystemSettingsPage';
 import { UsersPage } from './pages/UsersPage';
 import { WrongBookPage } from './pages/WrongBookPage';
 
@@ -79,6 +80,7 @@ export function App() {
         <Route path="/courseware" element={<CoursewarePage />} />
         <Route path="/quiz" element={<QuizSessionsPage />} />
         <Route path="/certificates" element={<CertificatesPage />} />
+        <Route path="/settings" element={<SystemSettingsPage />} />
         <Route
           path="/system/roles"
           element={

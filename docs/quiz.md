@@ -110,7 +110,7 @@ curl -sS -X POST http://127.0.0.1:3000/api/quiz/sessions/会话id/cancel \
   -H "authorization: Bearer $TOKEN"
 ```
 
-成卷后 `status` 为 `ready`，`paper.questions` 有题干、选项、分值和来源（`ai`、`wrong_carry` 或 `ai_variant`）。响应里没有标准答案和解析。分值之和等于出题时的证书总分；模型给的分值不一致时，在落库前做整数归一化。会话响应带 `source`。
+成卷后 `status` 为 `ready`，`paper.questions` 有题干、选项、分值和来源（`ai`、`wrong_carry`、`ai_variant` 或 `bank`）。响应里没有标准答案和解析。分值之和等于出题时的证书总分；模型给的分值不一致时，在落库前做整数归一化。会话响应带 `source`。`quiz_sessions.generation_stats` 记下本场 `wrongCarried`、`bankDrawn`、`aiGenerated`。
 
 进入答题会把状态改成 `in_progress`：
 
@@ -253,6 +253,20 @@ Prompt 沿用证书 > 领域 > 全局 > 代码内置。变异读 `prompt_templat
 - 题型变异在详情直接创建会话（`source=variant`、`count=1`、`mode=practice`），再进入进度页。进度页若露出出题设置底衬，整页不能改题量、模式或题型。失败可「重新生成」（新会话）或「返回详情」。加载文案含「答对不消灭原错题」。
 
 约束见 [复练 UI 约束](delivery/retrain-C-ui-constraints-v0.1.0-C.md)。
+
+## 题库落库与免费用户题库优先
+
+正式规则见 [TB-17 契约](contracts/tb17-bank-persist-C-contracts-v0.1.0-C.md)（v0.1.0-C）。这里只记已接通的行为。
+
+AI 原创和题型变异在结构校验通过后写入独立表 `question_bank`。每行带领域、证书、教材（独立知识点为空）、知识点、难度、入库来源（`ai` 或 `ai_variant`）和题干指纹 `content_key`。指纹算法和错题键相同，里面有 NUL，所以这一列是 `bytea`，存的是同一串 UTF-8。同一证书下指纹相同只保留第一行，后来的卷引用已有 id。取消或失败会删掉本场 `paper_questions`，不删题库。历史试卷和错题不回填。
+
+`normal` 和 `retrain_similar` 的组卷顺序是：未消灭错题（比例不变）→ 题库 → AI 补齐。题库分支只在后管开关 `freeUserBankFirst` 打开且 `isFreeUser` 为真时走。开关默认关。现网没有会员字段，`isFreeUser` 恒为真，代码里留了替身，会员上线后改为「有效会员返回 false」。会员不受开关影响，仍然 AI 出题并入库。`variant` 不抽题库，成功的变异题照样入库，来源是 `ai_variant`。
+
+抽题只取本证书、`online`、题型落在本场设置、知识点与本场有交集的行。难度只是软匹配，不够就忽略难度。近 30 天已交卷和最近 3 场已交卷里出现过的题干指纹不再抽。知识点不够不放宽到整张证书，剩下的交给 AI。不做题型或难度的强制配比。
+
+`paper_questions.source` 增加 `bank`。从题库抽入的题 `bank_question_id` 必填。AI 题建议带刚入库的 id。错题表增加可空 `bank_question_id`，消灭和带入仍按题干指纹，不改成只认题库 id。
+
+开关的读写见 [后管系统设置](admin-system-settings.md)。小程序创建会话的请求体不变，也不下发这个开关。
 
 ## 还没做
 

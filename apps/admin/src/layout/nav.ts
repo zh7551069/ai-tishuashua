@@ -74,6 +74,11 @@ export const NAV: NavGroup[] = [
     label: '系统',
     items: [
       {
+        to: '/settings',
+        label: '免费用户题库优先',
+        crumb: '系统 / 免费用户题库优先',
+      },
+      {
         to: '/system/roles',
         label: '角色权限',
         crumb: '系统 / 角色权限',
