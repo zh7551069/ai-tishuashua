@@ -65,6 +65,7 @@ export const NAV: NavGroup[] = [
         crumb: '数据查询 / 出题日志',
         placeholder: true,
       },
+      { to: '/question-bank', label: '题库（只读）', crumb: '数据查询 / 题库（只读）' },
       { to: '/courseware', label: '用户上传教材', crumb: '数据查询 / 用户上传教材' },
       { to: '/quiz', label: '出题会话', crumb: '数据查询 / 出题会话' },
       { to: '/certificates', label: '证书与成绩', crumb: '数据查询 / 证书与成绩' },

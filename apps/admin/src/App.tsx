@@ -9,6 +9,7 @@ import { CoursewarePage } from './pages/CoursewarePage';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { QuestionBankPage } from './pages/QuestionBankPage';
 import { QuizSessionsPage } from './pages/QuizSessionsPage';
 import { SystemSettingsPage } from './pages/SystemSettingsPage';
 import { UsersPage } from './pages/UsersPage';
@@ -77,6 +78,7 @@ export function App() {
             />
           }
         />
+        <Route path="/question-bank" element={<QuestionBankPage />} />
         <Route path="/courseware" element={<CoursewarePage />} />
         <Route path="/quiz" element={<QuizSessionsPage />} />
         <Route path="/certificates" element={<CertificatesPage />} />
@@ -104,11 +106,7 @@ export function App() {
         <Route
           path="/system/audit"
           element={
-            <PlaceholderPage
-              title="操作审计"
-              note="操作审计（TB-13）本刀不实现。"
-              frame="4:890"
-            />
+            <PlaceholderPage title="操作审计" note="操作审计（TB-13）本刀不实现。" frame="4:890" />
           }
         />
       </Route>
