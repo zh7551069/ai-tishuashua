@@ -1,19 +1,33 @@
-import { Text, View } from '@tarojs/components';
+import { Image, Text, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import {
-  QUIZ_MODE_LABELS,
-  QUIZ_SCORE_LIST_TRUNCATED_HINT,
-  QUIZ_SUBMIT_REASON_LABELS,
-  type QuizScoreSummary,
-} from '@tishuashua/shared';
-import { useEffect, useState } from 'react';
+import { QUIZ_SCORE_LIST_TRUNCATED_HINT, type QuizScoreSummary } from '@tishuashua/shared';
+import { useEffect, useMemo, useState } from 'react';
 import { Screen } from '../../components/Screen';
-import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../components/StateBlock';
-import { formatSubmittedAt } from '../../services/format';
+import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
 import { isAuthFailure } from '../../services/guard';
 import { fetchQuizScores } from '../../services/quiz-api';
 import { clearToken, readToken } from '../../services/session';
-import { bandHeadline, scoreBand } from '../../ui/score-band';
+// 返回、箭头、空态图标来自 Bridge SVG，栅成 PNG。微信 image 不画 svg。
+import iconBack from './assets/pr-back.png';
+import iconChevron from './assets/pr-chevron.png';
+import iconDisc from './assets/pr-empty-disc.png';
+import iconMark from './assets/pr-empty-mark.png';
+import iconRing from './assets/pr-empty-ring.png';
+import './list.css';
+import {
+  buildInsight,
+  countRecords,
+  filterRecords,
+  recordCard,
+  type InsightModel,
+  type RecordFilter,
+} from './records';
+
+const FILTERS: { id: RecordFilter; label: string }[] = [
+  { id: 'all', label: '全部' },
+  { id: 'practice', label: '练习' },
+  { id: 'exam', label: '考试' },
+];
 
 export function ScoreList(props: { tick: number }) {
   const [items, setItems] = useState<QuizScoreSummary[]>([]);
@@ -21,6 +35,7 @@ export function ScoreList(props: { tick: number }) {
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
   const [guest, setGuest] = useState(false);
+  const [filter, setFilter] = useState<RecordFilter>('all');
 
   const load = async () => {
     setError('');
@@ -52,7 +67,7 @@ export function ScoreList(props: { tick: number }) {
       setReady(false);
       setItems([]);
       setHasMore(false);
-      setError(caught instanceof Error ? caught.message : '成绩加载失败');
+      setError(caught instanceof Error ? caught.message : '练习记录加载失败');
     }
   };
 
@@ -63,100 +78,225 @@ export function ScoreList(props: { tick: number }) {
     void load();
   }, [props.tick]);
 
+  const now = useMemo(() => new Date(), [items]);
+  const counts = useMemo(() => countRecords(items), [items]);
+  const visible = useMemo(() => filterRecords(items, filter), [filter, items]);
+  const insight = useMemo(() => buildInsight(items, now), [items, now]);
+
   return (
-    <Screen back centerTitle title="成绩">
-      <View className="u-pad u-pad-set">
-        {guest ? (
-          <EmptyBlock
-            title="登录后查看成绩"
-            detail="已交卷的分数、时间和解析只对当前微信账号可见。"
-            action="去登录"
-            onAction={() => void Taro.reLaunch({ url: '/pages/login/index' })}
-          />
-        ) : null}
-        {!guest && !ready && !error ? <LoadingBlock label="正在加载成绩" /> : null}
-        {!guest && error ? (
+    <Screen
+      back
+      centerTitle
+      navPlain
+      bodyFill
+      title="练习记录"
+      background="#f8f9fb"
+      navClassName="pr-nav"
+      backMark={
+        <View className="pr-back-clip">
+          <Image className="pr-back-ico" src={iconBack} mode="aspectFit" />
+        </View>
+      }
+    >
+      {guest ? (
+        <EmptyState
+          title="登录后查看练习记录"
+          detail="已交卷的记录只对当前微信账号可见。"
+          action="去登录"
+          onAction={() => void Taro.reLaunch({ url: '/pages/login/index' })}
+        />
+      ) : null}
+      {!guest && !ready && !error ? (
+        <View className="pr-fill">
+          <LoadingBlock label="正在加载练习记录" />
+        </View>
+      ) : null}
+      {!guest && error ? (
+        <View className="pr-fill">
           <ErrorBlock
+            title="练习记录加载失败"
             detail={error}
             onRetry={() => void load()}
             onBack={() => void Taro.navigateBack()}
           />
-        ) : null}
-        {!guest && ready && hasMore ? (
-          <Text className="u-note">{QUIZ_SCORE_LIST_TRUNCATED_HINT}</Text>
-        ) : null}
-        {!guest && ready && items.length === 0 && !hasMore ? (
-          <EmptyBlock
-            title="还没有交卷记录"
-            detail="完成一次练习或考试后，成绩会出现在这里。"
-            action="去刷题"
-            onAction={() => {
-              void Taro.navigateBack({
-                fail: () => {
-                  void Taro.reLaunch({ url: '/pages/home/index' });
-                },
-              });
-            }}
-          />
-        ) : null}
-        {!guest && ready
-          ? items.map((item) => {
-              const band = scoreBand({
-                mode: item.mode,
-                passed: item.passed,
-                scoreRate: item.scoreRate,
-              });
-              const heading = scoreHeading(item);
-              return (
-                <View
-                  key={item.id}
-                  className="u-card"
-                  onClick={() =>
-                    void Taro.navigateTo({ url: `/pages/score/index?sessionId=${item.id}` })
-                  }
-                >
-                  <View className="u-card-copy">
-                    <Text className={`u-kicker u-band-${band}`}>
-                      {bandHeadline(band, item.mode)}
-                    </Text>
-                    <Text className="u-card-title">{heading.title}</Text>
-                    <Text className="u-card-sub">{heading.subtitle}</Text>
-                    <Text className="u-clock">
-                      {item.earnedScore}
-                      <Text className="u-note"> / {item.totalScore}</Text>
-                    </Text>
-                    <Text className="u-card-sub">
-                      正确率 {percent(item.accuracy)} · 正确 {item.correctCount}/
-                      {item.questionCount} · {passText(item)} ·{' '}
-                      {QUIZ_SUBMIT_REASON_LABELS[item.reason]}
-                    </Text>
-                    <Text className="u-card-sub">交卷 {formatSubmittedAt(item.submittedAt)}</Text>
-                  </View>
-                  <Text className="u-chev">›</Text>
-                </View>
-              );
-            })
-          : null}
-      </View>
+        </View>
+      ) : null}
+      {!guest && ready && items.length === 0 && !hasMore ? (
+        <EmptyState
+          placeholder
+          title="还没有练习记录"
+          detail="完成一次练习或考试后会出现在这里"
+          action="去刷题"
+          onAction={() => void Taro.reLaunch({ url: '/pages/home/index' })}
+        />
+      ) : null}
+      {!guest && ready && items.length > 0 && insight ? (
+        <View className="pr-stack">
+          <InsightCard model={insight} />
+          <View className="pr-chips">
+            {FILTERS.map((item) => (
+              <View
+                key={item.id}
+                className={filter === item.id ? 'pr-chip pr-chip-on' : 'pr-chip'}
+                onClick={() => setFilter(item.id)}
+              >
+                <Text className="pr-chip-text">
+                  {item.label} {counts[item.id]}
+                </Text>
+              </View>
+            ))}
+          </View>
+          {hasMore ? <Text className="pr-hint">{QUIZ_SCORE_LIST_TRUNCATED_HINT}</Text> : null}
+          {visible.length === 0 ? <Text className="pr-none">这一筛选下还没有记录</Text> : null}
+          {visible.map((item) => (
+            <RecordCard key={item.id} item={item} now={now} />
+          ))}
+        </View>
+      ) : null}
+      {!guest && ready && items.length === 0 && hasMore ? (
+        <View className="pr-fill">
+          <Text className="pr-hint">{QUIZ_SCORE_LIST_TRUNCATED_HINT}</Text>
+        </View>
+      ) : null}
     </Screen>
   );
 }
 
-function scoreHeading(item: QuizScoreSummary): { title: string; subtitle: string } {
-  const mode = QUIZ_MODE_LABELS[item.mode];
-  const cert = item.certName.trim();
-  const pack = item.packName.trim();
-  if (cert && pack && cert !== pack) {
-    return { title: cert, subtitle: `${pack} · ${mode}` };
-  }
-  return { title: cert || pack || '一次刷题', subtitle: mode };
+function InsightCard(props: { model: InsightModel }) {
+  const model = props.model;
+  return (
+    <View className="pr-card pr-insight">
+      <View className="pr-ai-head">
+        <View className="pr-ai-badge">
+          <Text className="pr-ai-badge-text">AI 学习点评</Text>
+        </View>
+        <Text className="pr-scope">{model.scope}</Text>
+      </View>
+      <View className="pr-hero">
+        <View className="pr-scoreblock">
+          <Text className="pr-score-label">综合评分</Text>
+          <Text className="pr-score-num">{model.score}</Text>
+        </View>
+        <View className="pr-hero-copy">
+          <Text className="pr-master-label">综合掌握度</Text>
+          <Text className="pr-master-line">{model.headline}</Text>
+        </View>
+      </View>
+      {model.strong || model.weak ? (
+        <View className="pr-notes">
+          {model.strong ? <NoteRow tone="good" text={model.strong} /> : null}
+          {model.weak ? <NoteRow tone="weak" text={model.weak} /> : null}
+        </View>
+      ) : null}
+      {model.bars.length > 0 ? (
+        <View className="pr-kp">
+          <Text className="pr-kp-title">知识点掌握度</Text>
+          <View className="pr-bars">
+            {model.bars.map((bar) => (
+              <View key={bar.key} className="pr-bar">
+                <View className="pr-bar-meta">
+                  <Text className="pr-bar-name">{bar.name}</Text>
+                  <Text
+                    className={
+                      bar.tone === 'good' ? 'pr-bar-pct pr-tone-good' : 'pr-bar-pct pr-tone-weak'
+                    }
+                  >
+                    {bar.percent}%
+                  </Text>
+                </View>
+                <View className="pr-track">
+                  <View
+                    className={
+                      bar.tone === 'good'
+                        ? 'pr-fillbar pr-fillbar-good'
+                        : 'pr-fillbar pr-fillbar-weak'
+                    }
+                    style={{ width: `${bar.percent}%` }}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+      <View
+        className="pr-cta"
+        onClick={() => void Taro.showToast({ title: '即将开放', icon: 'none' })}
+      >
+        <Text className="pr-cta-text">弱项复练</Text>
+      </View>
+    </View>
+  );
 }
 
-function passText(item: QuizScoreSummary): string {
-  const verdict = item.passed === null ? '未设及格线' : item.passed ? '及格' : '未及格';
-  return item.passScore === null ? verdict : `${verdict} · 及格线 ${item.passScore}`;
+function NoteRow(props: { tone: 'good' | 'weak'; text: string }) {
+  const good = props.tone === 'good';
+  return (
+    <View className={good ? 'pr-note-row pr-note-good' : 'pr-note-row pr-note-weak'}>
+      <View className={good ? 'pr-accent pr-accent-good' : 'pr-accent pr-accent-weak'} />
+      <Text className="pr-note-text">{props.text}</Text>
+    </View>
+  );
 }
 
-function percent(value: number): string {
-  return `${Math.round(value * 100)}%`;
+function RecordCard(props: { item: QuizScoreSummary; now: Date }) {
+  const card = recordCard(props.item, props.now);
+  const exam = card.mode === 'exam';
+  return (
+    <View
+      className="pr-card pr-session"
+      onClick={() => void Taro.navigateTo({ url: `/pages/score/index?sessionId=${props.item.id}` })}
+    >
+      <View className="pr-row1">
+        <View className={exam ? 'pr-badge pr-badge-exam' : 'pr-badge pr-badge-practice'}>
+          <Text className="pr-badge-text">{card.badge}</Text>
+        </View>
+        <Text className="pr-title">{card.title}</Text>
+        <Text
+          className={card.tone === 'good' ? 'pr-result pr-tone-good' : 'pr-result pr-tone-weak'}
+        >
+          {card.score}
+        </Text>
+      </View>
+      <View className="pr-row2">
+        <Text className="pr-meta">{card.meta}</Text>
+        <View className="pr-chev">
+          <Image className="pr-chev-ico" src={iconChevron} mode="aspectFit" />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function EmptyState(props: {
+  title: string;
+  detail: string;
+  action: string;
+  onAction: () => void;
+  placeholder?: boolean;
+}) {
+  return (
+    <View className="pr-empty-page">
+      {props.placeholder ? (
+        <View className="pr-card pr-insight-empty">
+          <View className="pr-ai-badge">
+            <Text className="pr-ai-badge-text">AI 学习点评</Text>
+          </View>
+          <Text className="pr-placeholder">练几次后这里会出现掌握点评</Text>
+        </View>
+      ) : null}
+      <View className="pr-empty">
+        <View className="pr-empty-icon">
+          <Image className="pr-empty-disc" src={iconDisc} mode="aspectFit" />
+          <Image className="pr-empty-ring" src={iconRing} mode="aspectFit" />
+          <Image className="pr-empty-mark" src={iconMark} mode="aspectFit" />
+        </View>
+        <Text className="pr-empty-title">{props.title}</Text>
+        <Text className="pr-empty-sub">{props.detail}</Text>
+        <View className="pr-go" onClick={props.onAction}>
+          <Text className="pr-go-text">{props.action}</Text>
+        </View>
+      </View>
+    </View>
+  );
 }

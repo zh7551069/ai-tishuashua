@@ -1,0 +1,569 @@
+/* 练习记录列表。尺寸和色值对齐 design/bridge-export/practice-records-20261107（390）。
+   状态栏和 Home 条用系统的，不画。 */
+
+.u-nav.pr-nav {
+  min-height: 44px;
+  height: 44px;
+  padding: 0 16px 0 12px;
+  background: transparent;
+}
+
+.u-nav.pr-nav .u-back {
+  width: 24px;
+  height: 24px;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.u-nav.pr-nav .u-nav-side {
+  width: 24px;
+  height: 24px;
+}
+
+.u-nav.pr-nav .u-nav-title-center {
+  left: 48px;
+  right: 48px;
+  font-size: 17px;
+  line-height: 24px;
+}
+
+.pr-back-clip {
+  width: 8px;
+  height: 14px;
+  margin-left: 8px;
+  margin-top: 5px;
+  overflow: hidden;
+}
+
+.pr-back-ico {
+  width: 8px;
+  height: 14px;
+}
+
+.pr-fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pr-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 20px calc(28px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.pr-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  box-sizing: border-box;
+}
+
+.pr-insight {
+  gap: 12px;
+  padding: 14px;
+}
+
+.pr-insight-empty {
+  gap: 8px;
+  padding: 12px 14px 14px;
+}
+
+.pr-ai-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pr-ai-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: #eff6ff;
+  flex-shrink: 0;
+}
+
+.pr-insight-empty .pr-ai-badge {
+  align-self: flex-start;
+  padding: 3px 7px;
+}
+
+.pr-ai-badge-text {
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+.pr-scope {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 14px;
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pr-hero {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #eff6ff;
+  box-sizing: border-box;
+}
+
+.pr-scoreblock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.pr-score-label {
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+}
+
+.pr-score-num {
+  color: #2563eb;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 36px;
+}
+
+.pr-hero-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pr-master-label {
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.pr-master-line {
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.pr-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pr-note-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.pr-note-good {
+  background: #dcfce7;
+}
+
+.pr-note-weak {
+  background: #fff7ed;
+}
+
+.pr-accent {
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.pr-accent-good {
+  background: #16a34a;
+}
+
+.pr-accent-weak {
+  background: #ea580c;
+}
+
+.pr-note-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.pr-note-good .pr-note-text {
+  color: #16a34a;
+}
+
+.pr-note-weak .pr-note-text {
+  color: #ea580c;
+}
+
+.pr-kp {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8f9fb;
+  box-sizing: border-box;
+}
+
+.pr-kp-title {
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.pr-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pr-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pr-bar-meta {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pr-bar-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pr-bar-pct {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.pr-tone-good {
+  color: #16a34a;
+}
+
+.pr-tone-weak {
+  color: #ea580c;
+}
+
+.pr-track {
+  height: 8px;
+  border-radius: 4px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.pr-fillbar {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.pr-fillbar-good {
+  background: #16a34a;
+}
+
+.pr-fillbar-weak {
+  background: #ea580c;
+}
+
+.pr-cta {
+  height: 48px;
+  border-radius: 14px;
+  background: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pr-cta-text {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.pr-placeholder {
+  align-self: stretch;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+  text-align: center;
+}
+
+.pr-chips {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.pr-chip {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.pr-chip-on {
+  background: #2563eb;
+  box-shadow: none;
+}
+
+.pr-chip-text {
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.pr-chip-on .pr-chip-text {
+  color: #ffffff;
+}
+
+.pr-hint,
+.pr-none {
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 14px;
+}
+
+.pr-none {
+  padding: 28px 12px;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.pr-session {
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.pr-row1,
+.pr-row2 {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-self: stretch;
+}
+
+.pr-row1 {
+  gap: 8px;
+}
+
+.pr-row2 {
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pr-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 5px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+.pr-badge-practice {
+  background: #eff6ff;
+}
+
+.pr-badge-exam {
+  background: #fff7ed;
+}
+
+.pr-badge-text {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+.pr-badge-practice .pr-badge-text {
+  color: #2563eb;
+}
+
+.pr-badge-exam .pr-badge-text {
+  color: #ea580c;
+}
+
+.pr-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pr-result {
+  flex-shrink: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.pr-meta {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 14px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pr-chev {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pr-chev-ico {
+  width: 5px;
+  height: 9px;
+}
+
+.pr-empty-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 20px calc(28px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.pr-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pr-empty-icon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.pr-empty-disc {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 44px;
+  height: 44px;
+}
+
+.pr-empty-ring {
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  width: 30px;
+  height: 30px;
+}
+
+.pr-empty-mark {
+  position: absolute;
+  left: 23px;
+  top: 15px;
+  width: 9px;
+  height: 15px;
+}
+
+.pr-empty-title {
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+
+.pr-empty-sub {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  text-align: center;
+}
+
+.pr-go {
+  width: 160px;
+  height: 44px;
+  border-radius: 14px;
+  background: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pr-go-text {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
