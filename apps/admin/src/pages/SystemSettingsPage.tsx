@@ -5,6 +5,13 @@ import { AdminApiError, adminFetch } from '../api';
 import type { AdminOutletContext } from '../layout/AdminLayout';
 import { clearAdminSession } from '../session';
 
+/** Bridge `28:2` 关态副文案。 */
+const OFF_SUBTITLE = '仅免费；关=默认 AI 出题；会员不受影响';
+/** Bridge `28:145` 开态副文案（帧 `28:15`）。 */
+const ON_SUBTITLE = '仅免费；开=先库后 AI 补齐；会员不受影响';
+const HELPER =
+  '开=先从题库抽题凑满一场，不足再 AI；关=免费默认全程 AI。均不影响会员。';
+
 export function SystemSettingsPage() {
   const navigate = useNavigate();
   const { session } = useOutletContext<AdminOutletContext>();
@@ -69,23 +76,55 @@ export function SystemSettingsPage() {
     }
   }
 
+  const enabled = setting?.enabled === true;
+
   return (
-    <section className="page">
-      <h1>免费用户题库优先</h1>
-      <div className="card-panel todo-card">
-        <p>仅影响免费用户；默认关。会员仍按 AI 出题并入库。这一页是占位，正式像素另过 UI 评审。</p>
-        {loading ? <p className="hint">读取中</p> : null}
-        {setting ? (
-          <p>
-            当前：<b>{setting.enabled ? '开' : '关'}</b>
-            {setting.updatedBy ? ` · ${setting.updatedBy}` : ''}
+    <section className="page strategy-settings">
+      <header className="strategy-head">
+        <h1>免费用户题库优先</h1>
+        <p className="strategy-scope">仅影响免费用户；默认关。</p>
+      </header>
+      {error ? (
+        <p className="strategy-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {loading && !setting ? <p className="strategy-status">读取中</p> : null}
+      {setting ? (
+        <article
+          className="strategy-card"
+          data-layer-id={enabled ? '28:145' : '28:2'}
+        >
+          <h2>出题策略</h2>
+          <div className="strategy-row">
+            <div className="strategy-copy">
+              <div className="strategy-title-row">
+                <span className="strategy-name">免费用户题库优先</span>
+                <span className="strategy-key">freeUserBankFirst</span>
+              </div>
+              <p className="strategy-sub" id="strategy-subtitle">
+                {enabled ? ON_SUBTITLE : OFF_SUBTITLE}
+              </p>
+            </div>
+            <button
+              type="button"
+              className={enabled ? 'strategy-switch is-on' : 'strategy-switch'}
+              role="switch"
+              aria-checked={enabled}
+              aria-describedby="strategy-subtitle strategy-helper"
+              disabled={saving}
+              aria-busy={saving}
+              onClick={() => void toggle()}
+            >
+              <span className="strategy-track" aria-hidden="true" />
+              <span className="strategy-switch-label">{enabled ? '开' : '关'}</span>
+            </button>
+          </div>
+          <p className="strategy-helper" id="strategy-helper">
+            {HELPER}
           </p>
-        ) : null}
-        {error ? <p className="hint">{error}</p> : null}
-        <button type="button" disabled={!setting || saving} onClick={() => void toggle()}>
-          {saving ? '保存中' : setting?.enabled ? '关闭' : '打开'}
-        </button>
-      </div>
+        </article>
+      ) : null}
     </section>
   );
 }
