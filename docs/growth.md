@@ -43,6 +43,6 @@ TB-29 把签到、每日分享和邀请有礼接到 TB-20 `grantEntitlement`。�
 
 ## 小程序
 
-「我」页签到按钮调用 checkin，成功后刷新权益。三态文案和禁支付不变。每日分享、邀请有礼目前是占位壳，只拉 `GET /api/me/growth`。`122:8` / `122:10` 对稿等 Arch UI 技术评审三行后再补。
+「我」页签到按钮调用 checkin，成功后刷新权益。三态文案和禁支付不变。每日分享对稿 `122:8`，邀请有礼对稿 `122:10`。样式对照 `design/bridge-export/mini-commerce-v2/`（`index.html` md5 `522993188277e4e4d1bffeb7e75d2d1e`）。会员分享展示「今日已享会员不限场」，不改发提炼次。冷启动 query `shareToken` / `inviteCode` 在登录后补一次 open / bind。UI 评审见 [TB-29 三行](delivery/tb29-ui-tech-review-20261107.md)。
 
 契约：[TB-29 C](contracts/tb29-daily-share-invite-C-contracts-v0.1.0-C.md)。

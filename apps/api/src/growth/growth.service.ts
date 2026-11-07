@@ -117,10 +117,12 @@ export class GrowthService implements OnModuleInit, OnModuleDestroy {
       const config = await this.loadConfig(db);
       const state = await readTaskState(db, userId, today);
       const membershipActive = await isMemberActive(db, userId, now);
+      const issuedToken = await findShareToken(db, userId, today);
       const share = growthShareStatus({
         enabled: config.share.enabled,
         claimed: state.shareClaimed,
         membershipActive,
+        awaitingOpen: Boolean(issuedToken),
       });
       const weekStart = growthWeekStart(today);
       const relation = await findInviteRelation(db, userId);
@@ -136,6 +138,7 @@ export class GrowthService implements OnModuleInit, OnModuleDestroy {
           claimed: state.shareClaimed,
           rewardSessions: config.share.rewardSessions,
           memberSkip: share.memberSkip,
+          awaitingOpen: share.awaitingOpen,
           statusText: share.statusText,
         },
         invite: {

@@ -93,17 +93,22 @@ export function growthShareStatus(input: {
   enabled: boolean;
   claimed: boolean;
   membershipActive: boolean;
-}): { memberSkip: boolean; statusText: string } {
+  /** 今日已发出 shareToken，但还没有被打开领奖。 */
+  awaitingOpen?: boolean;
+}): { memberSkip: boolean; awaitingOpen: boolean; statusText: string } {
   if (!input.enabled) {
-    return { memberSkip: false, statusText: '未开启' };
+    return { memberSkip: false, awaitingOpen: false, statusText: '未开启' };
   }
   if (input.claimed) {
-    return { memberSkip: false, statusText: '今日已领' };
+    return { memberSkip: false, awaitingOpen: false, statusText: '今日已领' };
   }
   if (input.membershipActive) {
-    return { memberSkip: true, statusText: GROWTH_MEMBER_SKIP_TEXT };
+    return { memberSkip: true, awaitingOpen: false, statusText: GROWTH_MEMBER_SKIP_TEXT };
   }
-  return { memberSkip: false, statusText: '今日未领' };
+  if (input.awaitingOpen) {
+    return { memberSkip: false, awaitingOpen: true, statusText: '未领取 · 等待好友打开' };
+  }
+  return { memberSkip: false, awaitingOpen: false, statusText: '今日未领' };
 }
 
 export interface GrowthRewardOutcome {
@@ -147,6 +152,7 @@ export interface GrowthView {
     claimed: boolean;
     rewardSessions: number;
     memberSkip: boolean;
+    awaitingOpen: boolean;
     statusText: string;
   };
   invite: {

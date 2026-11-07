@@ -9,6 +9,7 @@ import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../components/StateBloc
 import { fetchCurrentUser } from '../../services/auth-api';
 import { isAuthFailure, withAuth } from '../../services/guard';
 import { activatePack, deletePack, fetchPacks, updatePack } from '../../services/pack-api';
+import { captureGrowthLaunch, settleGrowthLaunch } from '../../services/growth-launch-run';
 import { clearToken, readToken } from '../../services/session';
 
 export default function HomePage() {
@@ -43,7 +44,18 @@ export default function HomePage() {
   };
 
   useDidShow(() => {
+    captureGrowthLaunch(
+      Taro.getCurrentInstance().router?.params as Record<string, unknown> | undefined,
+    );
     void load();
+    const token = readToken();
+    if (token) {
+      void settleGrowthLaunch(token).then((message) => {
+        if (message) {
+          void Taro.showToast({ title: message, icon: 'none' });
+        }
+      });
+    }
   });
 
   const current = packs?.items.find((item) => item.id === packs.activePackId) ?? null;

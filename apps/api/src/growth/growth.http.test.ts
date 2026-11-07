@@ -184,6 +184,10 @@ describe('growth rewards', { concurrency: 1 }, () => {
       (await entitlement(sharer.token)).balances.dailyTaskRemain,
       before.balances.dailyTaskRemain,
     );
+    const waiting = await growthOf(sharer.token);
+    assert.equal(waiting.share.claimed, false);
+    assert.equal(waiting.share.awaitingOpen, true);
+    assert.equal(waiting.share.statusText, '未领取 · 等待好友打开');
 
     const self = await call('/me/growth/share/open', sharer.token, {
       method: 'POST',
@@ -225,7 +229,10 @@ describe('growth rewards', { concurrency: 1 }, () => {
       (await entitlement(sharer.token)).balances.dailyTaskRemain,
       after.balances.dailyTaskRemain,
     );
-    assert.equal((await growthOf(sharer.token)).share.claimed, true);
+    const claimed = await growthOf(sharer.token);
+    assert.equal(claimed.share.claimed, true);
+    assert.equal(claimed.share.awaitingOpen, false);
+    assert.equal(claimed.share.statusText, '今日已领');
   });
 
   test('A3 会员分享不发场次也不发提炼次', async (t) => {

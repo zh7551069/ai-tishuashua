@@ -35,11 +35,25 @@ test('幂等键和业务周按契约钉死', () => {
 test('会员分享跳过文案，邀请绑定优先认邀请码', () => {
   assert.deepEqual(growthShareStatus({ enabled: true, claimed: false, membershipActive: true }), {
     memberSkip: true,
+    awaitingOpen: false,
     statusText: GROWTH_MEMBER_SKIP_TEXT,
   });
   assert.equal(
     growthShareStatus({ enabled: true, claimed: true, membershipActive: true }).statusText,
     '今日已领',
+  );
+  assert.equal(
+    growthShareStatus({
+      enabled: true,
+      claimed: false,
+      membershipActive: false,
+      awaitingOpen: true,
+    }).statusText,
+    '未领取 · 等待好友打开',
+  );
+  assert.equal(
+    growthShareStatus({ enabled: true, claimed: false, membershipActive: false }).awaitingOpen,
+    false,
   );
   assert.equal(growthSharePath('abc'), '/pages/home/index?shareToken=abc');
   const parsed = parseInviteBindBody({
