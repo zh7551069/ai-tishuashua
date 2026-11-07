@@ -10,6 +10,11 @@ import {
 import { Worker, type ConnectionOptions } from 'bullmq';
 import Redis from 'ioredis';
 import { Pool } from 'pg';
+import {
+  ENTITLEMENT_DAY_RECONCILE_CRON,
+  ENTITLEMENT_DAY_RECONCILE_JOB,
+  registerEntitlementDayReconcile,
+} from './commerce-jobs';
 import { loadWorkerEnv } from './config/env';
 import { handleExtractCourseware } from './processors/extract-courseware';
 import { handleGenerateQuiz } from './processors/generate-quiz';
@@ -20,11 +25,15 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
   private workers: Worker[] = [];
   private pool: Pool | null = null;
   private settingsRedis: Redis | null = null;
+  private commerceClose: (() => Promise<void>) | null = null;
 
   constructor(private readonly config: ConfigService) {}
 
-  onModuleInit(): void {
+  async onModuleInit(): Promise<void> {
     const env = loadWorkerEnv(this.config);
+    this.logger.log(
+      `commerce job ${ENTITLEMENT_DAY_RECONCILE_JOB} cron=${ENTITLEMENT_DAY_RECONCILE_CRON} tz=Asia/Shanghai`,
+    );
     const llm = env.llmMock ? 'mock' : env.llmConfigured ? 'configured' : 'missing';
     this.logger.log(
       `oss=${env.ossMode} llm=${llm} provider=${env.llmProvider || 'unset'} db=${env.databaseUrl ? 'configured' : 'missing'}`,
@@ -90,10 +99,23 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
       this.logger.error(error.message);
     });
     this.workers.push(extractWorker);
-    this.logger.log(`listening queues: ${JOB_GENERATE_QUIZ}, ${JOB_EXTRACT_COURSEWARE}`);
+    try {
+      const commerce = await registerEntitlementDayReconcile(connection, {
+        log: (message) => this.logger.log(message),
+      });
+      this.commerceClose = commerce.close;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '日切对账任务注册失败';
+      this.logger.error(message);
+    }
+    this.logger.log(
+      `listening queues: ${JOB_GENERATE_QUIZ}, ${JOB_EXTRACT_COURSEWARE}, ${ENTITLEMENT_DAY_RECONCILE_JOB}`,
+    );
   }
 
   async onModuleDestroy(): Promise<void> {
+    await this.commerceClose?.().catch(() => undefined);
+    this.commerceClose = null;
     await Promise.all(this.workers.map((worker) => worker.close()));
     this.settingsRedis?.disconnect();
     this.settingsRedis = null;

@@ -120,14 +120,6 @@ export function takeWrongCarry(
 }
 
 /**
- * 现网没有会员字段。商业化落地后改为「会员有效则 false」。
- * 组卷只在本函数为 true 且 freeUserBankFirst 打开时抽题库。
- */
-export function isFreeUser(_user: { id: string }): boolean {
-  return true;
-}
-
-/**
  * 从已过滤的候选里抽题。调用方保证候选属于本证书且 status=online。
  * 知识点没有交集的行丢掉，本切片不放宽到整张证书。
  * 难度只软匹配：先拿难度相同的，不够再拿其余的。
@@ -170,9 +162,7 @@ export function selectBankQuestions(input: {
   const bySalt = (left: BankCandidate, right: BankCandidate) =>
     sessionSalt(input.sessionId, left.id) - sessionSalt(input.sessionId, right.id) ||
     left.id.localeCompare(right.id);
-  const preferred = eligible
-    .filter((row) => row.difficulty === input.difficulty)
-    .sort(bySalt);
+  const preferred = eligible.filter((row) => row.difficulty === input.difficulty).sort(bySalt);
   const rest = eligible.filter((row) => row.difficulty !== input.difficulty).sort(bySalt);
   const picked: BankCandidate[] = [];
   const pickedKeys = new Set<string>();

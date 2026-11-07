@@ -9,7 +9,6 @@ import {
   BUILTIN_QUIZ_VARIANT_PROMPT,
   buildPromptVariables,
   buildVariantPromptVariables,
-  isFreeUser,
   mockAiQuestions,
   mockVariantQuestion,
   normalizeQuestionScores,
@@ -39,6 +38,7 @@ import {
   type QuizSessionSource,
   type QuizTypeCode,
 } from './quiz';
+import { commitEntitlement, isFreeUser, releaseEntitlement } from './entitlement-server';
 import { readFreeUserBankFirst, type SettingsCache } from './system-settings';
 
 interface QueryResultLike {
@@ -96,11 +96,11 @@ export type GenerationOutcome =
 
 /**
  * 测试可以替身 isFreeUser，用来锁住「会员即使开关开也不抽库」。
- * 不传 getFreeUserBankFirst 时直读 system_settings，不走缓存。
+ * 不传时读 memberships。不传 getFreeUserBankFirst 时直读 system_settings，不走缓存。
  */
 export interface GenerationDeps {
   getFreeUserBankFirst?: () => Promise<boolean>;
-  isFreeUser?: (user: { id: string }) => boolean;
+  isFreeUser?: (user: { id: string }) => boolean | Promise<boolean>;
   settingsCache?: SettingsCache | null;
 }
 
@@ -360,7 +360,8 @@ async function resolveFreeUserBankFirst(
   const enabled = deps?.getFreeUserBankFirst
     ? await deps.getFreeUserBankFirst()
     : await readFreeUserBankFirst(db, deps?.settingsCache ?? null);
-  const free = (deps?.isFreeUser ?? isFreeUser)({ id: userId });
+  const probe = deps?.isFreeUser ?? ((user: { id: string }) => isFreeUser(user, db));
+  const free = await probe({ id: userId });
   return enabled && free;
 }
 
@@ -979,6 +980,7 @@ async function markReady(
       `,
       [sessionId, total, Math.round(totalScore), JSON.stringify(stats)],
     );
+    await commitEntitlement(tx, sessionId);
     return true;
   });
 }
@@ -1017,6 +1019,7 @@ async function stopWithoutPaper(
       `,
       [sessionId, ApiErrorCode.QUIZ_GENERATION_FAILED, safeMessage],
     );
+    await releaseEntitlement(tx, sessionId);
     return { status: 'failed', code: ApiErrorCode.QUIZ_GENERATION_FAILED, message: safeMessage };
   });
 }
@@ -1058,6 +1061,7 @@ async function failSession(
       `,
       [sessionId, code, safeMessage],
     );
+    await releaseEntitlement(tx, sessionId);
     return { status: 'failed', code, message: safeMessage };
   });
 }

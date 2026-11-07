@@ -11,6 +11,43 @@ export {
 export type { LlmProvider } from './constants';
 export { ApiErrorCode } from './errors';
 export type { ApiErrorBody, ApiErrorCode as ApiErrorCodeValue } from './errors';
+export {
+  BUSINESS_TZ,
+  DEFAULT_DAILY_FREE_SESSIONS,
+  ENTITLEMENT_BUCKETS,
+  ENTITLEMENT_CTA_TYPES,
+  ENTITLEMENT_DAY_RECONCILE_CRON,
+  ENTITLEMENT_DAY_RECONCILE_JOB,
+  ENTITLEMENT_EXHAUSTED_CTA,
+  ENTITLEMENT_LEDGER_REASONS,
+  REFINE_LIFETIME_LIMIT_FREE,
+  EntitlementFlowError,
+  businessDate,
+  isEntitlementDevGrantEnabled,
+  parseDailyFreeQuota,
+  parseGrantCommand,
+  parseLedgerQuery,
+  refineAccess,
+  reserveIdempotencyKey,
+  runEntitlementDayReconcile,
+  sessionConsumesEntitlement,
+} from './entitlement-types';
+export type {
+  DayReconcileResult,
+  EntitlementBalances,
+  EntitlementBucket,
+  EntitlementCtaType,
+  EntitlementDb,
+  EntitlementExhaustedDetails,
+  EntitlementLedgerItem,
+  EntitlementLedgerPage,
+  EntitlementLedgerReason,
+  EntitlementMembership,
+  EntitlementReservation,
+  EntitlementView,
+  GrantCommand,
+  GrantResult,
+} from './entitlement-types';
 export type { HealthStatus } from './health';
 export { parseRedisUrl } from './redis';
 export type { RedisEndpoint } from './redis';
@@ -25,7 +62,6 @@ export {
   normalizeQuizRequest,
   normalizeSelection,
   parseAiQuestions,
-  isFreeUser,
   parseCreateQuizSessionRequest,
   pickPublishedPrompt,
   pickPublishedVariantPrompt,

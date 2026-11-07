@@ -26,6 +26,7 @@ import {
   type QuizSubmitReason,
   type QuizTypeCode,
 } from '@tishuashua/shared';
+import { releaseEntitlement } from '@tishuashua/shared/entitlement';
 import { randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import { rethrowDatabaseError } from '../common/database-error';
@@ -284,16 +285,13 @@ export class QuizRepository {
   }
 
   async deletePending(userId: string, sessionId: string): Promise<void> {
-    try {
-      await this.database
-        .requirePool()
-        .query(`DELETE FROM quiz_sessions WHERE id = $1 AND user_id = $2 AND status = 'pending'`, [
-          sessionId,
-          userId,
-        ]);
-    } catch (error) {
-      rethrowDatabaseError('quiz', error);
-    }
+    await this.transaction(async (client) => {
+      await releaseEntitlement(client, sessionId);
+      await client.query(
+        `DELETE FROM quiz_sessions WHERE id = $1 AND user_id = $2 AND status = 'pending'`,
+        [sessionId, userId],
+      );
+    });
   }
 
   async findSession(userId: string, sessionId: string): Promise<QuizSessionView | null> {
@@ -341,6 +339,7 @@ export class QuizRepository {
       if (status !== 'pending' && status !== 'generating') {
         return 'conflict';
       }
+      await releaseEntitlement(client, sessionId);
       await client.query(`DELETE FROM paper_questions WHERE session_id = $1`, [sessionId]);
       await client.query(
         `

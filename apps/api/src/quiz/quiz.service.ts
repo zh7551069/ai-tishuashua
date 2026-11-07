@@ -9,8 +9,10 @@ import {
   type QuizSessionView,
   type QuizTypeCode,
 } from '@tishuashua/shared';
+import { holdSessionEntitlement } from '@tishuashua/shared/entitlement';
 import { randomUUID } from 'node:crypto';
 import { ApiException } from '../common/api.exception';
+import { EntitlementService } from '../entitlement/entitlement.service';
 import { QuizQueueService } from './quiz-queue.service';
 import { toQuizScoreList } from './quiz-score-list';
 import { QuizRepository } from './quiz.repository';
@@ -20,6 +22,7 @@ export class QuizService {
   constructor(
     @Inject(QuizRepository) private readonly quizzes: QuizRepository,
     @Inject(QuizQueueService) private readonly queue: QuizQueueService,
+    @Inject(EntitlementService) private readonly entitlement: EntitlementService,
   ) {}
 
   async create(
@@ -139,6 +142,11 @@ export class QuizService {
       }
 
       const id = randomUUID();
+      try {
+        await holdSessionEntitlement(client, userId, parsed.request.source, id);
+      } catch (error) {
+        this.entitlement.rethrow(error);
+      }
       await this.quizzes.insertSession(client, {
         id,
         userId,

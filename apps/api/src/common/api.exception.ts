@@ -2,8 +2,9 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiErrorCode, type ApiErrorBody } from '@tishuashua/shared';
 
 export class ApiException extends HttpException {
-  constructor(status: HttpStatus, code: ApiErrorCode, message: string) {
-    const body: ApiErrorBody = { code, message };
+  constructor(status: HttpStatus, code: ApiErrorCode, message: string, details?: unknown) {
+    const body: ApiErrorBody =
+      details === undefined ? { code, message } : { code, message, details };
     super(body, status);
   }
 }
