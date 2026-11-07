@@ -25,6 +25,7 @@ export const ENTITLEMENT_LEDGER_REASONS = [
   'reserve_hold',
   'deduct',
   'release_restore',
+  'admin_revoke',
 ] as const;
 export type EntitlementLedgerReason = (typeof ENTITLEMENT_LEDGER_REASONS)[number];
 

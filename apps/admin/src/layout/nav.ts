@@ -4,7 +4,7 @@ export interface NavItem {
   crumb: string;
   /** 入口保留，本刀不接业务。 */
   placeholder?: boolean;
-  /** 灰置，不进入页面。用户权益留给 C6。 */
+  /** 灰置，不进入页面。 */
   disabled?: boolean;
 }
 
@@ -83,7 +83,6 @@ export const NAV: NavGroup[] = [
         to: '/commerce/entitlements',
         label: '用户权益',
         crumb: '商业化 / 用户权益',
-        disabled: true,
       },
     ],
   },

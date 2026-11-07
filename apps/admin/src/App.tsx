@@ -11,6 +11,8 @@ import { OverviewPage } from './pages/OverviewPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { QuestionBankPage } from './pages/QuestionBankPage';
 import { QuizSessionsPage } from './pages/QuizSessionsPage';
+import { CommerceAuditPage } from './pages/commerce/CommerceAuditPage';
+import { EntitlementsPage } from './pages/commerce/EntitlementsPage';
 import { GrowthPage } from './pages/commerce/GrowthPage';
 import { QuotaPage } from './pages/commerce/QuotaPage';
 import { SkusPage } from './pages/commerce/SkusPage';
@@ -88,6 +90,8 @@ export function App() {
         <Route path="/commerce/skus" element={<SkusPage />} />
         <Route path="/commerce/quota" element={<QuotaPage />} />
         <Route path="/commerce/growth" element={<GrowthPage />} />
+        <Route path="/commerce/entitlements" element={<EntitlementsPage />} />
+        <Route path="/commerce/audit" element={<CommerceAuditPage />} />
         <Route path="/settings" element={<SystemSettingsPage />} />
         <Route
           path="/system/roles"
