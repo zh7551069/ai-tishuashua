@@ -257,6 +257,10 @@ label {
   color: var(--faint);
 }
 
+.nav-link.is-disabled {
+  cursor: default;
+}
+
 .nav-dot {
   width: 6px;
   height: 6px;
@@ -1333,5 +1337,149 @@ pre {
 
   .bank-filter {
     flex-basis: 180px;
+  }
+}
+
+.commerce-page {
+  max-width: 1080px;
+}
+
+.commerce-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.commerce-head h1 {
+  margin-bottom: 4px;
+}
+
+.commerce-kicker,
+.commerce-hint,
+.commerce-meta,
+.commerce-foot,
+.commerce-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.commerce-kicker,
+.commerce-foot,
+.commerce-empty,
+.commerce-meta {
+  margin: 8px 0 0;
+}
+
+.commerce-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+.commerce-important {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--warn-bg);
+  color: #92400e;
+  font-size: 13px;
+}
+
+.commerce-card {
+  margin-bottom: 16px;
+  padding: 16px 18px 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.commerce-card h2,
+.commerce-card h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.commerce-card h3 {
+  margin-top: 8px;
+}
+
+.commerce-hint {
+  display: block;
+  margin-top: 4px;
+}
+
+.commerce-lock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.commerce-lock p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.commerce-pre {
+  margin: 0 0 16px;
+  white-space: pre-wrap;
+  font: inherit;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.commerce-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.commerce-tab {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.commerce-tab.is-on {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.commerce-row-actions {
+  display: flex;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.commerce-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.commerce-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.commerce-page .strategy-card {
+  margin-bottom: 16px;
+}
+
+@media (max-width: 720px) {
+  .commerce-head,
+  .commerce-split,
+  .commerce-lock {
+    display: block;
+  }
+
+  .commerce-actions {
+    margin-top: 12px;
   }
 }

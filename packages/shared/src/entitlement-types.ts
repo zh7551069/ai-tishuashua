@@ -189,20 +189,33 @@ export function isEntitlementDevGrantEnabled(env: NodeJS.ProcessEnv = process.en
   return mock === 'true' || mock === '1';
 }
 
-/** 上传提炼门禁可挂钩。本刀不改课件上传。 */
-export function refineAccess(input: { membershipActive: boolean; lifetimeUsed: number }): {
+/**
+ * 上传提炼门禁可挂钩。会员仍不限。
+ * lifetimeLimitFree 缺省时用常量 1；传入时只接受 1…99。
+ */
+export function refineAccess(input: {
+  membershipActive: boolean;
+  lifetimeUsed: number;
+  lifetimeLimitFree?: number;
+}): {
   unlimited: boolean;
   lifetimeLimitFree: number;
   allowed: boolean;
 } {
   const unlimited = input.membershipActive;
+  const lifetimeLimitFree = boundedRefineLimit(input.lifetimeLimitFree);
   return {
     unlimited,
-    lifetimeLimitFree: REFINE_LIFETIME_LIMIT_FREE,
-    allowed: unlimited || input.lifetimeUsed < REFINE_LIFETIME_LIMIT_FREE,
+    lifetimeLimitFree,
+    allowed: unlimited || input.lifetimeUsed < lifetimeLimitFree,
   };
 }
 
+/**
+ * 日免场次。
+ * 优先 `{ sessions: 正整数 }`（TB-21）。
+ * 仍接受 TB-20 的正整数、数字字符串，以及 `{ value }`。
+ */
 export function parseDailyFreeQuota(value: unknown): number | null {
   if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
     return value;
@@ -210,10 +223,23 @@ export function parseDailyFreeQuota(value: unknown): number | null {
   if (typeof value === 'string' && /^[1-9]\d*$/.test(value)) {
     return Number(value);
   }
-  if (value && typeof value === 'object' && 'value' in value) {
-    return parseDailyFreeQuota((value as { value: unknown }).value);
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const record = value as { sessions?: unknown; value?: unknown };
+    if ('sessions' in record) {
+      return parseDailyFreeQuota(record.sessions);
+    }
+    if ('value' in record) {
+      return parseDailyFreeQuota(record.value);
+    }
   }
   return null;
+}
+
+function boundedRefineLimit(value: number | undefined): number {
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 99) {
+    return value;
+  }
+  return REFINE_LIFETIME_LIMIT_FREE;
 }
 
 export function parseGrantCommand(

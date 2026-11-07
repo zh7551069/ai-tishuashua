@@ -95,21 +95,28 @@ export function AdminLayout() {
           {NAV.map((group) => (
             <div key={group.label ?? 'home'} className="nav-group">
               {group.label ? <p className="nav-label">{group.label}</p> : null}
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end
-                  className={({ isActive }) =>
-                    ['nav-link', item.placeholder ? 'is-later' : '', isActive ? 'active' : '']
-                      .filter(Boolean)
-                      .join(' ')
-                  }
-                >
-                  <span className="nav-dot" aria-hidden="true" />
-                  {item.label}
-                </NavLink>
-              ))}
+              {group.items.map((item) =>
+                item.disabled ? (
+                  <span key={item.label} className="nav-link is-later is-disabled" aria-disabled="true">
+                    <span className="nav-dot" aria-hidden="true" />
+                    {item.label}
+                  </span>
+                ) : (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end
+                    className={({ isActive }) =>
+                      ['nav-link', item.placeholder ? 'is-later' : '', isActive ? 'active' : '']
+                        .filter(Boolean)
+                        .join(' ')
+                    }
+                  >
+                    <span className="nav-dot" aria-hidden="true" />
+                    {item.label}
+                  </NavLink>
+                ),
+              )}
             </div>
           ))}
         </nav>

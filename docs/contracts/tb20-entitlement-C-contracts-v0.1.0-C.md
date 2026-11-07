@@ -412,6 +412,8 @@ type GrantCommand =
 
 > 现网 `system_settings` 仅有 `freeUserBankFirst`（TB-17）。本刀**不**要求迁移插入 `dailyFreeSessions`；全栈可只实现常量路径 + 可选读键分支。
 
+> **TB-21 旁注（2026-11-07）**：日免写键已由 C5 落地。值形钉死 `{ "sessions": number }`（1…99）。`dailyFreeQuota()` / `ensureDay` 读该键；缺省或非法仍回退常量 2。改配不回溯当日 `daily_free_remain`。正整数裸值和 `{ "value": n }` 仍兼容。后管路径见 TB-21 契约，不另起键名。
+
 ---
 
 ## 8. 与 TB-17 正交

@@ -11,6 +11,9 @@ import { OverviewPage } from './pages/OverviewPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { QuestionBankPage } from './pages/QuestionBankPage';
 import { QuizSessionsPage } from './pages/QuizSessionsPage';
+import { GrowthPage } from './pages/commerce/GrowthPage';
+import { QuotaPage } from './pages/commerce/QuotaPage';
+import { SkusPage } from './pages/commerce/SkusPage';
 import { SystemSettingsPage } from './pages/SystemSettingsPage';
 import { UsersPage } from './pages/UsersPage';
 import { WrongBookPage } from './pages/WrongBookPage';
@@ -82,6 +85,9 @@ export function App() {
         <Route path="/courseware" element={<CoursewarePage />} />
         <Route path="/quiz" element={<QuizSessionsPage />} />
         <Route path="/certificates" element={<CertificatesPage />} />
+        <Route path="/commerce/skus" element={<SkusPage />} />
+        <Route path="/commerce/quota" element={<QuotaPage />} />
+        <Route path="/commerce/growth" element={<GrowthPage />} />
         <Route path="/settings" element={<SystemSettingsPage />} />
         <Route
           path="/system/roles"

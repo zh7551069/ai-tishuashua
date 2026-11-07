@@ -58,6 +58,8 @@ describe('entitlement rules', () => {
     assert.equal(parseDailyFreeQuota(3), 3);
     assert.equal(parseDailyFreeQuota('4'), 4);
     assert.equal(parseDailyFreeQuota({ value: 5 }), 5);
+    assert.equal(parseDailyFreeQuota({ sessions: 3 }), 3);
+    assert.equal(parseDailyFreeQuota({ sessions: 0 }), null);
     assert.equal(parseDailyFreeQuota({ enabled: true }), null);
   });
 

@@ -21,13 +21,18 @@
     "./entitlement": {
       "types": "./dist/entitlement-server.d.ts",
       "default": "./dist/entitlement-server.js"
+    },
+    "./commerce": {
+      "types": "./dist/commerce-settings.d.ts",
+      "default": "./dist/commerce-settings.js"
     }
   },
   "typesVersions": {
     "*": {
       "generation": ["dist/generation.d.ts"],
       "courseware": ["dist/courseware-entry.d.ts"],
-      "entitlement": ["dist/entitlement-server.d.ts"]
+      "entitlement": ["dist/entitlement-server.d.ts"],
+      "commerce": ["dist/commerce-settings.d.ts"]
     }
   },
   "scripts": {

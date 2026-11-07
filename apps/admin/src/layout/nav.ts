@@ -4,6 +4,8 @@ export interface NavItem {
   crumb: string;
   /** 入口保留，本刀不接业务。 */
   placeholder?: boolean;
+  /** 灰置，不进入页面。用户权益留给 C6。 */
+  disabled?: boolean;
 }
 
 export interface NavGroup {
@@ -72,6 +74,20 @@ export const NAV: NavGroup[] = [
     ],
   },
   {
+    label: '商业化 / 权益 · v2.0.0',
+    items: [
+      { to: '/commerce/skus', label: '权益 SKU', crumb: '商业化 / 权益 SKU' },
+      { to: '/commerce/quota', label: '全局配额', crumb: '商业化 / 全局配额' },
+      { to: '/commerce/growth', label: '增长任务', crumb: '商业化 / 增长任务' },
+      {
+        to: '/commerce/entitlements',
+        label: '用户权益',
+        crumb: '商业化 / 用户权益',
+        disabled: true,
+      },
+    ],
+  },
+  {
     label: '系统',
     items: [
       {
@@ -104,6 +120,9 @@ export const NAV: NavGroup[] = [
 export function crumbFor(pathname: string): string {
   for (const group of NAV) {
     for (const item of group.items) {
+      if (item.disabled) {
+        continue;
+      }
       if (item.to === '/') {
         if (pathname === '/') {
           return item.crumb;
