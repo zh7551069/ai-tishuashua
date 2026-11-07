@@ -24,7 +24,7 @@ import {
   submitQuizSession,
 } from '../../../services/quiz-api';
 import { bandHeadline, scoreBand } from '../../../ui/score-band';
-import iconBack from './assets/back-chevron.png';
+import iconBack from '../../../assets/me-settings/3fbuza.svg';
 import iconCheck from './assets/check-on.png';
 import './index.css';
 import {
@@ -325,18 +325,18 @@ export default function QuizPaperPage() {
 
 function PaperNav(props: { mode: QuizMode | null; onBack: () => void }) {
   return (
-    <View className="paper-nav">
-      <View className="paper-nav-left" onClick={props.onBack}>
-        <View className="paper-back">
-          <Image className="paper-back-icon" src={iconBack} mode="aspectFit" />
-        </View>
-        <Text className="paper-nav-title">答题</Text>
+    <View className="paper-nav u-pin-nav">
+      <View className="u-pin-back" onClick={props.onBack}>
+        <Image className="u-back-ico" src={iconBack} mode="aspectFit" />
       </View>
-      {props.mode ? (
-        <Text className={props.mode === 'exam' ? 'paper-mode paper-mode-exam' : 'paper-mode'}>
-          {QUIZ_MODE_LABELS[props.mode]}
-        </Text>
-      ) : null}
+      <Text className="paper-nav-title">答题</Text>
+      <View className="u-pin-side">
+        {props.mode ? (
+          <Text className={props.mode === 'exam' ? 'paper-mode paper-mode-exam' : 'paper-mode'}>
+            {QUIZ_MODE_LABELS[props.mode]}
+          </Text>
+        ) : null}
+      </View>
     </View>
   );
 }

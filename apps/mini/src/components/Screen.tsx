@@ -1,7 +1,8 @@
-import { Text, View } from '@tarojs/components';
+import { Image, Text, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import iconBack from '../assets/me-settings/3fbuza.svg';
 
 function readInset(): number {
   try {
@@ -43,6 +44,7 @@ export function Screen(props: {
         ? 'u-nav-title-page'
         : '';
   const subClass = props.subtitleTone === 'muted' ? 'u-nav-sub u-nav-sub-muted' : 'u-nav-sub';
+  const centeredStack = Boolean(props.centerTitle && props.subtitle);
   const bodyClass = [
     'u-body',
     props.footer ? 'u-body-pad' : '',
@@ -76,6 +78,7 @@ export function Screen(props: {
           className={[
             'u-nav',
             props.centerTitle ? 'u-nav-center' : '',
+            centeredStack ? 'u-nav-stack' : '',
             props.navPlain ? 'u-nav-plain' : '',
             props.navClassName ?? '',
           ]
@@ -84,19 +87,30 @@ export function Screen(props: {
         >
           {props.back ? (
             <View className="u-back" onClick={back}>
-              {props.backMark ?? <Text className="u-back-mark">‹</Text>}
+              {props.backMark ?? <Image className="u-back-ico" src={iconBack} mode="aspectFit" />}
             </View>
           ) : (
             <View className="u-back-spacer" />
           )}
           {props.centerTitle ? (
-            <Text
-              className={['u-nav-title', 'u-nav-title-center', titleSizeClass]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              {props.title}
-            </Text>
+            centeredStack ? (
+              <View className="u-nav-copy u-nav-copy-center">
+                {props.title ? (
+                  <Text className={['u-nav-title', titleSizeClass].filter(Boolean).join(' ')}>
+                    {props.title}
+                  </Text>
+                ) : null}
+                <Text className={subClass}>{props.subtitle}</Text>
+              </View>
+            ) : (
+              <Text
+                className={['u-nav-title', 'u-nav-title-center', titleSizeClass]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {props.title}
+              </Text>
+            )
           ) : (
             <View className="u-nav-copy">
               {props.title ? (

@@ -2,10 +2,9 @@
    稿面轨道高 35，分段子项标成 40 并被轨道裁切；这里按可见轨道 35 排，避免文字被裁。 */
 
 .u-nav.qs-nav {
-  min-height: 36px;
-  height: 36px;
-  padding: 0 20px;
-  gap: 12px;
+  min-height: 44px;
+  height: 44px;
+  padding: 0;
   background: transparent;
   overflow: visible;
 }
@@ -21,21 +20,6 @@
   font-size: 18px;
   font-weight: 700;
   line-height: 26px;
-}
-
-.qs-back-clip {
-  width: 9px;
-  height: 18px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.qs-back-ico {
-  width: 13px;
-  height: 21px;
-  flex-shrink: 0;
 }
 
 .qs-stack {

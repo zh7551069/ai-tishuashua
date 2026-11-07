@@ -9,7 +9,7 @@ import { fetchCertificates, fetchDomains, fetchKnowledgeTree } from '../../../se
 import { withAuth } from '../../../services/guard';
 import { queryValue } from '../../../services/query';
 import { countKnowledgePoints } from '../../../ui/knowledge-meta';
-import iconBack from '../assets/icon-back.png';
+import iconBack from '../../../assets/me-settings/3fbuza.svg';
 import iconChevron from '../assets/icon-chevron.png';
 import iconSearch from '../assets/icon-search.png';
 import { PackSearch } from '../PackSearch';
@@ -109,11 +109,11 @@ export default function CertificatePage() {
               <Text className="cert-empty-sub">选领域 → 证书 → 知识点</Text>
             </View>
           ) : (
-            <View className="cert-nav">
-              <View className="cert-back" onClick={goBack}>
-                <Image className="cert-back-ico" src={iconBack} mode="aspectFit" />
+            <View className="cert-nav u-pin-nav">
+              <View className="u-pin-back" onClick={goBack}>
+                <Image className="u-back-ico" src={iconBack} mode="aspectFit" />
               </View>
-              <View className="cert-nav-copy">
+              <View className="cert-nav-copy u-pin-copy">
                 <Text className="cert-title">选择证书</Text>
                 {domainName ? <Text className="cert-sub">领域 · {domainName}</Text> : null}
               </View>

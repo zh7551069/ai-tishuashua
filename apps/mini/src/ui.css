@@ -52,6 +52,11 @@
   font-weight: 400;
 }
 
+.u-back-ico {
+  width: 12px;
+  height: 20px;
+}
+
 .u-nav-copy {
   flex: 1;
   display: flex;
@@ -59,9 +64,41 @@
   min-width: 0;
 }
 
+/* 居中标题时，返回钉在导航栏左侧，标题仍水平居中。
+   与「我 / 设置」的 .ms-nav 同一套，避免返回被 justify-content 挤到标题旁。 */
 .u-nav-center {
   position: relative;
   justify-content: center;
+  padding-left: 0;
+}
+
+.u-nav.u-nav-stack {
+  padding-right: 0;
+}
+
+.u-nav-center .u-back {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+}
+
+.u-nav-center .u-nav-side {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+  min-width: 44px;
+  margin-left: 0;
+}
+
+.u-nav-copy-center {
+  flex: 1;
+  width: 100%;
+  align-items: center;
+  text-align: center;
+  padding: 0 52px;
+  box-sizing: border-box;
 }
 
 .u-nav-title {
@@ -75,7 +112,55 @@
   position: absolute;
   left: 62px;
   right: 62px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   text-align: center;
+}
+
+/* 自定义顶栏（证书 / 知识点 / 答题）与 Screen 居中标题同一位置。 */
+.u-pin-nav {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 52px;
+  box-sizing: border-box;
+}
+
+.u-pin-back {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.u-pin-copy {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.u-pin-side {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding-right: 16px;
+  box-sizing: border-box;
 }
 
 .u-nav-sub {
@@ -2705,35 +2790,13 @@
   background: #ffffff;
 }
 
-.cert-nav {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 20px 8px 12px;
-  box-sizing: border-box;
-}
-
-.cert-back {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.cert-back-ico {
-  width: 24px;
-  height: 24px;
+.cert-nav.u-pin-nav {
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
 .cert-nav-copy,
 .kp-nav-copy {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
   gap: 2px;
 }
 
@@ -2978,21 +3041,10 @@
   box-shadow: inset 0 0 0 1px #e5e7eb;
 }
 
-.kp-nav {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  height: 52px;
-  padding: 0 16px 0 12px;
-  box-sizing: border-box;
-}
-
-.kp-back {
-  color: #111827;
-  font-size: 28px;
-  font-weight: 400;
-  line-height: 28px;
+.kp-nav.u-pin-nav {
+  min-height: 52px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .kp-body {
@@ -4108,8 +4160,8 @@
 
 .edit-nav.u-nav {
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 20px 24px;
+  gap: 0;
+  padding: 4px 0 16px;
   background: transparent;
 }
 

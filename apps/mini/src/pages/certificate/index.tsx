@@ -59,7 +59,7 @@ export default function CertificateQueryPage() {
   }, [items, query]);
 
   return (
-    <Screen back title="证书" subtitle="已关联的证书">
+    <Screen back centerTitle title="证书" subtitle="已关联的证书">
       <View className="u-pad">
         <View className="u-search">
           <Text className="u-search-mark">⌕</Text>

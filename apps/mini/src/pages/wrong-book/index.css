@@ -1,20 +1,6 @@
 /* 错题本列表。尺寸对齐 design/bridge-export/wrong-book-20261107（390）。
    庆祝层用主稿（卡宽 318、标题 26）。另一帧是同层约 92% 的字号稿，不另做运行时态。 */
 
-.wb-back-clip {
-  width: 10px;
-  height: 18px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.wb-back-ico {
-  width: 13px;
-  height: 20px;
-}
-
 .wb-search-hit {
   width: 44px;
   height: 44px;

@@ -277,6 +277,7 @@ export default function CoursewarePage() {
     return (
       <Screen
         back
+        centerTitle
         title="上传课件或书籍"
         subtitle="出题时自主上传 · AI 提炼知识点"
         footer={
@@ -305,7 +306,7 @@ export default function CoursewarePage() {
 
   if (phase === 'uploading') {
     return (
-      <Screen back title="正在上传" subtitle="文件上传完成后会自动开始学习材料">
+      <Screen back centerTitle title="正在上传" subtitle="文件上传完成后会自动开始学习材料">
         <View className="u-pad">
           <View className="u-panel">
             <Text className="u-label">上传文件</Text>
@@ -324,6 +325,7 @@ export default function CoursewarePage() {
     return (
       <Screen
         back
+        centerTitle
         title="提炼完成"
         subtitle="勾选要留下的知识点"
         footer={
@@ -368,7 +370,7 @@ export default function CoursewarePage() {
 
   if (phase === 'fail') {
     return (
-      <Screen back title="提炼失败" subtitle="可以换一份材料重新上传">
+      <Screen back centerTitle title="提炼失败" subtitle="可以换一份材料重新上传">
         <View className="u-pad">
           <ErrorBlock
             detail={job?.error?.message || error || '提炼没有完成'}
@@ -391,6 +393,7 @@ export default function CoursewarePage() {
   return (
     <Screen
       back
+      centerTitle
       title="正在提炼知识点"
       subtitle="材料越长提炼越慢，关闭本页不影响提炼"
       footer={
