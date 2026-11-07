@@ -10,6 +10,7 @@ export function uploadCourseware(
   file: { path: string; name: string },
   certificateId: string,
   onProgress?: (percent: number) => void,
+  onTask?: (task: { abort?: () => void }) => void,
 ): Promise<ExtractJobView> {
   const task = Taro.uploadFile({
     url: `${miniApiBase()}/courseware/uploads`,
@@ -24,7 +25,9 @@ export function uploadCourseware(
     },
   }) as Promise<Taro.uploadFile.SuccessCallbackResult> & {
     onProgressUpdate?: (callback: (event: { progress: number }) => void) => void;
+    abort?: () => void;
   };
+  onTask?.(task);
   task.onProgressUpdate?.((event) => {
     onProgress?.(event.progress);
   });
