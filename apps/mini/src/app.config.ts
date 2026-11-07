@@ -17,6 +17,8 @@ export default defineAppConfig({
     'pages/commerce/member/index',
     'pages/commerce/session-pack/index',
     'pages/commerce/tasks/index',
+    'pages/commerce/daily-share/index',
+    'pages/commerce/invite/index',
     'pages/commerce/session-ledger/index',
     'pages/wrong-book/index',
     'pages/wrong-book/detail/index',

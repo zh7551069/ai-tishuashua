@@ -7,6 +7,7 @@ import {
   DAILY_FREE_SESSIONS_CACHE_KEY,
   DAILY_FREE_SESSIONS_KEY,
   defaultGrowthConfig,
+  GROWTH_CONFIG_CACHE_KEY,
   GROWTH_CONFIG_KEY,
   parseGrowthConfig,
   parseRefineLifetimeLimit,
@@ -49,7 +50,12 @@ export async function readDailyFreeSessions(
   const sessions = parseDailyFreeQuota(row?.value) ?? DEFAULT_DAILY_FREE_SESSIONS;
   if (cache) {
     await cache
-      .set(DAILY_FREE_SESSIONS_CACHE_KEY, String(sessions), 'EX', COMMERCE_SETTING_CACHE_TTL_SECONDS)
+      .set(
+        DAILY_FREE_SESSIONS_CACHE_KEY,
+        String(sessions),
+        'EX',
+        COMMERCE_SETTING_CACHE_TTL_SECONDS,
+      )
       .catch(() => undefined);
   }
   return sessions;
@@ -77,6 +83,32 @@ export async function readRefineLifetimeLimitFree(
       .catch(() => undefined);
   }
   return limit;
+}
+
+/**
+ * 读增长配置。缓存键与 TB-21 相同（sysset:growthConfig，60 秒）。
+ * 缓存缺失或损坏时直读数据库。读失败不抛 Redis 错误。
+ */
+export async function readGrowthConfig(
+  db: SettingsDb,
+  cache: SettingsCache | null,
+): Promise<GrowthConfig> {
+  const cached = await readCachedGrowth(cache);
+  if (cached) {
+    return cached;
+  }
+  const record = await readGrowthConfigRecord(db);
+  if (cache) {
+    await cache
+      .set(
+        GROWTH_CONFIG_CACHE_KEY,
+        JSON.stringify(record.config),
+        'EX',
+        COMMERCE_SETTING_CACHE_TTL_SECONDS,
+      )
+      .catch(() => undefined);
+  }
+  return record.config;
 }
 
 export async function readGrowthConfigRecord(
@@ -164,6 +196,22 @@ async function readCachedQuota(cache: SettingsCache | null): Promise<number | nu
       return null;
     }
     return parseDailyFreeQuota(value);
+  } catch {
+    return null;
+  }
+}
+
+async function readCachedGrowth(cache: SettingsCache | null): Promise<GrowthConfig | null> {
+  if (!cache) {
+    return null;
+  }
+  try {
+    const value = await cache.get(GROWTH_CONFIG_CACHE_KEY);
+    if (!value) {
+      return null;
+    }
+    const parsed = parseGrowthConfig(JSON.parse(value) as unknown);
+    return parsed.ok ? parsed.value : null;
   } catch {
     return null;
   }

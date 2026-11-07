@@ -35,3 +35,5 @@
 | TB-25 小程序会员定价          | [tb25-miniapp-membership-pricing-C-contracts-v0.1.0-C.md](tb25-miniapp-membership-pricing-C-contracts-v0.1.0-C.md)         | active | 架构师 |
 | TB-26 小程序场次加油包        | [tb26-miniapp-session-boost-C-contracts-v0.1.0-C.md](tb26-miniapp-session-boost-C-contracts-v0.1.0-C.md)                   | active | 架构师 |
 | TB-27 小程序「我」非会员/会员 | [tb27-miniapp-me-member-states-C-contracts-v0.1.0-C.md](tb27-miniapp-me-member-states-C-contracts-v0.1.0-C.md)             | active | 架构师 |
+| TB-28 小程序场次明细          | [tb28-miniapp-session-ledger-C-contracts-v0.1.0-C.md](tb28-miniapp-session-ledger-C-contracts-v0.1.0-C.md)                 | active | 架构师 |
+| TB-29 每日分享与邀请有礼      | [tb29-daily-share-invite-C-contracts-v0.1.0-C.md](tb29-daily-share-invite-C-contracts-v0.1.0-C.md)                         | active | 架构师 |

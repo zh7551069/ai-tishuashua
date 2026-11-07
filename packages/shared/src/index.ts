@@ -127,10 +127,38 @@ export type {
   CommerceSku,
   GrowthConfig,
   GrowthConfigView,
+  GrowthInvite,
   SkuDraft,
   SkuPatch,
   SkuType,
 } from './commerce-config';
+export {
+  GROWTH_INVITE_CODE_ALPHABET,
+  GROWTH_INVITE_INVENTORY_EXPIRE_DAYS,
+  GROWTH_LOT_SOURCE,
+  GROWTH_MEMBER_SKIP_REASON,
+  GROWTH_MEMBER_SKIP_TEXT,
+  GROWTH_PENDING_SOURCE,
+  growthRef,
+  growthSharePath,
+  growthShareStatus,
+  growthWeekStart,
+  isGrowthShareToken,
+  isInviteCode,
+  isInviterRewardRef,
+  parseInviteBindBody,
+  parseShareOpenBody,
+} from './growth';
+export type {
+  GrowthCheckinResult,
+  GrowthInviteBindResult,
+  GrowthLotSource,
+  GrowthParse,
+  GrowthRewardOutcome,
+  GrowthShareOpenResult,
+  GrowthShareTokenResult,
+  GrowthView,
+} from './growth';
 export {
   DEFAULT_INVENTORY_EXPIRE_DAYS,
   ORDER_KINDS,

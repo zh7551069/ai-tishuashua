@@ -1,4 +1,4 @@
-/** 个人中心纯展示计算。签到只存在本机，不请求 API。 */
+/** 个人中心纯展示计算。连胜条按本机打卡；领场由服务端签到入账。 */
 
 export const APP_VERSION = 'v0.3.0';
 export const APP_FOOTER = '题刷刷 v0.3.0';

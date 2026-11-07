@@ -484,18 +484,34 @@ export class QuizRepository {
     });
   }
 
+  async countSubmitted(userId: string): Promise<number> {
+    try {
+      const result = await this.database.requirePool().query<{ count: number }>(
+        `
+          SELECT count(*)::int AS count
+          FROM quiz_sessions
+          WHERE user_id = $1 AND status = 'submitted'
+        `,
+        [userId],
+      );
+      return Number(result.rows[0]?.count ?? 0);
+    } catch (error) {
+      rethrowDatabaseError('quiz', error);
+    }
+  }
+
   async submit(
     userId: string,
     sessionId: string,
     requested: QuizSubmitReason,
-  ): Promise<'missing' | 'conflict' | 'submitted'> {
+  ): Promise<'missing' | 'conflict' | 'already' | 'fresh'> {
     return this.transaction(async (client) => {
       const row = await lockSession(client, userId, sessionId);
       if (!row) {
         return 'missing';
       }
       if (row.status === 'submitted') {
-        return 'submitted';
+        return 'already';
       }
       if (row.status !== 'ready' && row.status !== 'in_progress') {
         return 'conflict';
@@ -504,7 +520,7 @@ export class QuizRepository {
       const expired = isExamExpired(row, now);
       const nearTimeout = requested === 'timeout' && isExamExpired(row, now, TIMEOUT_GRACE_MS);
       await finishSession(client, row, expired || nearTimeout ? 'timeout' : 'manual');
-      return 'submitted';
+      return 'fresh';
     });
   }
 

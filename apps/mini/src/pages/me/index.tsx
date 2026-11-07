@@ -6,8 +6,14 @@ import { useState } from 'react';
 import { Screen } from '../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
 import { fetchCurrentUser } from '../../services/auth-api';
-import { fetchEntitlement, fetchMemberSkus } from '../../services/commerce-api';
+import {
+  fetchEntitlement,
+  fetchGrowth,
+  fetchMemberSkus,
+  postGrowthCheckin,
+} from '../../services/commerce-api';
 import { isAuthFailure, withAuth } from '../../services/guard';
+import { HttpError } from '../../services/http';
 import { checkInToday, readCheckin, readThemeId, type ThemeId } from '../../services/local-prefs';
 import {
   APP_FOOTER,
@@ -24,14 +30,16 @@ import {
   type WeekDot,
 } from '../../services/me-model';
 import {
+  ME_DAILY_SHARE_ROUTE,
+  ME_INVITE_ROUTE,
   ME_MEMBER_ROUTE,
   ME_SESSION_LEDGER_ROUTE,
-  ME_TASKS_ROUTE,
   presentMeCheckin,
   presentMeEntitlement,
   type MeEntitlementPresent,
   type MeMemberSkuName,
 } from '../../services/me-entitlement-present';
+import { clearToken, readToken } from '../../services/session';
 import { fetchPacks } from '../../services/pack-api';
 import { fetchQuizScores } from '../../services/quiz-api';
 import { fetchWrongBook } from '../../services/wrong-book-api';
@@ -64,6 +72,9 @@ export default function MePage() {
   const [today, setToday] = useState(() => dayKey(new Date()));
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [checkin, setCheckin] = useState<CheckinState>(EMPTY_CHECKIN);
+  const [serverChecked, setServerChecked] = useState(false);
+  const [growthReady, setGrowthReady] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [commerce, setCommerce] = useState<MeEntitlementPresent | null>(null);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
@@ -72,15 +83,21 @@ export default function MePage() {
     setError('');
     try {
       const loaded = await withAuth(async (token) => {
-        const [user, packs, scores, wrongs, entitlement, memberNames] = await Promise.all([
+        const [user, packs, scores, wrongs, entitlement, memberNames, growth] = await Promise.all([
           fetchCurrentUser(token),
           fetchPacks(token),
           fetchQuizScores(token),
           fetchWrongBook(token, 'pending'),
           fetchEntitlement(token),
           readMemberNames(token),
+          fetchGrowth(token).catch((error: unknown) => {
+            if (isAuthFailure(error)) {
+              throw error;
+            }
+            return null;
+          }),
         ]);
-        return { user, packs, scores, wrongs, entitlement, memberNames };
+        return { user, packs, scores, wrongs, entitlement, memberNames, growth };
       });
       if (!loaded) {
         return;
@@ -104,11 +121,24 @@ export default function MePage() {
         throw new Error('权益暂时无法识别');
       }
       setCommerce(presented);
-      setCheckin(readCheckin());
+      if (loaded.growth?.checkin.done) {
+        setGrowthReady(true);
+        setServerChecked(true);
+        setCheckin(checkInToday(day));
+      } else if (loaded.growth) {
+        setGrowthReady(true);
+        setServerChecked(false);
+        setCheckin(readCheckin());
+      } else {
+        setGrowthReady(false);
+        setServerChecked(false);
+        setCheckin(readCheckin());
+      }
       setReady(true);
     } catch (caught) {
       setReady(false);
       setCommerce(null);
+      setGrowthReady(false);
       setError(caught instanceof Error ? caught.message : '加载失败');
     }
   };
@@ -122,19 +152,53 @@ export default function MePage() {
   });
 
   const view = snapshot ? buildCenter({ ...snapshot, checkin, today }) : null;
-  const checkinCopy = commerce ? presentMeCheckin(commerce.active, Boolean(view?.checked)) : null;
+  const rewardChecked = growthReady ? serverChecked : Boolean(view?.checked);
+  const checkinCopy = commerce ? presentMeCheckin(commerce.active, rewardChecked) : null;
   const failed = Boolean(error) && !ready;
 
   const onCheckIn = () => {
-    if (!view) {
+    if (!view || checking) {
       return;
     }
-    if (view.checked) {
+    if (rewardChecked) {
       void Taro.showToast({ title: '今日已签到', icon: 'none' });
       return;
     }
-    setCheckin(checkInToday(today));
-    void Taro.showToast({ title: '签到成功', icon: 'success' });
+    const token = readToken();
+    if (!token) {
+      void Taro.reLaunch({ url: '/pages/login/index' });
+      return;
+    }
+    setChecking(true);
+    void (async () => {
+      try {
+        const result = await postGrowthCheckin(token);
+        setGrowthReady(true);
+        setServerChecked(true);
+        setCheckin(checkInToday(today));
+        if (result.applied) {
+          const entitlement = await fetchEntitlement(token);
+          const memberNames = await readMemberNames(token);
+          const presented = presentMeEntitlement(entitlement, memberNames);
+          if (presented) {
+            setCommerce(presented);
+          }
+          void Taro.showToast({ title: '签到成功', icon: 'success' });
+        } else {
+          void Taro.showToast({ title: '今日已签到', icon: 'none' });
+        }
+      } catch (caught) {
+        if (caught instanceof HttpError && (caught.status === 401 || caught.code === 'FORBIDDEN')) {
+          clearToken();
+          void Taro.reLaunch({ url: '/pages/login/index' });
+          return;
+        }
+        const message = caught instanceof HttpError ? caught.message : '签到失败';
+        void Taro.showToast({ title: message || '签到失败', icon: 'none' });
+      } finally {
+        setChecking(false);
+      }
+    })();
   };
 
   return (
@@ -169,6 +233,7 @@ export default function MePage() {
             commerce={commerce}
             checkinButton={checkinCopy.button}
             checkinNote={checkinCopy.note}
+            rewardChecked={rewardChecked}
             onCheckIn={onCheckIn}
           />
         ) : null}
@@ -184,6 +249,7 @@ function MeBody(props: {
   commerce: MeEntitlementPresent;
   checkinButton: string;
   checkinNote: string;
+  rewardChecked: boolean;
   onCheckIn: () => void;
 }) {
   const { view } = props;
@@ -224,10 +290,12 @@ function MeBody(props: {
         </View>
         <Text className="ms-checkin-note">{props.checkinNote}</Text>
         <View
-          className={view.checked ? 'ms-cta ms-brand-soft ms-brand-line' : 'ms-cta ms-brand-bg'}
+          className={
+            props.rewardChecked ? 'ms-cta ms-brand-soft ms-brand-line' : 'ms-cta ms-brand-bg'
+          }
           onClick={props.onCheckIn}
         >
-          <Text className={view.checked ? 'ms-cta-text ms-brand-fg' : 'ms-cta-text'}>
+          <Text className={props.rewardChecked ? 'ms-cta-text ms-brand-fg' : 'ms-cta-text'}>
             {props.checkinButton}
           </Text>
         </View>
@@ -240,7 +308,11 @@ function MeBody(props: {
           <Text className="ms-go-text">去首页刷题</Text>
         </View>
       ) : null}
-      <MeGrowthRow active={props.commerce.active} onOpenTasks={() => open(ME_TASKS_ROUTE)} />
+      <MeGrowthRow
+        active={props.commerce.active}
+        onOpenShare={() => open(ME_DAILY_SHARE_ROUTE)}
+        onOpenInvite={() => open(ME_INVITE_ROUTE)}
+      />
       <View className="ms-card">
         <MenuRow
           glyph={<ListGlyph />}

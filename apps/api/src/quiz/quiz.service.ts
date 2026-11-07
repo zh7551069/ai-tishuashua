@@ -11,8 +11,9 @@ import {
 } from '@tishuashua/shared';
 import { holdSessionEntitlement } from '@tishuashua/shared/entitlement';
 import { randomUUID } from 'node:crypto';
-import { ApiException } from '../common/api.exception';
+import { ApiException, logServerError } from '../common/api.exception';
 import { EntitlementService } from '../entitlement/entitlement.service';
+import { GrowthService } from '../growth/growth.service';
 import { QuizQueueService } from './quiz-queue.service';
 import { toQuizScoreList } from './quiz-score-list';
 import { QuizRepository } from './quiz.repository';
@@ -23,6 +24,7 @@ export class QuizService {
     @Inject(QuizRepository) private readonly quizzes: QuizRepository,
     @Inject(QuizQueueService) private readonly queue: QuizQueueService,
     @Inject(EntitlementService) private readonly entitlement: EntitlementService,
+    @Inject(GrowthService) private readonly growth: GrowthService,
   ) {}
 
   async create(
@@ -169,12 +171,12 @@ export class QuizService {
   }
 
   async get(userId: string, sessionId: string): Promise<QuizSessionView> {
-    await this.quizzes.expireDueExams(userId);
+    await this.touchExams(userId);
     return this.requireSession(userId, sessionId);
   }
 
   async listScores(userId: string) {
-    await this.quizzes.expireDueExams(userId);
+    await this.touchExams(userId);
     const page = await this.quizzes.listScores(userId);
     return toQuizScoreList(page.items, page.total);
   }
@@ -195,7 +197,7 @@ export class QuizService {
   }
 
   async start(userId: string, sessionId: string): Promise<QuizSessionView> {
-    await this.quizzes.expireDueExams(userId);
+    await this.touchExams(userId);
     const result = await this.quizzes.start(userId, sessionId);
     if (result === 'missing') {
       throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '出题会话不存在');
@@ -211,7 +213,8 @@ export class QuizService {
     sessionId: string,
     reason: 'manual' | 'timeout',
   ): Promise<QuizSessionView> {
-    await this.quizzes.expireDueExams(userId);
+    await this.touchExams(userId);
+    const before = await this.quizzes.countSubmitted(userId);
     const result = await this.quizzes.submit(userId, sessionId, reason);
     if (result === 'missing') {
       throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '出题会话不存在');
@@ -223,6 +226,9 @@ export class QuizService {
         '当前状态不能交卷',
       );
     }
+    if (result === 'fresh') {
+      await this.maybeFirstSubmit(userId, before);
+    }
     return this.requireSession(userId, sessionId);
   }
 
@@ -232,7 +238,7 @@ export class QuizService {
     questionId: string,
     selected: string[],
   ): Promise<QuizAnswerResult> {
-    await this.quizzes.expireDueExams(userId);
+    await this.touchExams(userId);
     const result = await this.quizzes.saveAnswer(userId, sessionId, questionId, selected);
     if (result.kind === 'missing') {
       throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '出题会话不存在');
@@ -247,6 +253,27 @@ export class QuizService {
       throw new ApiException(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, result.message);
     }
     return { questionId, selected: result.selected };
+  }
+
+  /** 到点收卷若形成生涯第一份成绩，补发首刷奖。失败不改变交卷结果。 */
+  private async touchExams(userId: string): Promise<void> {
+    const before = await this.quizzes.countSubmitted(userId);
+    await this.quizzes.expireDueExams(userId);
+    await this.maybeFirstSubmit(userId, before);
+  }
+
+  private async maybeFirstSubmit(userId: string, before: number): Promise<void> {
+    if (before !== 0) {
+      return;
+    }
+    try {
+      const after = await this.quizzes.countSubmitted(userId);
+      if (after >= 1) {
+        await this.growth.onFirstSubmit(userId);
+      }
+    } catch (error) {
+      logServerError('growth', error);
+    }
   }
 
   private async requireSession(userId: string, sessionId: string): Promise<QuizSessionView> {

@@ -49,18 +49,22 @@ export function MeStatusCard(props: { commerce: MeEntitlementPresent; onOpenMemb
   );
 }
 
-export function MeGrowthRow(props: { active: boolean; onOpenTasks: () => void }) {
+export function MeGrowthRow(props: {
+  active: boolean;
+  onOpenShare: () => void;
+  onOpenInvite: () => void;
+}) {
   const copy = presentMeGrowth(props.active);
   return (
     <View className="ms-growth">
-      <View className="ms-growth-tile ms-growth-share" onClick={props.onOpenTasks}>
+      <View className="ms-growth-tile ms-growth-share" onClick={props.onOpenShare}>
         <ShareMark />
         <View className="ms-growth-copy">
           <Text className="ms-growth-title">{copy.shareTitle}</Text>
           <Text className="ms-growth-meta">{copy.shareMeta}</Text>
         </View>
       </View>
-      <View className="ms-growth-tile ms-growth-invite" onClick={props.onOpenTasks}>
+      <View className="ms-growth-tile ms-growth-invite" onClick={props.onOpenInvite}>
         <Image className="ms-gift" src={iconGift} mode="aspectFit" />
         <View className="ms-growth-copy">
           <Text className="ms-growth-title">{copy.inviteTitle}</Text>

@@ -16,7 +16,9 @@ import {
   ME_CHECKIN_MEMBER_DONE_NOTE,
   ME_CHECKIN_MEMBER_OPEN,
   ME_CHECKIN_MEMBER_OPEN_NOTE,
+  ME_DAILY_SHARE_ROUTE,
   ME_INVITE_META,
+  ME_INVITE_ROUTE,
   ME_LEDGER_MEMBER_META,
   ME_MEMBER_CARD_NOTE,
   ME_MEMBER_CARD_TITLE,
@@ -157,11 +159,13 @@ test('签到和分享文案按会员态分支，不改余额', () => {
   assert.equal(presentMeGrowth(true).inviteMeta, ME_INVITE_META);
 });
 
-test('导航只指向会员页、加油包页、明细占位和任务页', () => {
+test('导航只指向会员页、加油包页、明细、任务和增长占位页', () => {
   assert.equal(ME_MEMBER_ROUTE, '/pages/commerce/member/index');
   assert.equal(ME_SESSION_PACK_ROUTE, '/pages/commerce/session-pack/index');
   assert.equal(ME_SESSION_LEDGER_ROUTE, '/pages/commerce/session-ledger/index');
   assert.equal(ME_TASKS_ROUTE, '/pages/commerce/tasks/index');
+  assert.equal(ME_DAILY_SHARE_ROUTE, '/pages/commerce/daily-share/index');
+  assert.equal(ME_INVITE_ROUTE, '/pages/commerce/invite/index');
 });
 
 test('「我」页源码无支付下单，也不写死示意用量', () => {
@@ -199,7 +203,9 @@ test('「我」页源码无支付下单，也不写死示意用量', () => {
   assert.match(page, /navigateTo/);
   assert.match(page, /ME_MEMBER_ROUTE/);
   assert.match(page, /ME_SESSION_LEDGER_ROUTE/);
-  assert.match(page, /ME_TASKS_ROUTE/);
+  assert.match(page, /ME_DAILY_SHARE_ROUTE/);
+  assert.match(page, /ME_INVITE_ROUTE/);
+  assert.match(page, /postGrowthCheckin/);
   assert.match(blocks, /commerce\.active/);
   assert.match(blocks, /ME_USAGE_TITLE/);
   assert.match(blocks, /todayRemain/);

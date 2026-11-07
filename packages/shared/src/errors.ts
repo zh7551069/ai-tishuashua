@@ -53,6 +53,20 @@ export const ApiErrorCode = {
   PAY_SIGN_INVALID: 'PAY_SIGN_INVALID',
   /** 订单状态不能这样迁移。HTTP 409。 */
   PAY_ORDER_STATE: 'PAY_ORDER_STATE',
+  /** 签到、分享或邀请开关关闭。HTTP 403。 */
+  GROWTH_DISABLED: 'GROWTH_DISABLED',
+  /** 今日已签到或分享奖励已领。推荐接口改回 200 幂等；保留此码供硬拒绝。HTTP 409。 */
+  GROWTH_ALREADY_CLAIMED: 'GROWTH_ALREADY_CLAIMED',
+  /** 已经有邀请人。HTTP 409。 */
+  GROWTH_ALREADY_BOUND: 'GROWTH_ALREADY_BOUND',
+  /** 自己邀请自己，或打开自己的分享链接刷奖。HTTP 400。 */
+  GROWTH_SELF_INVITE: 'GROWTH_SELF_INVITE',
+  /** shareToken 不存在或不是今天。HTTP 400。 */
+  GROWTH_INVALID_TOKEN: 'GROWTH_INVALID_TOKEN',
+  /** 日/周封顶后若选择硬拒绝。默认邀请人超额改写 pending，不走这个码。HTTP 409。 */
+  GROWTH_CAP_REACHED: 'GROWTH_CAP_REACHED',
+  /** 邀请码无效，或其它增长条件不满足。HTTP 400。 */
+  GROWTH_CONDITION_NOT_MET: 'GROWTH_CONDITION_NOT_MET',
 } as const;
 
 export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
