@@ -1,9 +1,10 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Button, Image, ScrollView, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import {
   QUIZ_MODE_LABELS,
   QUIZ_OUTCOME_LABELS,
   QUIZ_TYPE_LABELS,
+  type QuizMode,
   type QuizQuestionView,
   type QuizSessionView,
   type QuizSubmitReason,
@@ -23,6 +24,17 @@ import {
   submitQuizSession,
 } from '../../../services/quiz-api';
 import { bandHeadline, scoreBand } from '../../../ui/score-band';
+import iconBack from './assets/back-chevron.png';
+import iconCheck from './assets/check-on.png';
+import './index.css';
+import {
+  PAPER_TAG_LABEL,
+  PAPER_TYPE_LABEL,
+  cellTone,
+  optionFace,
+  questionHint,
+  type CellTone,
+} from './option-state';
 
 export default function QuizPaperPage() {
   const sessionId = queryValue(useRouter().params.sessionId);
@@ -163,6 +175,7 @@ export default function QuizPaperPage() {
   const submitted = session?.status === 'submitted';
   const current = questions[Math.min(index, Math.max(questions.length - 1, 0))];
   const unanswered = questions.filter((item) => item.selected.length === 0).length;
+  const answering = Boolean(session && paper && !submitted && current);
 
   const goBack = () => {
     void Taro.navigateBack({
@@ -180,8 +193,11 @@ export default function QuizPaperPage() {
     setDialog('leave');
   };
 
+  const askSubmit = () => setDialog('submit');
+
   return (
     <Screen
+      bare={!submitted}
       back
       onBack={leave}
       centerTitle={Boolean(submitted)}
@@ -189,28 +205,23 @@ export default function QuizPaperPage() {
       right={
         submitted && review ? (
           <Text className="u-mode">{wrongQuestions(questions).length} 题</Text>
-        ) : session ? (
-          <Text className={submitted ? 'u-mode u-mode-brand' : 'u-mode'}>
-            {QUIZ_MODE_LABELS[session.mode]}
-          </Text>
+        ) : submitted && session ? (
+          <Text className="u-mode u-mode-brand">{QUIZ_MODE_LABELS[session.mode]}</Text>
         ) : null
       }
-      footer={footer({
-        submitted,
-        review,
-        session,
-        index,
-        total: questions.length,
-        onPrev: () => setIndex((value) => Math.max(0, value - 1)),
-        onNext: () => setIndex((value) => Math.min(questions.length - 1, value + 1)),
-        onBoard: () => setBoard(true),
-        onSubmit: () => setDialog('submit'),
-        onHome: () => void Taro.reLaunch({ url: '/pages/home/index' }),
-        onReview: () => setReview(true),
-        onBackResult: () => setReview(false),
-      })}
+      footer={
+        submitted && paper
+          ? resultFooter({
+              review,
+              onHome: () => void Taro.reLaunch({ url: '/pages/home/index' }),
+              onReview: () => setReview(true),
+              onBackResult: () => setReview(false),
+            })
+          : null
+      }
     >
-      <View className="u-pad u-pad-tight">
+      {submitted ? null : <PaperNav mode={session?.mode ?? null} onBack={leave} />}
+      <View className={submitted ? 'u-pad u-pad-tight' : 'paper-body'}>
         {error ? <ErrorBlock detail={error} onRetry={() => void load()} onBack={leave} /> : null}
         {!session && !error ? <LoadingBlock label="正在加载试卷" /> : null}
         {session && !paper ? (
@@ -228,7 +239,7 @@ export default function QuizPaperPage() {
             }
           />
         ) : null}
-        {session && paper && !submitted && current ? (
+        {answering && session && current ? (
           <QuestionView
             session={session}
             question={current}
@@ -239,41 +250,46 @@ export default function QuizPaperPage() {
           />
         ) : null}
       </View>
+      {answering ? (
+        <AnswerBar
+          mode={session?.mode ?? 'practice'}
+          index={index}
+          total={questions.length}
+          onPrev={() => setIndex((value) => Math.max(0, value - 1))}
+          onNext={() => setIndex((value) => Math.min(questions.length - 1, value + 1))}
+          onBoard={() => setBoard(true)}
+          onSubmit={askSubmit}
+        />
+      ) : null}
       {board && !submitted ? (
-        <View className="u-sheet-mask" onClick={() => setBoard(false)}>
-          <View className="u-sheet" onClick={(event) => event.stopPropagation()}>
-            <Text className="u-sheet-title">题号跳转</Text>
-            <View className="u-board">
-              {questions.map((question, questionIndex) => {
-                const done = question.selected.length > 0;
-                const on = questionIndex === index;
-                return (
-                  <Text
-                    key={question.id}
-                    className={
-                      on
-                        ? 'u-board-cell u-board-on'
-                        : done
-                          ? 'u-board-cell u-board-done'
-                          : 'u-board-cell'
-                    }
-                    onClick={() => {
-                      setIndex(questionIndex);
-                      setBoard(false);
-                    }}
-                  >
-                    {question.ordinal}
-                  </Text>
-                );
-              })}
+        <View className="paper-mask" onClick={() => setBoard(false)}>
+          <View className="paper-sheet" onClick={(event) => event.stopPropagation()}>
+            <View className="paper-handle-wrap">
+              <View className="paper-handle" />
             </View>
-            <Button
-              className="u-btn"
-              style={{ marginTop: '8px' }}
-              onClick={() => setDialog('submit')}
-            >
-              交卷
-            </Button>
+            <View className="paper-sheet-head">
+              <Text className="paper-sheet-title">题目跳转</Text>
+              <Text className="paper-sheet-close" onClick={() => setBoard(false)}>
+                关闭
+              </Text>
+            </View>
+            <View className="paper-legend">
+              <LegendItem tone="right" label="答对" />
+              <LegendItem tone="wrong" label="答错" />
+              <LegendItem tone="current" label="当前" />
+              <LegendItem tone="blank" label="未答" />
+            </View>
+            <BoardGrid
+              questions={questions}
+              index={index}
+              onPick={(questionIndex) => {
+                setIndex(questionIndex);
+                setBoard(false);
+              }}
+            />
+            <View className="paper-sheet-submit" onClick={askSubmit}>
+              <Text className="paper-sheet-submit-text">交卷</Text>
+            </View>
           </View>
         </View>
       ) : null}
@@ -307,61 +323,86 @@ export default function QuizPaperPage() {
   );
 }
 
-function footer(props: {
-  submitted: boolean;
-  review: boolean;
-  session: QuizSessionView | null;
+function PaperNav(props: { mode: QuizMode | null; onBack: () => void }) {
+  return (
+    <View className="paper-nav">
+      <View className="paper-nav-left" onClick={props.onBack}>
+        <View className="paper-back">
+          <Image className="paper-back-icon" src={iconBack} mode="aspectFit" />
+        </View>
+        <Text className="paper-nav-title">答题</Text>
+      </View>
+      {props.mode ? (
+        <Text className={props.mode === 'exam' ? 'paper-mode paper-mode-exam' : 'paper-mode'}>
+          {QUIZ_MODE_LABELS[props.mode]}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function AnswerBar(props: {
+  mode: QuizMode;
   index: number;
   total: number;
   onPrev: () => void;
   onNext: () => void;
   onBoard: () => void;
   onSubmit: () => void;
+}) {
+  const atFirst = props.index <= 0;
+  const atLast = props.total === 0 || props.index >= props.total - 1;
+  // 稿面非末题是「下一题」。练习末题没有单独的交卷文字钮，主按钮改为交卷，避免只能从题板交卷。
+  const practiceHandIn = props.mode !== 'exam' && atLast;
+  return (
+    <View className="paper-foot">
+      <View className="paper-foot-row">
+        <View
+          className={atFirst ? 'paper-prev paper-btn-off' : 'paper-prev'}
+          onClick={atFirst ? undefined : props.onPrev}
+        >
+          <Text className="paper-prev-text">上一题</Text>
+        </View>
+        <View
+          className={atLast && !practiceHandIn ? 'paper-next paper-btn-off' : 'paper-next'}
+          onClick={practiceHandIn ? props.onSubmit : atLast ? undefined : props.onNext}
+        >
+          <Text className="paper-next-text">{practiceHandIn ? '交卷' : '下一题'}</Text>
+        </View>
+        {props.mode === 'exam' ? (
+          <View className="paper-handin" onClick={props.onSubmit}>
+            <Text className="paper-handin-text">交卷</Text>
+          </View>
+        ) : null}
+        <View className="paper-board-btn" onClick={props.onBoard}>
+          <Text className="paper-board-text">题板</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function resultFooter(props: {
+  review: boolean;
   onHome: () => void;
   onReview: () => void;
   onBackResult: () => void;
 }) {
-  if (!props.session?.paper) {
-    return null;
-  }
-  if (props.submitted && props.review) {
+  if (props.review) {
     return (
       <Button className="u-btn-ghost" onClick={props.onBackResult}>
         返回结果
       </Button>
     );
   }
-  if (props.submitted) {
-    return (
-      <View className="u-foot-row">
-        <Button className="u-btn-ghost" onClick={props.onHome}>
-          回首页
-        </Button>
-        <View className="u-foot-gap" />
-        <Button className="u-btn-danger" onClick={props.onReview}>
-          错题回顾
-        </Button>
-      </View>
-    );
-  }
   return (
     <View className="u-foot-row">
-      <Button className="u-btn-ghost" disabled={props.index === 0} onClick={props.onPrev}>
-        上一题
+      <Button className="u-btn-ghost" onClick={props.onHome}>
+        回首页
       </Button>
       <View className="u-foot-gap" />
-      {props.index < props.total - 1 ? (
-        <Button className="u-btn" onClick={props.onNext}>
-          下一题
-        </Button>
-      ) : (
-        <Button className="u-btn" onClick={props.onSubmit}>
-          交卷
-        </Button>
-      )}
-      <View className="u-foot-gap" />
-      <Button className="u-btn-ghost" onClick={props.onBoard}>
-        题板
+      <Button className="u-btn-danger" onClick={props.onReview}>
+        错题回顾
       </Button>
     </View>
   );
@@ -375,50 +416,184 @@ function QuestionView(props: {
   leftSeconds: number | null;
   onChoose: (optionId: string) => void;
 }) {
-  const timer = props.session.settings.timer;
-  const progress = props.total > 0 ? Math.round(((props.index + 1) / props.total) * 100) : 0;
+  const revealed = props.question.review !== null;
+  const hint = questionHint(props.session.mode, props.question.type, revealed);
   return (
-    <View>
-      <View className="u-panel">
-        <View className="u-q-head">
-          <View>
-            <Text className="u-note">
-              {timer.enabled && timer.kind === 'paper'
-                ? '整卷倒计时'
-                : timer.enabled
-                  ? '每题限时'
-                  : '不限时'}
-            </Text>
-            {props.leftSeconds !== null ? (
-              <Text className="u-clock">{formatClock(props.leftSeconds)}</Text>
-            ) : (
-              <Text className="u-clock">不限时</Text>
-            )}
-          </View>
-          <Text className="u-meta">
-            第 {props.index + 1} / {props.total} 题
+    <View className="paper-stack">
+      <ProgressCard
+        session={props.session}
+        index={props.index}
+        total={props.total}
+        leftSeconds={props.leftSeconds}
+      />
+      <View className="paper-question">
+        <View className="paper-type-row">
+          <Text
+            className={
+              props.session.mode === 'exam' ? 'paper-badge paper-badge-exam' : 'paper-badge'
+            }
+          >
+            {PAPER_TYPE_LABEL[props.question.type]}
           </Text>
+          {hint ? <Text className="paper-hint">{hint}</Text> : null}
         </View>
-        <View className="u-bar">
-          <View className="u-bar-fill" style={{ width: `${progress}%` }} />
-        </View>
+        <Text className="paper-stem">{props.question.stem}</Text>
+        <OptionList
+          mode={props.session.mode}
+          question={props.question}
+          onChoose={revealed ? undefined : props.onChoose}
+        />
+        {props.session.mode === 'exam' && !revealed ? (
+          <View className="paper-exam">
+            <Text className="paper-exam-text">考试模式：交卷后统一查看解析</Text>
+          </View>
+        ) : null}
+        {revealed ? <AnalysisBlock text={props.question.review?.analysis ?? ''} /> : null}
       </View>
-      <Text className="u-tag u-tag-lg u-tag-blue">{QUIZ_TYPE_LABELS[props.question.type]}</Text>
-      <Text className="u-stem">{props.question.stem}</Text>
+    </View>
+  );
+}
+
+function ProgressCard(props: {
+  session: QuizSessionView;
+  index: number;
+  total: number;
+  leftSeconds: number | null;
+}) {
+  const timer = props.session.settings.timer;
+  const progress = props.total > 0 ? ((props.index + 1) / props.total) * 100 : 0;
+  const count = `第 ${props.index + 1} / ${props.total} 题`;
+  return (
+    <View className={timer.enabled ? 'paper-progress' : 'paper-progress paper-progress-free'}>
+      {timer.enabled ? (
+        <View className="paper-time-row">
+          <View className="paper-time-left">
+            <Text className="paper-time-label">
+              {timer.kind === 'paper' ? '整卷倒计时' : '每题限时'}
+            </Text>
+            <Text className="paper-time-value">
+              {props.leftSeconds === null ? '不限时' : formatClock(props.leftSeconds)}
+            </Text>
+          </View>
+          <Text className="paper-time-count">{count}</Text>
+        </View>
+      ) : (
+        <View className="paper-free-row">
+          <Text className="paper-time-label">不计时</Text>
+          <Text className="paper-free-count">{count}</Text>
+        </View>
+      )}
+      <View className="paper-bar">
+        <View className="paper-bar-fill" style={{ width: `${progress}%` }} />
+      </View>
+      {timer.enabled ? (
+        <Text className="paper-limit">
+          {timer.kind === 'paper'
+            ? `限时 ${formatClock(timer.paperMinutes * 60)}`
+            : `限时 ${formatClock(timer.perQuestionSeconds)}`}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function OptionList(props: {
+  mode: QuizMode;
+  question: QuizQuestionView;
+  onChoose?: (optionId: string) => void;
+}) {
+  const answer = props.question.review ? props.question.review.answer : null;
+  return (
+    <View className="paper-options">
       {props.question.options.map((option) => {
-        const selected = props.question.selected.includes(option.id);
+        const face = optionFace({
+          mode: props.mode,
+          type: props.question.type,
+          selected: props.question.selected,
+          answer,
+          optionId: option.id,
+        });
         return (
           <View
             key={option.id}
-            className={selected ? 'u-option u-option-on' : 'u-option'}
-            onClick={() => props.onChoose(option.id)}
+            className={`paper-option paper-option-${face.tone}`}
+            onClick={props.onChoose ? () => props.onChoose?.(option.id) : undefined}
           >
-            <Text className={selected ? 'u-letter u-letter-on' : 'u-letter'}>{option.id}</Text>
-            <Text className="u-option-text">{option.text}</Text>
+            {face.control === 'check' ? (
+              face.tone === 'picked' ? (
+                <Image className="paper-check" src={iconCheck} mode="aspectFit" />
+              ) : (
+                <View className="paper-check paper-check-off" />
+              )
+            ) : (
+              <Text className={`paper-letter paper-letter-${face.tone}`}>{option.id}</Text>
+            )}
+            <Text className="paper-option-text">{option.text}</Text>
+            {face.tag ? (
+              <Text className={`paper-tag paper-tag-${face.tag}`}>{PAPER_TAG_LABEL[face.tag]}</Text>
+            ) : null}
           </View>
         );
       })}
     </View>
+  );
+}
+
+function AnalysisBlock(props: { text: string; follow?: boolean }) {
+  return (
+    <View className={props.follow ? 'paper-analysis paper-analysis-follow' : 'paper-analysis'}>
+      <View className="paper-analysis-bar" />
+      <View className="paper-analysis-copy">
+        <Text className="paper-analysis-title">解析</Text>
+        <Text className="paper-analysis-body">{props.text || '这道题没有解析。'}</Text>
+      </View>
+    </View>
+  );
+}
+
+function LegendItem(props: { tone: 'right' | 'wrong' | 'current' | 'blank'; label: string }) {
+  return (
+    <View className="paper-legend-item">
+      <View className={`paper-swatch paper-swatch-${props.tone}`} />
+      <Text className="paper-legend-label">{props.label}</Text>
+    </View>
+  );
+}
+
+function BoardGrid(props: {
+  questions: QuizQuestionView[];
+  index: number;
+  onPick: (index: number) => void;
+}) {
+  const rows = Math.ceil(props.questions.length / 5);
+  const height = rows * 56 + Math.max(0, rows - 1) * 10;
+  const grid = (
+    <View className="paper-grid">
+      {props.questions.map((question, questionIndex) => {
+        const tone: CellTone = cellTone({
+          current: questionIndex === props.index,
+          outcome: question.review?.outcome ?? null,
+          answered: question.selected.length > 0,
+        });
+        return (
+          <View
+            key={question.id}
+            className={`paper-cell paper-cell-${tone}`}
+            onClick={() => props.onPick(questionIndex)}
+          >
+            <Text className={`paper-cell-num paper-cell-num-${tone}`}>{question.ordinal}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+  if (height <= 280) {
+    return grid;
+  }
+  return (
+    <ScrollView scrollY className="paper-grid-scroll" style={{ height: '280px' }}>
+      {grid}
+    </ScrollView>
   );
 }
 
@@ -518,32 +693,13 @@ function ReviewView(props: {
             ) : null}
           </View>
           <Text className="u-stem">{question.stem}</Text>
-          <View className="u-compare">
-            <Text className="u-compare-label u-mine">你的答案</Text>
-            <Text className="u-compare-value u-mine">
-              {answerLine(question, question.selected)}
-            </Text>
-            <Text className="u-compare-label u-right" style={{ marginTop: '8px' }}>
-              正确答案
-            </Text>
-            <Text className="u-compare-value u-right">
-              {answerLine(question, question.review?.answer ?? [])}
-            </Text>
-          </View>
+          <OptionList mode={props.session.mode} question={question} />
           <View className="u-parse-btn" onClick={() => props.onToggle(question.id)}>
             <Text>{props.open[question.id] ? '收起解析' : '查看解析'}</Text>
             <Text>{props.open[question.id] ? '▾' : '›'}</Text>
           </View>
           {props.open[question.id] ? (
-            <View className="u-analysis">
-              <View className="u-analysis-bar" />
-              <View className="u-analysis-copy">
-                <Text className="u-analysis-title">解析</Text>
-                <Text className="u-analysis-body">
-                  {question.review?.analysis || '这道题没有解析。'}
-                </Text>
-              </View>
-            </View>
+            <AnalysisBlock follow text={question.review?.analysis ?? ''} />
           ) : null}
         </View>
       ))}
@@ -553,18 +709,6 @@ function ReviewView(props: {
 
 function wrongQuestions(questions: QuizQuestionView[]): QuizQuestionView[] {
   return questions.filter((question) => question.review && question.review.outcome !== 'correct');
-}
-
-function answerLine(question: QuizQuestionView, ids: string[]): string {
-  if (ids.length === 0) {
-    return '未作答';
-  }
-  return ids
-    .map((id) => {
-      const option = question.options.find((item) => item.id === id);
-      return option ? `${id} · ${option.text}` : id;
-    })
-    .join('  ');
 }
 
 function typeTag(type: QuizQuestionView['type']): string {

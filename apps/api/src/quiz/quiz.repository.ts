@@ -97,6 +97,7 @@ interface QuestionRow {
   score: number | string;
   source: string;
   selected: unknown;
+  kp_ids: string[] | null;
   answer?: unknown;
   analysis?: string | null;
 }
@@ -557,6 +558,7 @@ export class QuizRepository {
             q.options,
             q.score,
             q.source,
+            q.kp_ids,
             q.answer,
             q.analysis,
             COALESCE(a.selected, '[]'::jsonb) AS selected
@@ -574,6 +576,7 @@ export class QuizRepository {
             q.options,
             q.score,
             q.source,
+            q.kp_ids,
             COALESCE(a.selected, '[]'::jsonb) AS selected
           FROM paper_questions q
           LEFT JOIN quiz_answers a ON a.question_id = q.id
@@ -589,7 +592,7 @@ export class QuizRepository {
       }
       const selected = parseStringArray(row.selected);
       const score = Number(row.score);
-      questions.push({
+      const question: QuizQuestionView = {
         id: row.id,
         ordinal: Number(row.ordinal),
         type: row.type_code,
@@ -599,7 +602,17 @@ export class QuizRepository {
         source: row.source,
         selected,
         review: reveal ? reviewOf(row.type_code, row.answer, row.analysis, selected, score) : null,
-      });
+      };
+      if (reveal) {
+        const kpIds = (row.kp_ids ?? []).map((id) => id.toLowerCase()).filter(isUuid);
+        if (kpIds.length > 0) {
+          question.kpIds = kpIds;
+        }
+      }
+      questions.push(question);
+    }
+    if (reveal) {
+      await attachKnowledgeNames(db, questions);
     }
     return questions;
   }
@@ -1083,6 +1096,28 @@ function keyFromSnapshot(value: unknown): string | null {
     options: parseOptions(body.options),
     answer: parseStringArray(body.answer),
   });
+}
+
+async function attachKnowledgeNames(db: Queryable, questions: QuizQuestionView[]): Promise<void> {
+  const ids = [...new Set(questions.flatMap((question) => question.kpIds ?? []))];
+  if (ids.length === 0) {
+    return;
+  }
+  const named = await db.query<{ id: string; name: string }>(
+    `
+      SELECT id::text AS id, name
+      FROM knowledge_points
+      WHERE id = ANY($1::uuid[])
+    `,
+    [ids],
+  );
+  const nameById = new Map(named.rows.map((row) => [row.id.toLowerCase(), row.name]));
+  for (const question of questions) {
+    if (!question.kpIds) {
+      continue;
+    }
+    question.kpNames = question.kpIds.map((id) => nameById.get(id) ?? '');
+  }
 }
 
 function reviewOf(
