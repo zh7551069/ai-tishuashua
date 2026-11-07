@@ -9,10 +9,13 @@ C11 只增强既有 `pages/me/index`。会员是否生效、到期日、今日�
 - 开通、续费、升级：`navigateTo` `pages/commerce/member/index`（TB-25）。
 - 加油包：三帧没有单独入口行。购买仍走 TB-26 `pages/commerce/session-pack/index`（半屏和会员页已能到达）。
 - 场次明细：入口进 `pages/commerce/session-ledger/index`。本页（「我」）不拉账本。没有账本粗算时，非会员只显示库存；会员显示「会员不限场 · 明细可查」。
-- 每日分享、邀请有礼：入口进 `pages/commerce/tasks/index`。发奖归 C13。签到仍写本地，不调用 grant。
-- 本页禁止 `wx.requestPayment`、`POST /api/orders`、mock-notify 和 `upgrade-quote`。
+- 每日分享、邀请有礼：入口进 `pages/commerce/daily-share/index`（对稿 `122:8`）与 `pages/commerce/invite/index`（对稿 `122:10`）。`pages/commerce/tasks/index` 是两行聚合，不再是空占位。奖额、邀请码和封顶只读 `GET /api/me/growth`。
+- 签到 CTA 调 `POST /api/me/growth/checkin`，成功后再读权益。连胜条仍用本机记录。奖额读 `growthConfig`，不在页面写死。
+- 本页禁止 `wx.requestPayment`、`POST /api/orders`、mock-notify 和 `upgrade-quote`。分享和邀请页同样禁止支付。
 
 对稿帧 `122:5` / `122:11` / `122:7`。UI 评审见 [TB-27 三行](delivery/tb27-ui-tech-review-20261107.md)。契约：[TB-27 C](contracts/tb27-miniapp-me-member-states-C-contracts-v0.1.0-C.md)。
+
+增长发奖的路由、幂等键和 pending 见 [增长](growth.md)。契约：[TB-29 C](contracts/tb29-daily-share-invite-C-contracts-v0.1.0-C.md)。
 
 ## 场次明细（C12）
 

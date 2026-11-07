@@ -31,6 +31,8 @@ export const ME_MEMBER_ROUTE = '/pages/commerce/member/index';
 export const ME_SESSION_PACK_ROUTE = '/pages/commerce/session-pack/index';
 export const ME_SESSION_LEDGER_ROUTE = '/pages/commerce/session-ledger/index';
 export const ME_TASKS_ROUTE = '/pages/commerce/tasks/index';
+export const ME_DAILY_SHARE_ROUTE = '/pages/commerce/daily-share/index';
+export const ME_INVITE_ROUTE = '/pages/commerce/invite/index';
 
 const MEMBER_TIER_BY_CODE: Readonly<Record<string, string>> = {
   member_week: '周卡',
