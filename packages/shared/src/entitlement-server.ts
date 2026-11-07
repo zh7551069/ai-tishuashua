@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
   BUSINESS_TZ,
-  DEFAULT_DAILY_FREE_SESSIONS,
   type EntitlementBalances,
   type EntitlementBucket,
   type EntitlementDb,
@@ -16,11 +15,11 @@ import {
   type GrantCommand,
   type GrantResult,
   businessDate,
-  parseDailyFreeQuota,
   refineAccess,
   reserveIdempotencyKey,
   sessionConsumesEntitlement,
 } from './entitlement-types';
+import { readDailyFreeSessions, readRefineLifetimeLimitFree } from './commerce-settings';
 
 export {
   BUSINESS_TZ,
@@ -66,7 +65,6 @@ export type {
  */
 
 const USER_LOCK_KEY = 861022;
-const DAILY_FREE_SETTING_KEY = 'dailyFreeSessions';
 
 interface AccountRow {
   userId: string;
@@ -215,9 +213,11 @@ export async function readEntitlement(
   const account = await ensureEntitlementDay(db, userId, now);
   const membership = await readMembership(db, userId, now);
   const inventoryRemain = await sumInventory(db, userId);
+  const lifetimeLimitFree = await readRefineLifetimeLimitFree(db, null);
   const refine = refineAccess({
     membershipActive: membership.active,
     lifetimeUsed: account.refineLifetimeUsed,
+    lifetimeLimitFree,
   });
   return {
     businessDate: account.businessDate,
@@ -638,12 +638,12 @@ async function spendOne(
   return { bucket: 'inventory', lotId };
 }
 
+/**
+ * 直读 dailyFreeSessions。不走短缓存。
+ * 改配只影响下一次 daily_grant；当日 remain 由调用方在同一业务日直接返回。
+ */
 async function dailyFreeQuota(db: EntitlementDb): Promise<number> {
-  const result = await db.query(`SELECT value FROM system_settings WHERE key = $1`, [
-    DAILY_FREE_SETTING_KEY,
-  ]);
-  const value = (result.rows[0] as { value?: unknown } | undefined)?.value;
-  return parseDailyFreeQuota(value) ?? DEFAULT_DAILY_FREE_SESSIONS;
+  return readDailyFreeSessions(db, null);
 }
 
 async function lockAccount(db: EntitlementDb, userId: string): Promise<AccountRow | null> {

@@ -278,7 +278,7 @@ AI 原创和题型变异在结构校验通过后写入独立表 `question_bank`�
 
 预扣成功后余额立刻减少，流水记 `reserve_hold`。成卷变成 `ready` 时再记 `deduct`（delta 为 0，避免和预扣双计；会员场的桶是 `membership`）。取消，或生成失败，把预扣退回，流水记 `release_restore`。同一天退回按原数加回余额。若业务日已经切走，日免和任务奖不再加进新的一天，这条 `release_restore` 的 delta 记 0，避免把昨天的预扣补成今天的额外场次。进入答题和交卷不再扣场。
 
-业务日是 Asia/Shanghai 的日历日。第一次读余额或出题时，如果还没有账户，或业务日已经过了，会清掉没用完的日免和任务奖，再发当日日免。默认每天 2 场。若 `system_settings` 里有正整数键 `dailyFreeSessions`，用那个值。本刀不写后管配置页。
+业务日是 Asia/Shanghai 的日历日。第一次读余额或出题时，如果还没有账户，或业务日已经过了，会清掉没用完的日免和任务奖，再发当日日免。默认每天 2 场。`system_settings.dailyFreeSessions` 的值是 `{ "sessions": 正整数 }`；没有合法值时仍用 2。TB-20 的裸正整数也还能读。后管改这个数不改用户当天已经发出的余额，下一次跨日发放才用新值。配置页见 [商业化配置](admin-commerce-config.md)。
 
 余额是 `GET /api/me/entitlement`。流水是 `GET /api/me/entitlement/ledger`，`limit` 默认 20、最大 50，可用 `cursor` 翻页。支付、微信下单和支付回调不在这一刀。Worker 注册了 `entitlement.day-reconcile`，目前只上报任务跑过，不改余额。
 

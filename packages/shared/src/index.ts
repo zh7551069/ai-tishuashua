@@ -92,6 +92,45 @@ export {
   writeFreeUserBankFirst,
 } from './system-settings';
 export type { FreeUserBankFirstSetting, SettingsCache, SettingsDb } from './system-settings';
+export {
+  COMMERCE_AI_REVIEW_SUMMARY,
+  COMMERCE_AUDIT_ACTIONS,
+  COMMERCE_CLEARING_RULE_TEXT,
+  COMMERCE_DEDUCT_ORDER_TEXT,
+  COMMERCE_SETTING_CACHE_TTL_SECONDS,
+  COMMERCE_SKUS_CACHE_KEY,
+  DAILY_FREE_SESSIONS_CACHE_KEY,
+  DAILY_FREE_SESSIONS_KEY,
+  DEFAULT_REFINE_LIFETIME_LIMIT_FREE,
+  GROWTH_CONFIG_CACHE_KEY,
+  GROWTH_CONFIG_KEY,
+  MEMBER_DAILY_CAP_LOCKED,
+  REFINE_LIFETIME_LIMIT_FREE_CACHE_KEY,
+  REFINE_LIFETIME_LIMIT_FREE_KEY,
+  SKU_CODE_PATTERN,
+  SKU_TYPE_LABELS,
+  SKU_TYPES,
+  commerceQuotaFixed,
+  defaultGrowthConfig,
+  formatPriceYuan,
+  parseGrowthConfig,
+  parseQuotaWrite,
+  parseRefineLifetimeLimit,
+  parseSkuCreate,
+  parseSkuListQuery,
+  parseSkuUpdate,
+  priceFenFromYuanInput,
+  priceYuanFromFen,
+} from './commerce-config';
+export type {
+  CommerceQuotaView,
+  CommerceSku,
+  GrowthConfig,
+  GrowthConfigView,
+  SkuDraft,
+  SkuPatch,
+  SkuType,
+} from './commerce-config';
 export { readProcessLlmEnv, resolveLlmMode } from './llm-env';
 export type { LlmMode, LlmRuntimeEnv } from './llm-env';
 export { examDeadlineAt, gradeSelection, summarizeGrades } from './quiz-grade';
