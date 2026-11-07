@@ -260,13 +260,27 @@ Prompt 沿用证书 > 领域 > 全局 > 代码内置。变异读 `prompt_templat
 
 AI 原创和题型变异在结构校验通过后写入独立表 `question_bank`。每行带领域、证书、教材（独立知识点为空）、知识点、难度、入库来源（`ai` 或 `ai_variant`）和题干指纹 `content_key`。指纹算法和错题键相同，里面有 NUL，所以这一列是 `bytea`，存的是同一串 UTF-8。同一证书下指纹相同只保留第一行，后来的卷引用已有 id。取消或失败会删掉本场 `paper_questions`，不删题库。历史试卷和错题不回填。
 
-`normal` 和 `retrain_similar` 的组卷顺序是：未消灭错题（比例不变）→ 题库 → AI 补齐。题库分支只在后管开关 `freeUserBankFirst` 打开且 `isFreeUser` 为真时走。开关默认关。现网没有会员字段，`isFreeUser` 恒为真，代码里留了替身，会员上线后改为「有效会员返回 false」。会员不受开关影响，仍然 AI 出题并入库。`variant` 不抽题库，成功的变异题照样入库，来源是 `ai_variant`。
+`normal` 和 `retrain_similar` 的组卷顺序是：未消灭错题（比例不变）→ 题库 → AI 补齐。题库分支只在后管开关 `freeUserBankFirst` 打开且 `isFreeUser` 为真时走。开关默认关。`isFreeUser` 读 `memberships`：`ends_at` 晚于现在就是会员，返回 false，不抽题库。没有会员行或已经过期就是免费用户。抽题顺序、避复窗口、`freeUserBankFirst` 默认值和题库表都不因场次账本改动。会员不受这个开关影响，仍然 AI 出题并入库。`variant` 不抽题库，成功的变异题照样入库，来源是 `ai_variant`。
 
 抽题只取本证书、`online`、题型落在本场设置、知识点与本场有交集的行。难度只是软匹配，不够就忽略难度。近 30 天已交卷和最近 3 场已交卷里出现过的题干指纹不再抽。知识点不够不放宽到整张证书，剩下的交给 AI。不做题型或难度的强制配比。
 
 `paper_questions.source` 增加 `bank`。从题库抽入的题 `bank_question_id` 必填。AI 题建议带刚入库的 id。错题表增加可空 `bank_question_id`，消灭和带入仍按题干指纹，不改成只认题库 id。
 
 开关的读写见 [后管系统设置](admin-system-settings.md)。后管只读列表见 [后管题库](admin-question-bank.md)，只读 `question_bank`，不改抽题，也没有编辑、删除或审核。小程序创建会话的请求体不变，也不下发这个开关。
+
+## 出题门禁
+
+正式规则见 [TB-20 权益账本与出题门禁](contracts/tb20-entitlement-C-contracts-v0.1.0-C.md)（v0.1.0-C）。这里只记已接通的行为。
+
+`POST /api/quiz/sessions` 在校验通过后、写入会话的同一事务里预扣 1 场。`normal`、`retrain_similar`、`variant` 都走这道门，1 题的变异也算 1 场。`wrongSet` 不预扣；创建请求仍返回 `400` / `VALIDATION_ERROR`，文案含「暂未开放」。
+
+非会员按日免、当日任务奖、库存加油包的顺序扣。库存按 `expires_at` 从近到远，没有过期时间的排在最后。三桶都不够时不写会话，返回 `402` / `ENTITLEMENT_EXHAUSTED`，响应里带 `details`（原因、业务日、三个余额和开通会员、购买加油包、做任务三个入口）。会员在 `ends_at` 之前不扣这三桶，预扣行仍会留下。
+
+预扣成功后余额立刻减少，流水记 `reserve_hold`。成卷变成 `ready` 时再记 `deduct`（delta 为 0，避免和预扣双计；会员场的桶是 `membership`）。取消，或生成失败，把预扣退回，流水记 `release_restore`。进入答题和交卷不再扣场。
+
+业务日是 Asia/Shanghai 的日历日。第一次读余额或出题时，如果还没有账户，或业务日已经过了，会清掉没用完的日免和任务奖，再发当日日免。默认每天 2 场。若 `system_settings` 里有正整数键 `dailyFreeSessions`，用那个值。本刀不写后管配置页。
+
+余额是 `GET /api/me/entitlement`。流水是 `GET /api/me/entitlement/ledger`，`limit` 默认 20、最大 50，可用 `cursor` 翻页。支付、微信下单和支付回调不在这一刀。Worker 注册了 `entitlement.day-reconcile`，目前只上报任务跑过，不改余额。
 
 ## 还没做
 

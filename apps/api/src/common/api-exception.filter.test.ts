@@ -61,4 +61,19 @@ describe('ApiExceptionFilter', () => {
     assert.equal(internal.body?.message, 'Internal server error');
     assert.equal(JSON.stringify(internal.body).includes('secret-detail'), false);
   });
+
+  test('场次用尽保留 402 和 details', () => {
+    const details = { reason: 'exhausted', membershipActive: false };
+    const result = capture(
+      new ApiException(
+        HttpStatus.PAYMENT_REQUIRED,
+        ApiErrorCode.ENTITLEMENT_EXHAUSTED,
+        '今日免费场次已用完',
+        details,
+      ),
+    );
+    assert.equal(result.status, 402);
+    assert.equal(result.body?.code, ApiErrorCode.ENTITLEMENT_EXHAUSTED);
+    assert.deepEqual(result.body?.details, details);
+  });
 });

@@ -485,7 +485,7 @@ describe('quiz generation rules', () => {
     assert.match(source, /禁止回退整包/);
   });
 
-  test('题干指纹与错题键同构，会员闸门现网恒为免费', () => {
+  test('题干指纹与错题键同构，isFreeUser 读会员结束时间', async () => {
     const options = [
       { id: 'B', text: '乙' },
       { id: 'A', text: '甲' },
@@ -504,7 +504,20 @@ describe('quiz generation rules', () => {
     });
     assert.equal(forward, reversed);
     assert.equal(forward, `multi\u0002题干\u0002B\u0000乙\u0001A\u0000甲\u0002A\u0001B`);
-    assert.equal(isFreeUser({ id: '00000000-0000-4000-8000-000000000001' }), true);
+    const user = { id: '00000000-0000-4000-8000-000000000001' };
+    assert.equal(await isFreeUser(user, { query: async () => ({ rows: [] }) }), true);
+    assert.equal(
+      await isFreeUser(user, {
+        query: async () => ({ rows: [{ ends_at: new Date(Date.now() - 60_000).toISOString() }] }),
+      }),
+      true,
+    );
+    assert.equal(
+      await isFreeUser(user, {
+        query: async () => ({ rows: [{ ends_at: new Date(Date.now() + 60_000).toISOString() }] }),
+      }),
+      false,
+    );
 
     const migration = readFileSync(
       join(__dirname, '../../migrations/008_question_bank_and_settings.sql'),

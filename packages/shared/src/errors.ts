@@ -37,6 +37,10 @@ export const ApiErrorCode = {
   COURSEWARE_UNREADABLE: 'COURSEWARE_UNREADABLE',
   /** 提炼失败，且不是模型配置或输出错误。 */
   EXTRACT_FAILED: 'EXTRACT_FAILED',
+  /** 非会员且日免、任务奖、库存都不足以预扣 1 场。HTTP 402。 */
+  ENTITLEMENT_EXHAUSTED: 'ENTITLEMENT_EXHAUSTED',
+  /** 同一幂等键冲突且无法安全合并。HTTP 409。 */
+  ENTITLEMENT_CONFLICT: 'ENTITLEMENT_CONFLICT',
 } as const;
 
 export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
@@ -44,4 +48,6 @@ export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
 export interface ApiErrorBody {
   code: ApiErrorCode;
   message: string;
+  /** 用尽场次时附带半屏最小载荷。旧客户端可以忽略。 */
+  details?: unknown;
 }

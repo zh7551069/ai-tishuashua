@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { CertificateModule } from './certificate/certificate.module';
 import { CoursewareModule } from './courseware/courseware.module';
+import { EntitlementModule } from './entitlement/entitlement.module';
 import { DatabaseModule } from './db/database.module';
 import { HealthModule } from './health/health.module';
 import { PackModule } from './pack/pack.module';
@@ -29,6 +30,7 @@ import { WrongBookModule } from './wrong-book/wrong-book.module';
     UserModule,
     CatalogModule,
     PackModule,
+    EntitlementModule,
     QuizModule,
     WrongBookModule,
     CertificateModule,

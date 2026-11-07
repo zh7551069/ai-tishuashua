@@ -1835,7 +1835,35 @@ async function login(code: string): Promise<WechatLoginResponse> {
   assert.equal(response.status, 200);
   const body = response.body as unknown as WechatLoginResponse;
   ctx.tokens.push(body.token);
+  await seedQuizTestInventory(body.user.id);
   return body;
+}
+
+/**
+ * 现有出题用例会连续创建很多场。给测试用户灌一笔库存，
+ * 避免日免 2 场把旧用例打成 402。不写成会员，题库优先仍按免费用户走。
+ */
+async function seedQuizTestInventory(userId: string): Promise<void> {
+  const lotId = randomUUID();
+  await requiredPool().query(
+    `
+      INSERT INTO entitlement_lots (id, user_id, bucket, qty, remain, source)
+      VALUES ($1, $2, 'inventory', 1000, 1000, 'seed')
+    `,
+    [lotId, userId],
+  );
+  await requiredPool().query(
+    `
+      INSERT INTO entitlement_ledger (
+        id, user_id, delta, bucket, reason, ref_type, ref_id, biz_date, lot_id
+      )
+      VALUES (
+        $1, $2, 1000, 'inventory', 'inventory_grant', 'grant', $3,
+        (timezone('Asia/Shanghai', now()))::date, $4
+      )
+    `,
+    [randomUUID(), userId, `quiz-http-seed:${userId}`, lotId],
+  );
 }
 
 async function createPack(

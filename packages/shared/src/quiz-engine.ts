@@ -1,4 +1,5 @@
 import { WRONG_QUESTION_RATIO_MAX } from './constants';
+import { isMemberActive, type EntitlementDb } from './entitlement';
 import { PACK_KNOWLEDGE_POINT_MAX } from './pack';
 import {
   DEFAULT_PAPER_MINUTES,
@@ -120,11 +121,11 @@ export function takeWrongCarry(
 }
 
 /**
- * 现网没有会员字段。商业化落地后改为「会员有效则 false」。
- * 组卷只在本函数为 true 且 freeUserBankFirst 打开时抽题库。
+ * 免费用户才抽题库。会员生效（memberships.ends_at 晚于现在）返回 false。
+ * 只读会员态，不扣场，也不改抽题顺序。组卷仍要同时打开 freeUserBankFirst。
  */
-export function isFreeUser(_user: { id: string }): boolean {
-  return true;
+export async function isFreeUser(user: { id: string }, db: EntitlementDb): Promise<boolean> {
+  return !(await isMemberActive(db, user.id));
 }
 
 /**
@@ -170,9 +171,7 @@ export function selectBankQuestions(input: {
   const bySalt = (left: BankCandidate, right: BankCandidate) =>
     sessionSalt(input.sessionId, left.id) - sessionSalt(input.sessionId, right.id) ||
     left.id.localeCompare(right.id);
-  const preferred = eligible
-    .filter((row) => row.difficulty === input.difficulty)
-    .sort(bySalt);
+  const preferred = eligible.filter((row) => row.difficulty === input.difficulty).sort(bySalt);
   const rest = eligible.filter((row) => row.difficulty !== input.difficulty).sort(bySalt);
   const picked: BankCandidate[] = [];
   const pickedKeys = new Set<string>();
