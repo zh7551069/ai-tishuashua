@@ -55,11 +55,7 @@ export {
   SettingsCacheError,
   writeFreeUserBankFirst,
 } from './system-settings';
-export type {
-  FreeUserBankFirstSetting,
-  SettingsCache,
-  SettingsDb,
-} from './system-settings';
+export type { FreeUserBankFirstSetting, SettingsCache, SettingsDb } from './system-settings';
 export { readProcessLlmEnv, resolveLlmMode } from './llm-env';
 export type { LlmMode, LlmRuntimeEnv } from './llm-env';
 export { examDeadlineAt, gradeSelection, summarizeGrades } from './quiz-grade';
@@ -129,6 +125,19 @@ export type {
   AdminWrongBookList,
   AdminWrongBookSummary,
 } from './admin-wrong-book';
+export {
+  ADMIN_QUESTION_BANK_DEFAULT_RANGE,
+  ADMIN_QUESTION_BANK_RANGES,
+  ADMIN_QUESTION_BANK_SOURCE_LABELS,
+  ADMIN_QUESTION_BANK_SUMMARY_MAX,
+  summarizeQuestionBankStem,
+} from './admin-question-bank';
+export type {
+  AdminQuestionBankDetail,
+  AdminQuestionBankList,
+  AdminQuestionBankRange,
+  AdminQuestionBankSummary,
+} from './admin-question-bank';
 export {
   ADMIN_COURSEWARE_STAGE_LABELS,
   ADMIN_COURSEWARE_STATUS_LABELS,

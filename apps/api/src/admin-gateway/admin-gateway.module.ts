@@ -16,6 +16,9 @@ import { AdminUserService } from '../admin-users/admin-users.service';
 import { AdminCoursewareController } from '../admin-courseware/admin-courseware.controller';
 import { AdminCoursewareRepository } from '../admin-courseware/admin-courseware.repository';
 import { AdminCoursewareService } from '../admin-courseware/admin-courseware.service';
+import { AdminQuestionBankController } from '../admin-question-bank/admin-question-bank.controller';
+import { AdminQuestionBankRepository } from '../admin-question-bank/admin-question-bank.repository';
+import { AdminQuestionBankService } from '../admin-question-bank/admin-question-bank.service';
 import { AdminWrongBookController } from '../admin-wrong-book/admin-wrong-book.controller';
 import { AdminWrongBookRepository } from '../admin-wrong-book/admin-wrong-book.repository';
 import { AdminWrongBookService } from '../admin-wrong-book/admin-wrong-book.service';
@@ -28,6 +31,7 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminGatewayController,
     AdminCatalogController,
     AdminWrongBookController,
+    AdminQuestionBankController,
     AdminCoursewareController,
     AdminCertificateController,
     AdminUserController,
@@ -41,6 +45,8 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminCatalogService,
     AdminWrongBookRepository,
     AdminWrongBookService,
+    AdminQuestionBankRepository,
+    AdminQuestionBankService,
     AdminCoursewareRepository,
     AdminCoursewareService,
     AdminCertificateRepository,

@@ -266,7 +266,7 @@ AI 原创和题型变异在结构校验通过后写入独立表 `question_bank`�
 
 `paper_questions.source` 增加 `bank`。从题库抽入的题 `bank_question_id` 必填。AI 题建议带刚入库的 id。错题表增加可空 `bank_question_id`，消灭和带入仍按题干指纹，不改成只认题库 id。
 
-开关的读写见 [后管系统设置](admin-system-settings.md)。小程序创建会话的请求体不变，也不下发这个开关。
+开关的读写见 [后管系统设置](admin-system-settings.md)。后管只读列表见 [后管题库](admin-question-bank.md)，只读 `question_bank`，不改抽题，也没有编辑、删除或审核。小程序创建会话的请求体不变，也不下发这个开关。
 
 ## 还没做
 
