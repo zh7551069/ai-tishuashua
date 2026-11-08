@@ -18,7 +18,7 @@ export function BridgeSteps(props: {
         const dotClass = [
           'bridge-dot',
           on || done ? 'bridge-dot-on' : '',
-          on && props.ring ? 'bridge-dot-ring' : '',
+          on,
         ]
           .filter(Boolean)
           .join(' ');

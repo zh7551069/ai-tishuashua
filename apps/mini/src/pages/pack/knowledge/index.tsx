@@ -30,6 +30,7 @@ import {
 import iconBack from '../../../assets/me-settings/3fbuza.svg';
 import iconSearch from '../assets/icon-search-kp.png';
 import { PackSearch } from '../PackSearch';
+import iconCheck from '../../../pages/pack/assets/icon-check.png';
 
 type ErrorKind = '' | 'network' | 'missing' | 'unavailable';
 
@@ -591,7 +592,7 @@ function Check(props: { state: CheckState }) {
   const dash = props.state === 'indeterminate';
   return (
     <View className="kp-check kp-check-on">
-      <Text className={dash ? 'kp-check-dash' : 'kp-check-mark'}>{dash ? '–' : '✓'}</Text>
+      <Image src={iconCheck} mode="aspectFit" className={dash ? 'kp-check-dash' : 'kp-check-mark'}></Image>
     </View>
   );
 }

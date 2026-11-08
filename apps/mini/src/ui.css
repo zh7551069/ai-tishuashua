@@ -487,7 +487,7 @@
 .u-step-num {
   color: #6b7280;
   font-size: 11px;
-  line-height: 14px;
+  line-height: 8px;
 }
 
 .u-step-num-on {
@@ -1841,7 +1841,7 @@
 }
 
 .u-pad-home {
-  padding: 24px 20px 16px;
+  padding: 24px 20px 120px;
 }
 
 .u-pad-quiz {
@@ -2931,13 +2931,9 @@
   box-shadow: none;
 }
 
-.bridge-dot-ring {
-  box-shadow: inset 0 0 0 1px #e5e7eb;
-}
-
 .bridge-check {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
 }
 
 .bridge-num {
@@ -3386,6 +3382,7 @@
   font-size: 12px;
   font-weight: 700;
   line-height: 12px;
+  height: 14px;
 }
 
 .kp-check-dash {
