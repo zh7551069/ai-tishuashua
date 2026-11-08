@@ -418,7 +418,6 @@ export default function CoursewarePage() {
     <Screen
       back
       centerTitle
-      navClassName="cw-nav"
       title={PAGE_TITLE}
       subtitle={subtitle}
       footer={footer}

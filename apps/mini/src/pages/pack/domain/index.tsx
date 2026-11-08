@@ -134,12 +134,6 @@ export default function DomainPage() {
           <View className="domain-header">
             <View className="domain-title-row">
               <Text className="domain-hello">你好，备考人</Text>
-              <View
-                className="domain-me"
-                onClick={() => void Taro.navigateTo({ url: '/pages/me/index' })}
-              >
-                <Text className="domain-me-text">我</Text>
-              </View>
             </View>
             <Text className="domain-crumb">选领域 → 证书 → 知识点</Text>
           </View>

@@ -1,9 +1,6 @@
 /* 课件上传。尺寸对齐 design/bridge-export/courseware-20261107（390）。
    顶栏返回仍走全站 .u-nav-center：返回钉在左侧，标题居中。状态栏和 Home Indicator 不画。 */
 
-.cw-nav {
-  border-bottom: 1px solid #e5e7eb;
-}
 
 .cw-foot {
   display: flex;
