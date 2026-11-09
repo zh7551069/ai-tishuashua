@@ -27,9 +27,9 @@ import {
   materialKind,
   type MaterialKind,
 } from '../../../ui/knowledge-meta';
-import iconBack from '../../../assets/me-settings/3fbuza.svg';
 import iconSearch from '../assets/icon-search-kp.png';
 import { PackSearch } from '../PackSearch';
+import { PackTopBar } from '../PackTopBar';
 import iconCheck from '../../../pages/pack/assets/icon-check.png';
 
 type ErrorKind = '' | 'network' | 'missing' | 'unavailable';
@@ -262,16 +262,8 @@ export default function KnowledgePage() {
     >
       <View className="kp-sheet">
         <View className="kp-head" style={headStyle}>
-          <View className="kp-nav u-pin-nav">
-            <View className="u-pin-back" onClick={goBack}>
-              <Image className="u-back-ico" src={iconBack} mode="aspectFit" />
-            </View>
-            <View className="kp-nav-copy u-pin-copy">
-              <Text className="kp-title">选择知识点</Text>
-              {subtitle ? <Text className="kp-sub">{subtitle}</Text> : null}
-            </View>
-          </View>
-          <BridgeSteps current={3} numWeight="regular" ring />
+          <PackTopBar title="选择知识点" subtitle={subtitle} onBack={goBack} />
+          <BridgeSteps current={3} numWeight="regular" />
           <View className="kp-search-wrap">
             <PackSearch
               placeholder="搜索教材或知识点"

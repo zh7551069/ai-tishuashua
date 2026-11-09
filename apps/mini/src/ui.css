@@ -2773,26 +2773,56 @@
   background: #ffffff;
 }
 
-.cert-nav.u-pin-nav {
-  padding-top: 8px;
-  padding-bottom: 8px;
+/* 选证书 2:68 / 选知识点 119·120 共用。白父内与进度条、搜索平级。
+   标题列 baseline，不回到 center。字号对齐 Bridge：主 17/700，副 12/400/#2563eb，间距 2。 */
+.pack-nav {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 52px;
+  padding: 0 16px 0 12px;
+  background: #ffffff;
 }
 
-.cert-nav-copy,
-.kp-nav-copy {
+.pack-nav-back {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pack-nav-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: baseline;
   gap: 2px;
+  overflow: hidden;
 }
 
-.cert-title,
-.kp-title {
+.pack-nav-title,
+.pack-nav-sub {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.pack-nav-title {
   color: #111827;
   font-size: 17px;
   font-weight: 700;
   line-height: 22px;
 }
 
-.cert-sub,
-.kp-sub {
+.pack-nav-sub {
   color: #2563eb;
   font-size: 12px;
   font-weight: 400;
@@ -2833,25 +2863,15 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 10px 12px;
+  height: 42px;
+  padding: 0 12px;
   border-radius: 12px;
   background: #f3f4f6;
   box-shadow: inset 0 0 0 1px #e5e7eb;
   box-sizing: border-box;
 }
 
-.pack-search-focus {
-  height: 42px;
-  min-height: 42px;
-  padding: 0 13px;
-  box-shadow: none;
-}
-
 .pack-search-bare {
-  height: 42px;
-  min-height: 42px;
-  padding: 0 12px;
   box-shadow: none;
 }
 
@@ -3018,12 +3038,6 @@
 .kp-head {
   background: #ffffff;
   box-shadow: inset 0 0 0 1px #e5e7eb;
-}
-
-.kp-nav.u-pin-nav {
-  min-height: 52px;
-  padding-top: 4px;
-  padding-bottom: 4px;
 }
 
 .kp-body {

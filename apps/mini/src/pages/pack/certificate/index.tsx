@@ -9,10 +9,10 @@ import { fetchCertificates, fetchDomains, fetchKnowledgeTree } from '../../../se
 import { withAuth } from '../../../services/guard';
 import { queryValue } from '../../../services/query';
 import { countKnowledgePoints } from '../../../ui/knowledge-meta';
-import iconBack from '../../../assets/me-settings/3fbuza.svg';
 import iconChevron from '../assets/icon-chevron.png';
 import iconSearch from '../assets/icon-search.png';
 import { PackSearch } from '../PackSearch';
+import { PackTopBar } from '../PackTopBar';
 
 function readInset(): number {
   try {
@@ -109,15 +109,11 @@ export default function CertificatePage() {
               <Text className="cert-empty-sub">选领域 → 证书 → 知识点</Text>
             </View>
           ) : (
-            <View className="cert-nav u-pin-nav">
-              <View className="u-pin-back" onClick={goBack}>
-                <Image className="u-back-ico" src={iconBack} mode="aspectFit" />
-              </View>
-              <View className="cert-nav-copy u-pin-copy">
-                <Text className="cert-title">选择证书</Text>
-                {domainName ? <Text className="cert-sub">领域 · {domainName}</Text> : null}
-              </View>
-            </View>
+            <PackTopBar
+              title="选择证书"
+              subtitle={domainName ? `领域 · ${domainName}` : undefined}
+              onBack={goBack}
+            />
           )}
           {emptyShell || error ? null : <BridgeSteps current={2} numWeight="bold" />}
           {error ? null : (
