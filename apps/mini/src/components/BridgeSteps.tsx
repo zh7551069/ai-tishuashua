@@ -3,25 +3,15 @@ import iconCheck from '../pages/pack/assets/icon-check.png';
 
 const STEPS = ['领域', '证书', '知识点'];
 
-/** 证书 / 知识点步骤条。勾选用 Bridge 导出的对勾，领域页仍走 Steps。 */
-export function BridgeSteps(props: {
-  current: 1 | 2 | 3;
-  numWeight: 'bold' | 'regular';
-  ring?: boolean;
-}) {
+/** 证书 / 知识点步骤条。完成勾用 main 上的 icon-check.png，不画外圈。领域页仍走 Steps。 */
+export function BridgeSteps(props: { current: 1 | 2 | 3; numWeight: 'bold' | 'regular' }) {
   return (
     <View className="bridge-steps">
       {STEPS.map((label, index) => {
         const order = index + 1;
         const on = order === props.current;
         const done = order < props.current;
-        const dotClass = [
-          'bridge-dot',
-          on || done ? 'bridge-dot-on' : '',
-          on,
-        ]
-          .filter(Boolean)
-          .join(' ');
+        const dotClass = ['bridge-dot', on || done ? 'bridge-dot-on' : ''].filter(Boolean).join(' ');
         const numClass = on
           ? `bridge-num bridge-num-on${props.numWeight === 'bold' ? ' bridge-num-bold' : ''}`
           : 'bridge-num';
