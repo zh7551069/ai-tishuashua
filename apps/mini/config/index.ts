@@ -26,7 +26,14 @@ export default defineConfig<'webpack5'>(async (merge) => {
       options: {},
     },
     framework: 'react',
-    compiler: 'webpack5',
+    compiler: {
+      type: 'webpack5',
+      // 开发态预编译用 esbuild 把 CJS 收成 ESM，只留 default。
+      // shared 的命名导出（parsePublicSkuList 等）会变成 undefined。
+      prebundle: {
+        exclude: ['@tishuashua/shared'],
+      },
+    },
     cache: {
       enable: false,
     },
