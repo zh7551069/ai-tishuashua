@@ -1,5 +1,30 @@
 import { parsePublicSkuList as parsePublicSkuListFromPayment } from './payment';
 import type { CommerceSkuPublic } from './payment';
+import {
+  DAILY_PLAN_CTA_LABEL as dailyPlanCtaLabel,
+  DAILY_PLAN_EMPTY_HINT as dailyPlanEmptyHint,
+  DAILY_PLAN_ENCOURAGEMENT as dailyPlanEncouragement,
+  DAILY_PLAN_GREETING as dailyPlanGreeting,
+  DAILY_PLAN_MULTI_PACE as dailyPlanMultiPace,
+  DAILY_PLAN_WEEK_STARTS_ON as dailyPlanWeekStartsOn,
+  DAILY_PLAN_WEEKDAY_LABELS as dailyPlanWeekdayLabels,
+  dailyPlanDayNumber as dailyPlanDayNumberFromPlan,
+  dailyPlanFootnote as dailyPlanFootnoteFromPlan,
+  dailyPlanLayout as dailyPlanLayoutFromPlan,
+  dailyPlanPercent as dailyPlanPercentFromPlan,
+  dailyPlanQuizPath as dailyPlanQuizPathFromPlan,
+  dailyPlanRing as dailyPlanRingFromPlan,
+  dailyPlanWeek as dailyPlanWeekFromPlan,
+  formatDailyPlanDate as formatDailyPlanDateFromPlan,
+  resolveDailyPlanCta as resolveDailyPlanCtaFromPlan,
+} from './daily-plan';
+import type {
+  DailyPlanActivePack,
+  DailyPlanCta,
+  DailyPlanLayout,
+  DailyPlanRing,
+  DailyPlanView,
+} from './daily-plan';
 
 export {
   COURSEWARE_MAX_BYTES,
@@ -419,24 +444,63 @@ export type {
   UpdatePackRequest,
 } from './pack';
 export { PACK_KNOWLEDGE_POINT_MAX, PACK_NAME_MAX_LENGTH } from './pack';
-export {
-  DAILY_PLAN_CTA_LABEL,
-  DAILY_PLAN_EMPTY_HINT,
-  DAILY_PLAN_ENCOURAGEMENT,
-  DAILY_PLAN_GREETING,
-  DAILY_PLAN_MULTI_PACE,
-  DAILY_PLAN_WEEK_STARTS_ON,
-  DAILY_PLAN_WEEKDAY_LABELS,
-  dailyPlanDayNumber,
-  dailyPlanFootnote,
-  dailyPlanLayout,
-  dailyPlanPercent,
-  dailyPlanQuizPath,
-  dailyPlanRing,
-  dailyPlanWeek,
-  formatDailyPlanDate,
-  resolveDailyPlanCta,
-} from './daily-plan';
+
+/**
+ * 小程序经 barrel 调用。不要改回 `export { ... } from './daily-plan'`。
+ * 那种再导出会被 tsc 编成 `exports.dailyPlanLayout = void 0` 再加 getter。
+ * 开发者工具里的命名导入会拿到非函数，首页就报 dailyPlanLayout is not a function。
+ * 常量和函数一样改成本地绑定，避免下一个导出又是 undefined。
+ */
+export const DAILY_PLAN_CTA_LABEL = dailyPlanCtaLabel;
+export const DAILY_PLAN_EMPTY_HINT = dailyPlanEmptyHint;
+export const DAILY_PLAN_ENCOURAGEMENT = dailyPlanEncouragement;
+export const DAILY_PLAN_GREETING = dailyPlanGreeting;
+export const DAILY_PLAN_MULTI_PACE = dailyPlanMultiPace;
+export const DAILY_PLAN_WEEK_STARTS_ON = dailyPlanWeekStartsOn;
+export const DAILY_PLAN_WEEKDAY_LABELS = dailyPlanWeekdayLabels;
+
+export function dailyPlanDayNumber(isoDate: string): number {
+  return dailyPlanDayNumberFromPlan(isoDate);
+}
+
+export function dailyPlanFootnote(plan: DailyPlanView): string {
+  return dailyPlanFootnoteFromPlan(plan);
+}
+
+export function dailyPlanLayout(plan: {
+  empty: boolean;
+  packs: readonly unknown[];
+}): DailyPlanLayout {
+  return dailyPlanLayoutFromPlan(plan);
+}
+
+export function dailyPlanPercent(completed: number, total: number): number {
+  return dailyPlanPercentFromPlan(completed, total);
+}
+
+export function dailyPlanQuizPath(packId: string, knowledgePointId: string): string {
+  return dailyPlanQuizPathFromPlan(packId, knowledgePointId);
+}
+
+export function dailyPlanRing(plan: DailyPlanView): DailyPlanRing | null {
+  return dailyPlanRingFromPlan(plan);
+}
+
+export function dailyPlanWeek(businessDate: string): Array<{ date: string; weekday: number }> {
+  return dailyPlanWeekFromPlan(businessDate);
+}
+
+export function formatDailyPlanDate(businessDate: string): string {
+  return formatDailyPlanDateFromPlan(businessDate);
+}
+
+export function resolveDailyPlanCta(plan: {
+  empty: boolean;
+  activePack: DailyPlanActivePack | null;
+}): DailyPlanCta {
+  return resolveDailyPlanCtaFromPlan(plan);
+}
+
 export type {
   DailyPlanActivePack,
   DailyPlanCta,

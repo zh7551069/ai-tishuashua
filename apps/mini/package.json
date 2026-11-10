@@ -19,7 +19,7 @@
     "build": "taro build --type weapp",
     "build:weapp": "taro build --type weapp",
     "typecheck": "tsc --noEmit --pretty false",
-    "test": "node --import tsx --test src/services/http-exchange.test.ts src/services/public-sku-entry.test.ts src/services/exhausted-sheet.test.ts src/services/membership-pay.test.ts src/services/session-pack-pay.test.ts src/services/me-entitlement-present.test.ts src/services/session-ledger-present.test.ts src/services/growth-shell.test.ts src/services/growth-present.test.ts src/pages/home/daily-plan.test.ts"
+    "test": "node --import tsx --test src/services/http-exchange.test.ts src/services/public-sku-entry.test.ts src/services/daily-plan-entry.test.ts src/services/exhausted-sheet.test.ts src/services/membership-pay.test.ts src/services/session-pack-pay.test.ts src/services/me-entitlement-present.test.ts src/services/session-ledger-present.test.ts src/services/growth-shell.test.ts src/services/growth-present.test.ts src/pages/home/daily-plan.test.ts"
   },
   "browserslist": [
     "defaults and fully supports es6-module",
