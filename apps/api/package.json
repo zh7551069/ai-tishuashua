@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "node --import tsx --test --test-reporter=spec src/auth/*.test.ts src/user/*.test.ts src/common/*.test.ts src/session/*.test.ts src/config/*.test.ts src/catalog/*.test.ts src/pack/*.test.ts src/quiz/*.test.ts src/courseware/*.test.ts src/certificate/*.test.ts src/admin-gateway/*.test.ts src/admin-catalog/*.test.ts src/admin-wrong-book/*.test.ts src/admin-question-bank/*.test.ts src/admin-courseware/*.test.ts src/admin-certificates/*.test.ts src/admin-users/*.test.ts src/admin-quiz-sessions/*.test.ts src/admin-system-settings/*.test.ts src/admin-commerce/*.test.ts src/admin-entitlement/*.test.ts src/payment/*.test.ts src/rate-limit/*.test.ts src/entitlement/*.test.ts src/growth/*.test.ts src/daily-plan/*.test.ts"
+    "test": "node --import tsx --test --test-reporter=spec src/app.setup.test.ts src/auth/*.test.ts src/user/*.test.ts src/common/*.test.ts src/session/*.test.ts src/config/*.test.ts src/catalog/*.test.ts src/pack/*.test.ts src/quiz/*.test.ts src/courseware/*.test.ts src/certificate/*.test.ts src/admin-gateway/*.test.ts src/admin-catalog/*.test.ts src/admin-wrong-book/*.test.ts src/admin-question-bank/*.test.ts src/admin-courseware/*.test.ts src/admin-certificates/*.test.ts src/admin-users/*.test.ts src/admin-quiz-sessions/*.test.ts src/admin-system-settings/*.test.ts src/admin-commerce/*.test.ts src/admin-entitlement/*.test.ts src/payment/*.test.ts src/rate-limit/*.test.ts src/entitlement/*.test.ts src/growth/*.test.ts src/daily-plan/*.test.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.8",
