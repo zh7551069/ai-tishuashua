@@ -109,12 +109,12 @@ export function celebrates(tone: ResultTone): boolean {
 /** 与 Bridge 环色一致：≥75% 绿，≥50% 橙，其余红。 */
 export function ringColor(rate: number): string {
   if (rate >= 0.75) {
-    return '#16a34a';
+    return '#4D7C0F';
   }
   if (rate >= 0.5) {
-    return '#ea580c';
+    return '#D97706';
   }
-  return '#dc2626';
+  return '#C0563C';
 }
 
 export function knowledgeBars(questions: readonly QuizQuestionView[]): KnowledgeBar[] {
@@ -360,12 +360,12 @@ export function wrongQuestions(questions: readonly QuizQuestionView[]): QuizQues
 
 function barColor(rate: number): string {
   if (rate >= 0.75) {
-    return '#16a34a';
+    return '#4D7C0F';
   }
   if (rate > 0.4) {
-    return '#ea580c';
+    return '#D97706';
   }
-  return '#dc2626';
+  return '#C0563C';
 }
 
 function lowDetail(rate: number, weakCount: number): string {

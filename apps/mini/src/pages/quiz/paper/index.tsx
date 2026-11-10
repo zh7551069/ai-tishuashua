@@ -25,10 +25,9 @@ import {
 } from '../../../services/quiz-api';
 import { bandHeadline, scoreBand } from '../../../ui/score-band';
 import iconBack from '../../../assets/me-settings/3fbuza.svg';
-import iconCheck from './assets/check-on.png';
+import { QuizOption } from '../../../components/QuizOption';
 import './index.css';
 import {
-  PAPER_TAG_LABEL,
   PAPER_TYPE_LABEL,
   cellTone,
   optionFace,
@@ -514,25 +513,13 @@ function OptionList(props: {
           optionId: option.id,
         });
         return (
-          <View
+          <QuizOption
             key={option.id}
-            className={`paper-option paper-option-${face.tone}`}
-            onClick={props.onChoose ? () => props.onChoose?.(option.id) : undefined}
-          >
-            {face.control === 'check' ? (
-              face.tone === 'picked' ? (
-                <Image className="paper-check" src={iconCheck} mode="aspectFit" />
-              ) : (
-                <View className="paper-check paper-check-off" />
-              )
-            ) : (
-              <Text className={`paper-letter paper-letter-${face.tone}`}>{option.id}</Text>
-            )}
-            <Text className="paper-option-text">{option.text}</Text>
-            {face.tag ? (
-              <Text className={`paper-tag paper-tag-${face.tag}`}>{PAPER_TAG_LABEL[face.tag]}</Text>
-            ) : null}
-          </View>
+            optionId={option.id}
+            text={option.text}
+            face={face}
+            onChoose={props.onChoose}
+          />
         );
       })}
     </View>
@@ -724,12 +711,12 @@ function typeTag(type: QuizQuestionView['type']): string {
 function ringColor(band: ReturnType<typeof scoreBand>, rate: number): string {
   const color =
     band === 'high'
-      ? '#16a34a'
+      ? 'var(--ts-accent-700)'
       : band === 'fail'
-        ? '#dc2626'
+        ? 'var(--ts-terra)'
         : band === 'low'
-          ? '#ea580c'
-          : '#2563eb';
+          ? 'var(--ts-warning)'
+          : 'var(--ts-accent)';
   return `conic-gradient(${color} ${rate * 3.6}deg, #e5e7eb 0deg)`;
 }
 

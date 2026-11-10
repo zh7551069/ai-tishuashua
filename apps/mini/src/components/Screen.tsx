@@ -1,8 +1,10 @@
 import { Image, Text, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useState } from 'react';
 import iconBack from '../assets/me-settings/3fbuza.svg';
+import { themeRootStyle, useThemeId } from '../theme/apply-theme';
+import { themeClassName } from '../theme/palettes';
 
 function readInset(): number {
   try {
@@ -37,6 +39,7 @@ export function Screen(props: {
   children?: ReactNode;
 }) {
   const [inset] = useState(readInset);
+  const themeId = useThemeId();
   const titleSizeClass =
     props.titleSize === 'lg'
       ? 'u-nav-title-lg'
@@ -67,11 +70,12 @@ export function Screen(props: {
 
   return (
     <View
-      className="u-screen"
+      className={`u-screen ${themeClassName(themeId)}`}
       style={{
         paddingTop: `${inset}px`,
+        ...themeRootStyle(themeId),
         ...(props.background ? { background: props.background } : {}),
-      }}
+      } as CSSProperties}
     >
       {props.bare ? null : (
         <View

@@ -58,11 +58,21 @@ describe('home daily plan wiring', () => {
     }
     const home = readFileSync(join(root, 'pages/home/index.tsx'), 'utf8');
     const quiz = readFileSync(join(root, 'pages/quiz/index.tsx'), 'utf8');
+    const entry = readFileSync(join(root, 'theme/pack-entry.ts'), 'utf8');
     assert.match(home, /\/me\/daily-plan/);
     assert.match(home, /useDidShow/);
-    assert.match(home, /dailyPlanQuizPath/);
+    assert.match(home, /homeEntryTarget\('knowledge'/);
+    assert.match(home, /homeEntryTarget\(entry\)/);
     assert.match(home, /activatePack/);
-    assert.match(home, /\/pages\/pack\/domain\/index/);
+    assert.match(home, /go\('plus'\)/);
+    assert.match(home, /go\('cta'\)/);
+    assert.match(home, /go\('create'\)/);
+    assert.match(home, /go\('profile'\)/);
+    assert.match(home, /HeroIllustration/);
+    assert.equal(home.includes('saveHeroGender'), false);
+    assert.equal(home.includes('/pages/pack/domain/index'), false);
+    assert.match(entry, /PACK_INDEX_ROUTE = '\/pages\/pack\/index'/);
+    assert.match(entry, /ME_ROUTE = '\/pages\/me\/index'/);
     assert.equal(/requestPayment|quiz\/sessions|session-ledger|daily-share|invite/.test(home), false);
     assert.match(quiz, /intent\) === 'dailyPlan'/);
     assert.match(quiz, /knowledgePointIds: kept/);

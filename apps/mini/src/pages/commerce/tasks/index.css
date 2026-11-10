@@ -17,7 +17,7 @@
 }
 
 .tk-title {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 16px;
   font-weight: 700;
   line-height: 23px;
@@ -25,7 +25,7 @@
 
 .tk-meta {
   margin-top: 4px;
-  color: #6b7280;
+  color: var(--ts-muted);
   font-size: 13px;
   line-height: 19px;
 }

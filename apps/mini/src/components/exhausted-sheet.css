@@ -51,7 +51,7 @@
   width: 56px;
   height: 56px;
   margin-bottom: 12px;
-  background: #eff6ff;
+  background: var(--ts-tint);
   border-radius: 28px;
   flex-shrink: 0;
 }
@@ -62,7 +62,7 @@
 }
 
 .exh-title {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 18px;
   font-weight: 700;
   line-height: 26px;
@@ -71,7 +71,7 @@
 
 .exh-summary {
   margin-top: 3px;
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 11px;
   font-weight: 400;
   line-height: 16px;
@@ -80,7 +80,7 @@
 
 .exh-sub {
   margin-top: 6px;
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 11px;
   font-weight: 400;
   line-height: 16px;
@@ -114,26 +114,26 @@
 }
 
 .exh-btn-member {
-  background: #2563eb;
+  background: var(--ts-accent);
   color: #ffffff;
 }
 
 .exh-btn-pack {
   background: #ffffff;
-  color: #2563eb;
+  color: var(--ts-accent-700);
   box-shadow: inset 0 0 0 1px #e5e7eb;
 }
 
 .exh-btn-task {
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--ts-tint);
+  color: var(--ts-accent-700);
   box-shadow: inset 0 0 0 1px #e5e7eb;
 }
 
 .exh-later {
   margin-top: 16px;
   padding: 8px 12px;
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 11px;
   font-weight: 500;
   line-height: 16px;
@@ -145,7 +145,7 @@
 }
 
 .exh-stub-title {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 18px;
   font-weight: 700;
   line-height: 26px;

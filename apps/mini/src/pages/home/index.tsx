@@ -1,4 +1,4 @@
-import { Button, ScrollView, Text, View } from '@tarojs/components';
+import { ScrollView, Text, View } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import {
   DAILY_PLAN_CTA_LABEL,
@@ -8,53 +8,48 @@ import {
   dailyPlanDayNumber,
   dailyPlanFootnote,
   dailyPlanLayout,
-  dailyPlanQuizPath,
   dailyPlanRing,
   formatDailyPlanDate,
-  resolveDailyPlanCta,
   type DailyPlanItem,
   type DailyPlanView,
-  type PackList,
-  type UserSummary,
 } from '@tishuashua/shared';
 import { useState } from 'react';
-import { PackSheet } from '../../components/PackSheet';
+import { AppButton } from '../../components/AppButton';
+import { EmptyState } from '../../components/EmptyState';
+import { FilterChip } from '../../components/FilterChip';
+import { HeroIllustration } from '../../components/HeroIllustration';
+import { ListRow } from '../../components/ListRow';
+import { ProgressRing } from '../../components/ProgressRing';
 import { Screen } from '../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
-import { fetchCurrentUser } from '../../services/auth-api';
+import { WeekStrip } from '../../components/WeekStrip';
 import { captureGrowthLaunch, settleGrowthLaunch } from '../../services/growth-launch-run';
 import { isAuthFailure, withAuth } from '../../services/guard';
-import { activatePack, deletePack, fetchPacks, updatePack } from '../../services/pack-api';
 import { apiRequest } from '../../services/http';
+import { activatePack } from '../../services/pack-api';
 import { clearToken, readToken } from '../../services/session';
+import { paletteById } from '../../theme/palettes';
+import { useThemeId } from '../../theme/apply-theme';
+import { homeEntryTarget } from '../../theme/pack-entry';
 import './daily-plan.css';
 
 export default function HomePage() {
-  const [user, setUser] = useState<UserSummary | null>(null);
+  const themeId = useThemeId();
   const [plan, setPlan] = useState<DailyPlanView | null>(null);
-  const [packs, setPacks] = useState<PackList | null>(null);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
     setError('');
     try {
-      const data = await withAuth(async (token) => {
-        const [me, daily, list] = await Promise.all([
-          fetchCurrentUser(token),
-          apiRequest<DailyPlanView>('/me/daily-plan', { method: 'GET', token }),
-          fetchPacks(token),
-        ]);
-        return { me, daily, list };
-      });
-      if (!data) {
+      const daily = await withAuth((token) =>
+        apiRequest<DailyPlanView>('/me/daily-plan', { method: 'GET', token }),
+      );
+      if (!daily) {
         return;
       }
-      setUser(data.me);
-      setPlan(data.daily);
-      setPacks(data.list);
+      setPlan(daily);
       setReady(true);
     } catch (caught) {
       if (isAuthFailure(caught)) {
@@ -81,88 +76,52 @@ export default function HomePage() {
     }
   });
 
-  const run = async (task: (token: string) => Promise<void>) => {
-    const token = readToken();
-    if (!token) {
-      await Taro.reLaunch({ url: '/pages/login/index' });
-      return;
-    }
-    setBusy(true);
-    try {
-      await task(token);
-      await load();
-    } catch (caught) {
-      if (isAuthFailure(caught)) {
-        clearToken();
-        await Taro.reLaunch({ url: '/pages/login/index' });
-      }
-      throw caught;
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const openDomain = () => {
-    void Taro.navigateTo({ url: '/pages/pack/domain/index' });
-  };
-
-  const removePack = async (id: string) => {
-    const before = packs?.items.length ?? 0;
-    await run(async (token) => {
-      await deletePack(token, id);
-    });
-    if (before <= 1) {
-      setSheetOpen(false);
-    }
+  const go = (entry: 'plus' | 'cta' | 'create' | 'profile') => {
+    void Taro.navigateTo({ url: homeEntryTarget(entry) });
   };
 
   const switchPack = (id: string) => {
     if (busy || id === plan?.activePackId) {
       return;
     }
-    void run((token) => activatePack(token, id).then(() => undefined)).catch((caught: unknown) => {
-      if (isAuthFailure(caught)) {
-        return;
-      }
-      void Taro.showToast({
-        title: caught instanceof Error ? caught.message : '切换失败',
-        icon: 'none',
-      });
-    });
+    const token = readToken();
+    if (!token) {
+      void Taro.reLaunch({ url: '/pages/login/index' });
+      return;
+    }
+    setBusy(true);
+    void activatePack(token, id)
+      .then(() => load())
+      .catch((caught: unknown) => {
+        if (isAuthFailure(caught)) {
+          clearToken();
+          void Taro.reLaunch({ url: '/pages/login/index' });
+          return;
+        }
+        void Taro.showToast({
+          title: caught instanceof Error ? caught.message : '切换失败',
+          icon: 'none',
+        });
+      })
+      .finally(() => setBusy(false));
   };
 
   const layout = plan ? dailyPlanLayout(plan) : 'empty';
-  const cta = plan ? resolveDailyPlanCta(plan) : null;
   const ring = plan ? dailyPlanRing(plan) : null;
-  const startPractice = () => {
-    if (!cta || !plan) {
-      return;
-    }
-    if (!cta.enabled) {
-      if (cta.reason === 'unavailable') {
-        void Taro.showToast({ title: '刷题包不可用', icon: 'none' });
-      }
-      return;
-    }
-    void Taro.navigateTo({ url: dailyPlanQuizPath(cta.packId, cta.knowledgePointId) });
-  };
+  const accent = paletteById(themeId).accent;
 
   return (
     <Screen
       bare
-      background="#f5f6f8"
+      background="#F7F8F4"
       footerClassName="dp-foot"
       footer={
-        ready && plan && cta ? (
+        ready && plan ? (
           <View className="dp-foot-stack">
-            <Text className="dp-foot-note">{dailyPlanFootnote(plan)}</Text>
-            <Button
-              className={cta.enabled ? 'u-btn' : 'u-btn u-btn-off'}
-              disabled={!cta.enabled && cta.reason !== 'unavailable'}
-              onClick={startPractice}
-            >
-              {DAILY_PLAN_CTA_LABEL}
-            </Button>
+            {layout === 'empty' ? null : (
+              <Text className="dp-foot-note">{dailyPlanFootnote(plan)}</Text>
+            )}
+            <AppButton label={DAILY_PLAN_CTA_LABEL} onClick={() => go('cta')} />
           </View>
         ) : null
       }
@@ -171,109 +130,83 @@ export default function HomePage() {
         {!ready && !error ? <LoadingBlock label="正在加载今日练习" /> : null}
         {error ? <ErrorBlock detail={error} onRetry={() => void load()} /> : null}
         {ready && plan ? (
-            <View className="dp-stack">
+          <View className="dp-stack">
             <View className="dp-head">
-              <View
-                className="dp-avatar"
-                onClick={() => void Taro.navigateTo({ url: '/pages/me/index' })}
-              >
-                <Text className="dp-avatar-text">{avatarChar(user?.nick)}</Text>
-              </View>
               <View className="dp-head-copy">
-                <Text className="dp-date">{formatDailyPlanDate(plan.businessDate)}</Text>
                 <Text className="dp-hello">{DAILY_PLAN_GREETING}</Text>
+                <Text className="dp-date">{formatDailyPlanDate(plan.businessDate)}</Text>
               </View>
-              {plan.packs.length > 0 ? (
-                <Text className="dp-more" onClick={() => setSheetOpen(true)}>
-                  …
-                </Text>
-              ) : null}
-            </View>
-            <View className="dp-week">
-              {plan.week.map((day) => {
-                const today = day.date === plan.businessDate;
-                const future = day.date > plan.businessDate;
-                return (
-                  <View key={day.date} className={today ? 'dp-day dp-day-today' : 'dp-day'}>
-                    <Text className="dp-day-label">
-                      {DAILY_PLAN_WEEKDAY_LABELS[day.weekday - 1] ?? ''}
-                    </Text>
-                    <Text className={future && !today ? 'dp-day-num dp-day-future' : 'dp-day-num'}>
-                      {dailyPlanDayNumber(day.date)}
-                    </Text>
-                    {day.hasCompletion ? <View className="dp-dot" /> : <View className="dp-dot-slot" />}
+              <View className="dp-tools">
+                <View className="dp-tool dp-tool-me" onClick={() => go('profile')}>
+                  <View className="dp-sil">
+                    <View className="dp-sil-head" />
+                    <View className="dp-sil-body" />
                   </View>
-                );
-              })}
+                </View>
+                <View className="dp-tool dp-tool-plus" onClick={() => go('plus')}>
+                  <Text className="dp-plus-mark">+</Text>
+                </View>
+              </View>
             </View>
+            <WeekStrip
+              days={plan.week.map((day) => ({
+                key: day.date,
+                label: DAILY_PLAN_WEEKDAY_LABELS[day.weekday - 1] ?? '',
+                number: String(dailyPlanDayNumber(day.date)),
+                today: day.date === plan.businessDate,
+                marked: day.hasCompletion,
+              }))}
+            />
             {layout === 'empty' || !ring ? (
-              <View className="dp-hero dp-hero-empty">
-                <View className="dp-mark">
-                  <Text className="dp-mark-title">待开启</Text>
-                  <Text className="dp-mark-sub">练习之旅</Text>
-                </View>
+              <View className="dp-hero-card">
                 <View className="dp-hero-copy">
-                  <Text className="dp-kicker">每一步，都算数</Text>
-                  <Text className="dp-done">从第一题开始</Text>
-                  <Text className="dp-remain">创建刷题包，开启你的每日练习计划。</Text>
+                  <Text className="dp-kicker">练习之旅</Text>
+                  <Text className="dp-done">每一步，都算数</Text>
+                  <Text className="dp-remain">
+                    从第一题开始，创建刷题包后即可规划今天的练习。
+                  </Text>
                 </View>
+                <HeroIllustration className="dp-hero-art" />
+                <View className="dp-hero-fade" />
               </View>
             ) : (
-              <View className="dp-hero">
-                <View
-                  className="dp-ring"
-                  style={{ background: `conic-gradient(#2563EB ${ring.percent}%, #E5E7EB 0)` }}
-                >
-                  <View className="dp-ring-hole">
-                    <Text className="dp-ring-pct">{ring.percent}%</Text>
-                    <Text className="dp-ring-cap">今日已完成</Text>
-                  </View>
+              <View className="dp-hero-card">
+                <ProgressRing percent={ring.percent} color={accent} />
+                <View className="dp-hero-stats">
+                  <Text className="dp-stat-line">{ring.kicker}</Text>
+                  <Text className="dp-stat-line">{ring.doneLine}</Text>
+                  <Text className="dp-stat-line">{ring.remainLine}</Text>
                 </View>
-                <View className="dp-hero-copy">
-                  <Text className="dp-kicker">{ring.kicker}</Text>
-                  <Text className="dp-done">{ring.doneLine}</Text>
-                  <Text className="dp-remain">{ring.remainLine}</Text>
-                  {layout === 'multi' ? <Text className="dp-pace">{DAILY_PLAN_MULTI_PACE}</Text> : null}
-                </View>
+                <HeroIllustration className="dp-hero-art" />
+                <View className="dp-hero-fade" />
               </View>
             )}
             {layout === 'empty' ? (
-              <View className="dp-section">
-                <View className="dp-section-head">
-                  <Text className="dp-section-title">今日练习</Text>
-                  <Text className="dp-plus" onClick={openDomain}>
-                    +
-                  </Text>
-                </View>
-                <View className="dp-empty">
-                  <View className="dp-folder">
-                    <Text>+</Text>
-                  </View>
-                  <Text className="dp-section-aside">还没有刷题包</Text>
-                  <Text className="dp-empty-title">创建你的第一个刷题包</Text>
-                  <Text className="dp-empty-sub">选择领域与证书，添加想练的知识点，让每天的进步有迹可循。</Text>
-                  <Text className="dp-create" onClick={openDomain}>
-                    创建刷题包
-                  </Text>
-                  <Text className="dp-empty-hint">也可以点击右上方「+」新增</Text>
-                </View>
-              </View>
+              <EmptyState
+                title="还没有刷题包"
+                body="创建你的第一个刷题包。选择领域与证书，添加想练的知识点，让每天的进步有迹可循。"
+                action="创建刷题包"
+                hint="或点击右上方 +"
+                onAction={() => go('create')}
+              />
             ) : null}
             {layout !== 'empty' && plan.activePack ? (
               <PracticeSection
                 plan={plan}
                 layout={layout}
                 busy={busy}
-                onCreate={openDomain}
+                onOpenPack={() => go('plus')}
                 onActivate={switchPack}
-                onManage={() => setSheetOpen(true)}
                 onPractice={(knowledgePointId) => {
                   if (!plan.activePack || plan.activePack.unavailable) {
                     void Taro.showToast({ title: '刷题包不可用', icon: 'none' });
                     return;
                   }
                   void Taro.navigateTo({
-                    url: dailyPlanQuizPath(plan.activePack.packId, knowledgePointId),
+                    url: homeEntryTarget('knowledge', {
+                      packId: plan.activePack.packId,
+                      knowledgePointId,
+                    }),
                   });
                 }}
               />
@@ -281,24 +214,6 @@ export default function HomePage() {
           </View>
         ) : null}
       </View>
-      {sheetOpen && packs && packs.items.length > 0 ? (
-        <PackSheet
-          items={packs.items}
-          activeId={packs.activePackId}
-          busy={busy}
-          onClose={() => setSheetOpen(false)}
-          onSelect={(id) => {
-            setSheetOpen(false);
-            switchPack(id);
-          }}
-          onCreate={() => {
-            setSheetOpen(false);
-            openDomain();
-          }}
-          onRename={(id, name) => run((token) => updatePack(token, id, { name }).then(() => undefined))}
-          onDelete={(id) => removePack(id)}
-        />
-      ) : null}
     </Screen>
   );
 }
@@ -307,9 +222,8 @@ function PracticeSection(props: {
   plan: DailyPlanView;
   layout: 'single' | 'multi';
   busy: boolean;
-  onCreate: () => void;
+  onOpenPack: () => void;
   onActivate: (packId: string) => void;
-  onManage: () => void;
   onPractice: (knowledgePointId: string) => void;
 }) {
   const active = props.plan.activePack;
@@ -318,48 +232,31 @@ function PracticeSection(props: {
   }
   return (
     <View className="dp-section">
+      {props.layout === 'multi' ? <Text className="dp-pace">{DAILY_PLAN_MULTI_PACE}</Text> : null}
       <View className="dp-section-head">
         <Text className="dp-section-title">今日练习</Text>
         <Text className="dp-section-aside">
-          {active.completedCount} / {active.knowledgePointCount} 项已完成
+          {active.completedCount}/{active.knowledgePointCount}
         </Text>
       </View>
-      <View className="dp-chip-row">
-        {props.layout === 'multi' ? (
-          <ScrollView scrollX className="dp-chips" enableFlex>
-            {props.plan.packs.map((pack) => (
-              <Text
-                key={pack.packId}
-                className={chipClass(pack.active, pack.unavailable)}
-                onClick={() => props.onActivate(pack.packId)}
-                onLongPress={props.onManage}
-              >
-                {pack.unavailable ? `${pack.name} · 不可用` : pack.name}
-              </Text>
-            ))}
-          </ScrollView>
-        ) : (
-          <View className="dp-chips">
-            <Text className="dp-chip dp-chip-on">{active.certName || active.name}</Text>
-          </View>
-        )}
-        <Text className="dp-plus" onClick={props.onCreate}>
-          +
-        </Text>
-      </View>
+      <ScrollView scrollX className="dp-chips" enableFlex>
+        {props.plan.packs.map((pack) => (
+          <FilterChip
+            key={pack.packId}
+            label={pack.unavailable ? `${pack.name} · 不可用` : pack.name}
+            active={pack.active}
+            disabled={pack.unavailable}
+            onClick={() => props.onActivate(pack.packId)}
+            onLongPress={props.onOpenPack}
+          />
+        ))}
+      </ScrollView>
       <View className="dp-card">
-        <View className="dp-card-head">
-          <Text className="dp-card-title">
-            {props.layout === 'multi'
-              ? active.certName || active.name
-              : `${active.domainName} · ${active.knowledgePointCount} 个知识点`}
-          </Text>
-          <Text className="dp-card-sub">
-            {props.layout === 'multi'
-              ? `仅显示当前包 · ${active.knowledgePointCount} 个知识点 · 待练习优先`
-              : '今日知识点练习 · 待练习优先'}
-          </Text>
-        </View>
+        <Text className="dp-card-sub">
+          {props.layout === 'multi'
+            ? `仅显示当前包 · ${active.knowledgePointCount} 个知识点 · 待练习优先`
+            : '今日知识点练习 · 待练习优先'}
+        </Text>
         {active.items.map((item) => (
           <KnowledgeRow
             key={item.knowledgePointId}
@@ -379,35 +276,23 @@ function KnowledgeRow(props: {
   onPractice: (knowledgePointId: string) => void;
 }) {
   return (
-    <View
-      className="dp-row"
+    <ListRow
+      title={props.item.name}
+      leading={
+        <View className={props.item.done ? 'dp-badge dp-badge-done' : 'dp-badge dp-badge-todo'}>
+          <Text className="dp-badge-text">{props.item.done ? '✓' : '!'}</Text>
+        </View>
+      }
+      trailing={
+        <Text className={props.item.done ? 'dp-row-state dp-row-done' : 'dp-row-state dp-row-todo'}>
+          {props.item.done ? '已完成' : '待练习'}
+        </Text>
+      }
       onClick={() => {
         if (!props.disabled) {
           props.onPractice(props.item.knowledgePointId);
         }
       }}
-    >
-      <View className={props.item.done ? 'dp-badge dp-badge-done' : 'dp-badge dp-badge-todo'}>
-        <Text className="dp-badge-text">{props.item.done ? '✓' : '!'}</Text>
-      </View>
-      <Text className="dp-row-name">{props.item.name}</Text>
-      <Text className={props.item.done ? 'dp-row-state dp-row-done' : 'dp-row-state dp-row-todo'}>
-        {props.item.done ? '已完成' : '待练习'}
-      </Text>
-    </View>
+    />
   );
-}
-
-function chipClass(active: boolean, unavailable: boolean): string {
-  return ['dp-chip', active ? 'dp-chip-on' : '', unavailable ? 'dp-chip-off' : '']
-    .filter(Boolean)
-    .join(' ');
-}
-
-function avatarChar(nick: string | null | undefined): string {
-  const text = nick?.trim();
-  if (!text) {
-    return '备';
-  }
-  return Array.from(text)[0] ?? '备';
 }

@@ -180,7 +180,7 @@ export default function WrongBookDetailPage() {
       centerTitle
       navPlain
       navClassName="wd-nav"
-      background="#f8f9fb"
+      background="#F7F8F4"
       title="错题详情"
       footerClassName={footExtra ? 'wd-foot wd-foot-help' : 'wd-foot'}
       right={

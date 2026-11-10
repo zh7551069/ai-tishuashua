@@ -1,5 +1,5 @@
 export default definePageConfig({
   navigationStyle: 'custom',
   navigationBarTitleText: '正在出题',
-  backgroundColor: '#f8f9fb',
+  backgroundColor: '#F7F8F4',
 });

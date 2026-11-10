@@ -252,7 +252,7 @@ export default function CoursewarePage() {
       title: '取消上传',
       content: '确定取消这次上传？文件不会继续提交。',
       confirmText: '取消上传',
-      confirmColor: '#4b5563',
+      confirmColor: '#78716C',
     });
     if (!confirmed.confirm || phaseRef.current !== 'uploading' || uploadToken.current !== token) {
       return;
@@ -274,7 +274,7 @@ export default function CoursewarePage() {
       title: '取消提炼',
       content: '取消后这次提炼会停掉。已经在学习的材料不会写进知识点树。',
       confirmText: '取消并返回',
-      confirmColor: '#b42318',
+      confirmColor: '#9A3F2C',
     });
     if (!confirmed.confirm) {
       return;

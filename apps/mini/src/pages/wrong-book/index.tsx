@@ -8,6 +8,7 @@ import { fetchWrongBook } from '../../services/wrong-book-api';
 import iconCaret from './assets/icon-caret.png';
 import iconCheck from './assets/icon-check.png';
 import iconSearch from './assets/icon-search.png';
+import { CelebrateOverlay } from '../../components/CelebrateOverlay';
 import { CONFETTI_DOTS, CONFETTI_STICKS } from './confetti';
 import './index.css';
 import {
@@ -149,7 +150,7 @@ export default function WrongBookPage() {
       navPlain
       bodyFill
       title="错题本"
-      background="#f8f9fb"
+      background="#F7F8F4"
       right={right}
     >
       {failed ? (
@@ -268,7 +269,7 @@ export default function WrongBookPage() {
         </View>
       ) : null}
       {celebrateOpen && ready && !failed && todayCleared > 0 ? (
-        <View className="wb-celebrate" catchMove onClick={closeCelebrate}>
+        <CelebrateOverlay onClose={closeCelebrate}>
           <View className="wb-scrim" />
           <View className="wb-wash" />
           <View className="wb-confetti">
@@ -336,7 +337,7 @@ export default function WrongBookPage() {
             </View>
             <Text className="wb-celebrate-hint">点按任意处关闭</Text>
           </View>
-        </View>
+        </CelebrateOverlay>
       ) : null}
     </Screen>
   );

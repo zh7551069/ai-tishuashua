@@ -125,7 +125,7 @@ export default function DomainPage() {
   }
 
   return (
-    <Screen bare background="#f5f6f8" bodyFill>
+    <Screen bare background="#F7F8F4" bodyFill>
       <View className="domain-sheet">
         <View
           className="domain-head"

@@ -33,7 +33,7 @@
   width: 56px;
   height: 56px;
   border-radius: 28px;
-  background: #eff6ff;
+  background: var(--ts-tint);
   box-shadow: inset 0 0 0 1px #e5e7eb;
   display: flex;
   align-items: center;
@@ -55,7 +55,7 @@
 
 .ds-hero-title {
   margin-top: 17px;
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 16px;
   font-weight: 700;
   line-height: 23px;
@@ -64,7 +64,7 @@
 
 .ds-hero-note {
   margin-top: 4px;
-  color: #6b7280;
+  color: var(--ts-muted);
   font-size: 12px;
   line-height: 17px;
   text-align: center;
@@ -76,7 +76,7 @@
 
 .ds-card-title {
   display: block;
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 15px;
   font-weight: 700;
   line-height: 22px;
@@ -84,7 +84,7 @@
 
 .ds-rule {
   margin-top: 8px;
-  color: #6b7280;
+  color: var(--ts-muted);
   font-size: 13px;
   line-height: 22px;
 }
@@ -94,14 +94,14 @@
 }
 
 .ds-status-label {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 12px;
   line-height: 17px;
 }
 
 .ds-status-value {
   margin-top: 6px;
-  color: #2563eb;
+  color: var(--ts-accent-700);
   font-size: 15px;
   font-weight: 700;
   line-height: 22px;
@@ -126,13 +126,13 @@
 }
 
 .ds-btn-primary {
-  background: #2563eb;
+  background: var(--ts-accent);
   color: #ffffff;
 }
 
 .ds-btn-secondary {
   background: #ffffff;
-  color: #111827;
+  color: var(--ts-ink);
   box-shadow: inset 0 0 0 1px #e5e7eb;
 }
 
