@@ -37,6 +37,7 @@ export default function QuizSettingsPage() {
   const params = useRouter().params;
   const packId = queryValue(params.packId);
   const fromRetrain = queryValue(params.from) === 'retrainSimilar';
+  const fromDailyPlan = queryValue(params.intent) === 'dailyPlan' && !fromRetrain;
   const requestedKpIds = parseIdList(queryValue(params.kpIds));
   const seeded = useRef(false);
   const [pack, setPack] = useState<PackView | null>(null);
@@ -44,6 +45,7 @@ export default function QuizSettingsPage() {
   const [ready, setReady] = useState(false);
   const [prefilled, setPrefilled] = useState<string[]>([]);
   const [kept, setKept] = useState<string[] | null>(null);
+  const [wholePack, setWholePack] = useState(false);
   const [count, setCount] = useState<QuizCount>(DEFAULT_QUIZ_COUNT);
   const [difficulty, setDifficulty] = useState<QuizDifficulty>(DEFAULT_QUIZ_DIFFICULTY);
   const [types, setTypes] = useState<QuizTypeCode[]>([]);
@@ -83,6 +85,11 @@ export default function QuizSettingsPage() {
         setPrefilled(ids);
         setKept(ids);
       }
+      if (fromDailyPlan && !seeded.current) {
+        seeded.current = true;
+        const allowed = new Set(data.knowledgePointIds.map((id) => id.toLowerCase()));
+        setKept(requestedKpIds.filter((id) => allowed.has(id)));
+      }
       setReady(true);
     } catch (caught) {
       if (isAuthFailure(caught)) {
@@ -103,6 +110,7 @@ export default function QuizSettingsPage() {
     (!Number.isInteger(perQuestionSeconds) || perQuestionSeconds < 1 || perQuestionSeconds > 600);
   const typeMissing = types.length === 0;
   const kpMissing = fromRetrain && kept !== null && kept.length === 0;
+  const dailyMissing = fromDailyPlan && !wholePack && (!kept || kept.length === 0);
   const retrainPending = fromRetrain && kept === null;
   const blocked =
     !pack ||
@@ -112,6 +120,7 @@ export default function QuizSettingsPage() {
     busy ||
     gate.sheetOpen ||
     kpMissing ||
+    dailyMissing ||
     retrainPending;
   const enabledTypes = (pack?.enabledQuestionTypeCodes ?? []).filter((code): code is QuizTypeCode =>
     KNOWN_TYPES.has(code),
@@ -138,6 +147,9 @@ export default function QuizSettingsPage() {
     if (fromRetrain && (!kept || kept.length === 0)) {
       return;
     }
+    if (fromDailyPlan && !wholePack && (!kept || kept.length === 0)) {
+      return;
+    }
     setBusy(true);
     try {
       const result = await gate.run({
@@ -156,7 +168,9 @@ export default function QuizSettingsPage() {
                 : { enabled: true, kind: 'paper', paperMinutes },
             ...(fromRetrain
               ? { source: 'retrain_similar' as const, knowledgePointIds: kept ?? [] }
-              : {}),
+              : fromDailyPlan && !wholePack
+                ? { knowledgePointIds: kept ?? [] }
+                : {}),
           }),
       });
       if (result.kind !== 'created') {
@@ -196,6 +210,9 @@ export default function QuizSettingsPage() {
               AI 开始出题
             </Button>
             {kpMissing ? <Text className="u-help-alert">{RETRAIN_KP_HELP}</Text> : null}
+            {dailyMissing ? (
+              <Text className="u-help-alert">请选择至少一个知识点，或打开整包练习</Text>
+            ) : null}
           </View>
         ) : null
       }
@@ -215,7 +232,9 @@ export default function QuizSettingsPage() {
             <Text className="qs-pack-line">
               {fromRetrain
                 ? `${pack.certName || pack.name} · 复练同类`
-                : `${pack.certName || pack.name} · ${pack.knowledgePointCount} 知识点`}
+                : fromDailyPlan
+                  ? `${pack.certName || pack.name} · 今日计划`
+                  : `${pack.certName || pack.name} · ${pack.knowledgePointCount} 知识点`}
             </Text>
             {pack.unavailable ? (
               <Text className="qs-pack-off">关联证书已下架，不能出题</Text>
@@ -247,6 +266,46 @@ export default function QuizSettingsPage() {
               </View>
             ) : null}
             {kpMissing ? <Text className="u-help-alert">{RETRAIN_KP_HELP}</Text> : null}
+          </View>
+        ) : null}
+        {pack && !pack.unavailable && fromDailyPlan ? (
+          <View className="qs-panel qs-retrain">
+            <Text className="qs-kicker">今日计划</Text>
+            <Text className="qs-label">知识点</Text>
+            <Text className="qs-hint">默认只练带入的知识点。可以改选多个，或打开整包练习。</Text>
+            <View className="qs-chips">
+              {pack.knowledgePoints.map((item) => {
+                const id = item.id.toLowerCase();
+                const on = !wholePack && (kept ?? []).includes(id);
+                return (
+                  <View
+                    key={item.id}
+                    className={classes('qs-chip', on && 'qs-chip-on')}
+                    onClick={() => {
+                      if (wholePack) {
+                        setWholePack(false);
+                        setKept([id]);
+                        return;
+                      }
+                      toggleKept(id);
+                    }}
+                  >
+                    <Text className={classes('qs-chip-label', on && 'qs-chip-label-on')}>
+                      {item.name}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+            <View className="qs-timer-row" onClick={() => setWholePack((value) => !value)}>
+              <Text className="qs-label">整包练习</Text>
+              <View className={classes('qs-switch', wholePack && 'qs-switch-on')}>
+                <Image className="qs-knob" src={iconKnob} mode="aspectFit" />
+              </View>
+            </View>
+            {dailyMissing ? (
+              <Text className="u-help-alert">请选择至少一个知识点，或打开整包练习</Text>
+            ) : null}
           </View>
         ) : null}
         {pack && !pack.unavailable ? (

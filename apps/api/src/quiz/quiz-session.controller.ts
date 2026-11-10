@@ -124,7 +124,7 @@ export class QuizSessionController {
   @ApiOperation({
     summary: '交卷并判分',
     description:
-      '练习和考试都可以主动交卷。交卷后不可改答案，并返回成绩、正确答案和解析。重复交卷返回同一成绩。考试到点后记为到时收卷；未到点即使请求写 timeout 也记为主动交卷。答错、少选和未作答写入错题本，完全答对则消灭同一题。',
+      '练习和考试都可以主动交卷。交卷后不可改答案，并返回成绩、正确答案和解析。重复交卷返回同一成绩。考试到点后记为到时收卷；未到点即使请求写 timeout 也记为主动交卷。答错、少选和未作答写入错题本，完全答对则消灭同一题。仅 source=normal 且 mode=practice、并且会话有刷题包时，成功后按试卷题目知识点并集幂等写入今日计划；考试、复练、变异和取消不写。回写失败不改变本次交卷结果。',
   })
   @ApiBody({ type: SubmitQuizDto, required: false })
   @ApiOkResponse({ type: QuizSessionViewDto })

@@ -420,6 +420,35 @@ export type {
 } from './pack';
 export { PACK_KNOWLEDGE_POINT_MAX, PACK_NAME_MAX_LENGTH } from './pack';
 export {
+  DAILY_PLAN_CTA_LABEL,
+  DAILY_PLAN_EMPTY_HINT,
+  DAILY_PLAN_ENCOURAGEMENT,
+  DAILY_PLAN_GREETING,
+  DAILY_PLAN_MULTI_PACE,
+  DAILY_PLAN_WEEK_STARTS_ON,
+  DAILY_PLAN_WEEKDAY_LABELS,
+  dailyPlanDayNumber,
+  dailyPlanFootnote,
+  dailyPlanLayout,
+  dailyPlanPercent,
+  dailyPlanQuizPath,
+  dailyPlanRing,
+  dailyPlanWeek,
+  formatDailyPlanDate,
+  resolveDailyPlanCta,
+} from './daily-plan';
+export type {
+  DailyPlanActivePack,
+  DailyPlanCta,
+  DailyPlanItem,
+  DailyPlanLayout,
+  DailyPlanPackChip,
+  DailyPlanRing,
+  DailyPlanSummary,
+  DailyPlanView,
+  DailyPlanWeekDay,
+} from './daily-plan';
+export {
   collectKnowledgePointIds,
   filterCatalogTree,
   textbookCheckState,
