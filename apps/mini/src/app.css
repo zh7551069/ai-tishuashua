@@ -14,12 +14,12 @@
   display: block;
   margin-bottom: 6px;
   font-size: 15px;
-  color: #5c6b66;
+  color: var(--ts-muted);
   line-height: 1.5;
 }
 
 .link {
-  color: #2563eb;
+  color: var(--ts-accent-700);
 }
 
 .label {
@@ -27,20 +27,20 @@
   margin-top: 4px;
   margin-bottom: 4px;
   font-size: 14px;
-  color: #334155;
+  color: var(--ts-ink);
 }
 
 .field {
   margin-bottom: 8px;
   padding: 8px 10px;
-  background: #f4f7fb;
+  background: var(--ts-tint);
   border-radius: 6px;
   font-size: 15px;
 }
 
 .primary {
   margin: 6px 0 8px;
-  background: #2563eb;
+  background: var(--ts-accent);
   color: #ffffff;
   border-radius: 6px;
   font-size: 16px;
@@ -50,7 +50,7 @@
   display: block;
   margin-bottom: 6px;
   font-size: 14px;
-  color: #b42318;
+  color: var(--ts-terra-dark);
   line-height: 1.5;
 }
 
@@ -65,12 +65,12 @@
   margin-bottom: 10px;
   padding: 12px;
   background: #ffffff;
-  border: 1px solid #dbe4f0;
+  border: 1px solid rgba(28, 25, 23, 0.08);
   border-radius: 8px;
 }
 
 .card-off {
-  background: #f8fafc;
+  background: var(--ts-canvas);
   opacity: 0.72;
 }
 
@@ -83,8 +83,8 @@
 
 .badge {
   padding: 2px 6px;
-  background: #fee2e2;
-  color: #b42318;
+  background: var(--ts-terra-bg);
+  color: var(--ts-terra-dark);
   border-radius: 999px;
   font-size: 11px;
 }
@@ -92,7 +92,7 @@
 .meta {
   display: block;
   margin-top: 4px;
-  color: #64748b;
+  color: var(--ts-muted);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -107,28 +107,28 @@
 .chip {
   margin: 0 6px 6px 0;
   padding: 3px 7px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: var(--ts-tint);
+  color: var(--ts-accent-700);
   border-radius: 999px;
   font-size: 12px;
 }
 
 .chip-on {
-  background: #2563eb;
+  background: var(--ts-accent);
   color: #ffffff;
 }
 
 .option {
   margin-top: 6px;
   padding: 8px 10px;
-  background: #f8fafc;
-  border: 1px solid #dbe4f0;
+  background: var(--ts-canvas);
+  border: 1px solid rgba(28, 25, 23, 0.08);
   border-radius: 6px;
 }
 
 .option-on {
-  background: #eff6ff;
-  border-color: #2563eb;
+  background: var(--ts-tint);
+  border-color: var(--ts-accent-700);
 }
 
 .option-text,
@@ -138,40 +138,40 @@
 }
 
 .option-text {
-  color: #0f172a;
+  color: var(--ts-ink);
 }
 
 .option-text-on {
-  color: #1d4ed8;
+  color: var(--ts-accent-700);
 }
 
 .option-right {
-  background: #ecfdf3;
-  border-color: #16a34a;
+  background: var(--ts-tint);
+  border-color: var(--ts-accent-700);
 }
 
 .option-wrong {
-  background: #fef2f2;
-  border-color: #b42318;
+  background: var(--ts-terra-bg);
+  border-color: var(--ts-terra-dark);
 }
 
 .analysis {
   display: block;
   margin-top: 8px;
-  color: #334155;
+  color: var(--ts-ink);
   font-size: 14px;
   line-height: 1.6;
 }
 
 .score-num {
   display: block;
-  color: #0f172a;
+  color: var(--ts-ink);
   font-size: 29px;
   font-weight: 600;
 }
 
 .score-total {
-  color: #64748b;
+  color: var(--ts-muted);
   font-size: 15px;
   font-weight: 400;
 }
@@ -186,7 +186,7 @@
 
 .bar-fill {
   height: 6px;
-  background: #2563eb;
+  background: var(--ts-accent);
 }
 
 .choice,
@@ -201,7 +201,7 @@
   margin-bottom: 8px;
   padding: 10px;
   background: #ffffff;
-  border: 1px solid #dbe4f0;
+  border: 1px solid rgba(28, 25, 23, 0.08);
   border-radius: 8px;
 }
 
@@ -215,12 +215,12 @@
 
 .tree-name {
   font-size: 16px;
-  color: #0f172a;
+  color: var(--ts-ink);
 }
 
 .expander {
   margin-right: 4px;
-  color: #2563eb;
+  color: var(--ts-accent-700);
   font-size: 15px;
 }
 
@@ -231,12 +231,12 @@
   width: 19px;
   height: 19px;
   margin-right: 8px;
-  border: 1px solid #2563eb;
+  border: 1px solid var(--ts-accent-700);
   border-radius: 4px;
 }
 
 .box-on {
-  background: #2563eb;
+  background: var(--ts-accent);
 }
 
 .box-off {
@@ -266,19 +266,19 @@
 
 .ghost {
   background: #ffffff;
-  color: #2563eb;
-  border: 1px solid #2563eb;
+  color: var(--ts-accent-700);
+  border: 1px solid var(--ts-accent-700);
 }
 
 .secondary {
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: var(--ts-tint);
+  color: var(--ts-accent-700);
 }
 
 .danger {
   background: #ffffff;
-  color: #b42318;
-  border: 1px solid #fecaca;
+  color: var(--ts-terra-dark);
+  border: 1px solid var(--ts-terra-bg);
 }
 
 .primary[disabled] {
@@ -338,13 +338,13 @@
   width: 15px;
   height: 15px;
   margin-right: 8px;
-  border: 1px solid #94a3b8;
+  border: 1px solid var(--ts-muted);
   border-radius: 7px;
 }
 
 .radio-on {
-  border-color: #2563eb;
-  background: #2563eb;
+  border-color: var(--ts-accent-700);
+  background: var(--ts-accent);
 }
 
 .step {
@@ -359,18 +359,18 @@
   height: 8px;
   margin-right: 6px;
   border-radius: 4px;
-  background: #dbe4f0;
+  background: rgba(28, 25, 23, 0.08);
 }
 
 .step-dot-on {
-  background: #2563eb;
+  background: var(--ts-accent);
 }
 
 .step-label {
   font-size: 15px;
-  color: #0f172a;
+  color: var(--ts-ink);
 }
 
 .step-label-wait {
-  color: #94a3b8;
+  color: var(--ts-muted);
 }

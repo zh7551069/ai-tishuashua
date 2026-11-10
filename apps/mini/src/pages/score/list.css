@@ -81,7 +81,7 @@
   justify-content: center;
   padding: 3px 8px;
   border-radius: 7px;
-  background: #eff6ff;
+  background: var(--ts-tint);
   flex-shrink: 0;
 }
 
@@ -91,7 +91,7 @@
 }
 
 .pr-ai-badge-text {
-  color: #2563eb;
+  color: var(--ts-accent-700);
   font-size: 10px;
   font-weight: 700;
   line-height: 14px;
@@ -101,7 +101,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 10px;
   font-weight: 400;
   line-height: 14px;
@@ -118,7 +118,7 @@
   gap: 16px;
   padding: 14px;
   border-radius: 12px;
-  background: #eff6ff;
+  background: var(--ts-tint);
   box-sizing: border-box;
 }
 
@@ -132,14 +132,14 @@
 }
 
 .pr-score-label {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 10px;
   font-weight: 500;
   line-height: 14px;
 }
 
 .pr-score-num {
-  color: #2563eb;
+  color: var(--ts-accent-700);
   font-size: 30px;
   font-weight: 700;
   line-height: 36px;
@@ -154,14 +154,14 @@
 }
 
 .pr-master-label {
-  color: #4b5563;
+  color: var(--ts-muted);
   font-size: 12px;
   font-weight: 700;
   line-height: 16px;
 }
 
 .pr-master-line {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 16px;
   font-weight: 700;
   line-height: 22px;
@@ -184,11 +184,11 @@
 }
 
 .pr-note-good {
-  background: #dcfce7;
+  background: var(--ts-tint);
 }
 
 .pr-note-weak {
-  background: #fff7ed;
+  background: var(--ts-warning-bg);
 }
 
 .pr-accent {
@@ -199,11 +199,11 @@
 }
 
 .pr-accent-good {
-  background: #16a34a;
+  background: var(--ts-accent-700);
 }
 
 .pr-accent-weak {
-  background: #ea580c;
+  background: var(--ts-warning);
 }
 
 .pr-note-text {
@@ -215,11 +215,11 @@
 }
 
 .pr-note-good .pr-note-text {
-  color: #16a34a;
+  color: var(--ts-accent-700);
 }
 
 .pr-note-weak .pr-note-text {
-  color: #ea580c;
+  color: var(--ts-warning);
 }
 
 .pr-kp {
@@ -228,12 +228,12 @@
   gap: 10px;
   padding: 12px;
   border-radius: 12px;
-  background: #f8f9fb;
+  background: var(--ts-canvas);
   box-sizing: border-box;
 }
 
 .pr-kp-title {
-  color: #4b5563;
+  color: var(--ts-muted);
   font-size: 13px;
   font-weight: 700;
   line-height: 18px;
@@ -263,7 +263,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  color: #4b5563;
+  color: var(--ts-muted);
   font-size: 12px;
   font-weight: 500;
   line-height: 16px;
@@ -279,11 +279,11 @@
 }
 
 .pr-tone-good {
-  color: #16a34a;
+  color: var(--ts-accent-700);
 }
 
 .pr-tone-weak {
-  color: #ea580c;
+  color: var(--ts-warning);
 }
 
 .pr-track {
@@ -299,17 +299,17 @@
 }
 
 .pr-fillbar-good {
-  background: #16a34a;
+  background: var(--ts-accent-700);
 }
 
 .pr-fillbar-weak {
-  background: #ea580c;
+  background: var(--ts-warning);
 }
 
 .pr-cta {
   height: 48px;
   border-radius: 14px;
-  background: #2563eb;
+  background: var(--ts-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -324,7 +324,7 @@
 
 .pr-placeholder {
   align-self: stretch;
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 13px;
   font-weight: 400;
   line-height: 18px;
@@ -352,12 +352,12 @@
 }
 
 .pr-chip-on {
-  background: #2563eb;
+  background: var(--ts-accent);
   box-shadow: none;
 }
 
 .pr-chip-text {
-  color: #4b5563;
+  color: var(--ts-muted);
   font-size: 12px;
   font-weight: 700;
   line-height: 16px;
@@ -369,7 +369,7 @@
 
 .pr-hint,
 .pr-none {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 10px;
   font-weight: 400;
   line-height: 14px;
@@ -414,11 +414,11 @@
 }
 
 .pr-badge-practice {
-  background: #eff6ff;
+  background: var(--ts-tint);
 }
 
 .pr-badge-exam {
-  background: #fff7ed;
+  background: var(--ts-warning-bg);
 }
 
 .pr-badge-text {
@@ -428,18 +428,18 @@
 }
 
 .pr-badge-practice .pr-badge-text {
-  color: #2563eb;
+  color: var(--ts-accent-700);
 }
 
 .pr-badge-exam .pr-badge-text {
-  color: #ea580c;
+  color: var(--ts-warning);
 }
 
 .pr-title {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 13px;
   font-weight: 700;
   line-height: 18px;
@@ -458,7 +458,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 10px;
   font-weight: 400;
   line-height: 14px;
@@ -529,7 +529,7 @@
 }
 
 .pr-empty-title {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 16px;
   font-weight: 700;
   line-height: 22px;
@@ -537,7 +537,7 @@
 }
 
 .pr-empty-sub {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 12px;
   font-weight: 400;
   line-height: 16px;
@@ -548,7 +548,7 @@
   width: 160px;
   height: 44px;
   border-radius: 14px;
-  background: #2563eb;
+  background: var(--ts-accent);
   display: flex;
   align-items: center;
   justify-content: center;

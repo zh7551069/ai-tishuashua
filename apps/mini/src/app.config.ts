@@ -5,6 +5,7 @@ export default defineAppConfig({
     'pages/me/index',
     'pages/settings/index',
     'pages/settings/theme/index',
+    'pages/pack/index',
     'pages/pack/domain/index',
     'pages/pack/certificate/index',
     'pages/pack/knowledge/index',
@@ -27,8 +28,8 @@ export default defineAppConfig({
   ],
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#f8f9fb',
-    backgroundColor: '#f8f9fb',
+    navigationBarBackgroundColor: '#F7F8F4',
+    backgroundColor: '#F7F8F4',
     navigationBarTitleText: '题刷刷',
     navigationBarTextStyle: 'black',
   },

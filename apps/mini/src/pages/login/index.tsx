@@ -33,7 +33,7 @@ export default function LoginPage() {
   useDidShow(() => {
     void Taro.setNavigationBarColor({
       frontColor: '#000000',
-      backgroundColor: '#eff6ff',
+      backgroundColor: '#F4F8E8',
     }).catch(() => undefined);
     if (phaseRef.current === 'authorizing' || phaseRef.current === 'filling') {
       return;

@@ -88,7 +88,7 @@
 }
 
 .dlg-title {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 18px;
   font-weight: 700;
   line-height: 26px;
@@ -104,7 +104,7 @@
 }
 
 .dlg-count {
-  color: #2563eb;
+  color: var(--ts-accent-700);
   font-size: 15px;
   font-weight: 700;
   line-height: 22px;
@@ -122,7 +122,7 @@
 .dlg-bar-fill {
   height: 8px;
   border-radius: 6px;
-  background: #2563eb;
+  background: var(--ts-accent);
 }
 
 .dlg-meta {
@@ -134,7 +134,7 @@
 }
 
 .dlg-meta-line {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 11px;
   font-weight: 400;
   line-height: 16px;
@@ -150,7 +150,7 @@
 
 .dlg-body {
   align-self: stretch;
-  color: #4b5563;
+  color: var(--ts-muted);
   font-size: 13px;
   font-weight: 400;
   line-height: 20px;
@@ -163,14 +163,14 @@
   align-items: center;
   justify-content: center;
   padding: 8px 12px;
-  background: #fff7ed;
+  background: var(--ts-warning-bg);
   border-radius: 8px;
-  box-shadow: inset 0 0 0 1px #fdba74;
+  box-shadow: inset 0 0 0 1px var(--ts-warning);
   box-sizing: border-box;
 }
 
 .dlg-banner-text {
-  color: #c2410c;
+  color: var(--ts-warning);
   font-size: 12px;
   font-weight: 500;
   line-height: 16px;
@@ -200,7 +200,7 @@
 }
 
 .dlg-caption {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 11px;
   font-weight: 400;
   line-height: 16px;
@@ -244,37 +244,37 @@
 }
 
 .dlg-btn-primary {
-  background: #2563eb;
+  background: var(--ts-accent);
   color: #ffffff;
 }
 
 .dlg-btn-cancel {
   background: #ffffff;
-  color: #4b5563;
+  color: var(--ts-muted);
   box-shadow: inset 0 0 0 1px #e5e7eb;
 }
 
 .dlg-btn-ghost {
   background: #ffffff;
-  color: #111827;
+  color: var(--ts-ink);
   box-shadow: inset 0 0 0 1px #e5e7eb;
 }
 
 .dlg-btn-muted {
   background: #ffffff;
-  color: #4b5563;
+  color: var(--ts-muted);
   border-radius: 14px;
   box-shadow: inset 0 0 0 1px #e5e7eb;
 }
 
 .dlg-btn-orange {
   background: #ffffff;
-  color: #ea580c;
-  box-shadow: inset 0 0 0 1.5px #ea580c;
+  color: var(--ts-warning);
+  box-shadow: inset 0 0 0 1.5px var(--ts-warning);
 }
 
 .dlg-btn-danger {
-  background: #dc2626;
+  background: var(--ts-terra);
   color: #ffffff;
   border-radius: 14px;
 }
@@ -292,7 +292,7 @@
 }
 
 .dlg-link-text {
-  color: #2563eb;
+  color: var(--ts-accent-700);
   font-size: 14px;
   font-weight: 700;
   line-height: 20px;

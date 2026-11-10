@@ -1,0 +1,144 @@
+.pk-page,
+.pk-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.pk-page {
+  padding: 4px 20px 24px;
+}
+
+.pk-banner,
+.pk-empty-art {
+  width: 100%;
+  height: 148px;
+  border-radius: 20px;
+}
+
+.pk-card {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  padding: 16px 16px 16px 0;
+  background: var(--ts-surface);
+  border-radius: 20px;
+  box-sizing: border-box;
+}
+
+.pk-card-off {
+  opacity: 0.72;
+}
+
+.pk-bar {
+  width: 4px;
+  border-radius: 4px;
+  background: var(--ts-accent-100);
+  flex: none;
+}
+
+.pk-card-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pk-kicker-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pk-kicker,
+.pk-link {
+  color: var(--ts-accent-700);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.pk-kicker {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.pk-name {
+  color: var(--ts-ink);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.pk-meta,
+.pk-note {
+  color: var(--ts-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.pk-pills {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.pk-pill {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--ts-tint);
+  color: var(--ts-accent-700);
+  font-size: 12px;
+  line-height: 28px;
+}
+
+.pk-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.pk-text-btn {
+  color: var(--ts-accent-700);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 32px;
+}
+
+.pk-text-danger {
+  color: var(--ts-terra);
+}
+
+.pk-field {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--ts-canvas);
+  border-radius: 12px;
+  color: var(--ts-ink);
+  font-size: 16px;
+}
+
+.pk-sheet-name {
+  color: var(--ts-ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.pk-sheet-meta {
+  display: block;
+  margin-top: 2px;
+  color: var(--ts-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.pk-foot {
+  margin-top: 8px;
+}

@@ -1,0 +1,662 @@
+html,
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-synthesis-weight: none;
+  background: transparent;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.content-layer {
+  position: relative;
+  z-index: 0;
+}
+
+.frame,
+.shape,
+.text,
+.svg-container,
+.mask-container {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 0;
+}
+
+.svg-container>svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  shape-rendering: geometricPrecision;
+}
+
+.svg-container>img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.self-stretch {
+  align-self: stretch;
+}
+
+.grow {
+  flex-grow: 1;
+}
+
+.min-w-0 {
+  min-width: 0px;
+}
+
+.min-h-0 {
+  min-height: 0px;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.relative {
+  position: relative;
+}
+
+.box-border {
+  box-sizing: border-box;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.whitespace-pre {
+  white-space: pre;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.gap-\[4px\] {
+  gap: 4px;
+}
+
+.gap-\[12px\] {
+  gap: 12px;
+}
+
+.gap-\[10px\] {
+  gap: 10px;
+}
+
+.gap-\[6px\] {
+  gap: 6px;
+}
+
+.gap-\[14px\] {
+  gap: 14px;
+}
+
+.gap-\[8px\] {
+  gap: 8px;
+}
+
+.gap-\[2px\] {
+  gap: 2px;
+}
+
+.gap-\[3px\] {
+  gap: 3px;
+}
+
+.rounded-\[20px\] {
+  border-radius: 20px;
+}
+
+.rounded-\[999px\] {
+  border-radius: 999px;
+}
+
+.rounded-\[16px\] {
+  border-radius: 16px;
+}
+
+.rounded-\[24px\] {
+  border-radius: 24px;
+}
+
+.rounded-\[4px\] {
+  border-radius: 4px;
+}
+
+.rounded-\[99px\] {
+  border-radius: 99px;
+}
+
+.rounded-\[12px\] {
+  border-radius: 12px;
+}
+
+.rounded-\[6px\] {
+  border-radius: 6px;
+}
+
+.text-\[13px\] {
+  font-size: 13px;
+}
+
+.text-\[15px\] {
+  font-size: 15px;
+}
+
+.text-\[18px\] {
+  font-size: 18px;
+}
+
+.text-\[12px\] {
+  font-size: 12px;
+}
+
+.text-\[22px\] {
+  font-size: 22px;
+}
+
+.text-\[16px\] {
+  font-size: 16px;
+}
+
+.text-\[20px\] {
+  font-size: 20px;
+}
+
+.text-\[14px\] {
+  font-size: 14px;
+}
+
+.text-\[11px\] {
+  font-size: 11px;
+}
+
+.tracking-\[0\.3px\] {
+  letter-spacing: 0.3px;
+}
+
+.tracking-\[-0\.3px\] {
+  letter-spacing: -0.3px;
+}
+
+.tracking-\[-0\.2px\] {
+  letter-spacing: -0.2px;
+}
+
+.font-normal {
+  font-weight: 400;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.h-\[844px\] {
+  height: 844px;
+}
+
+.w-\[390px\] {
+  width: 390px;
+}
+
+.h-\[34px\] {
+  height: 34px;
+}
+
+.w-\[124px\] {
+  width: 124px;
+}
+
+.h-\[54px\] {
+  height: 54px;
+}
+
+.h-\[710px\] {
+  height: 710px;
+}
+
+.h-\[22px\] {
+  height: 22px;
+}
+
+.h-\[44px\] {
+  height: 44px;
+}
+
+.w-\[44px\] {
+  width: 44px;
+}
+
+.w-\[260px\] {
+  width: 260px;
+}
+
+.h-\[148px\] {
+  height: 148px;
+}
+
+.h-\[332px\] {
+  height: 332px;
+}
+
+.h-\[50px\] {
+  height: 50px;
+}
+
+.h-\[5px\] {
+  height: 5px;
+}
+
+.w-\[128px\] {
+  width: 128px;
+}
+
+.h-\[210px\] {
+  height: 210px;
+}
+
+.h-\[345px\] {
+  height: 345px;
+}
+
+.h-\[36px\] {
+  height: 36px;
+}
+
+.h-\[182px\] {
+  height: 182px;
+}
+
+.h-\[246px\] {
+  height: 246px;
+}
+
+.h-\[322px\] {
+  height: 322px;
+}
+
+.w-\[334px\] {
+  width: 334px;
+}
+
+.h-\[12px\] {
+  height: 12px;
+}
+
+.w-\[17px\] {
+  width: 17px;
+}
+
+.w-\[16px\] {
+  width: 16px;
+}
+
+.w-\[25px\] {
+  width: 25px;
+}
+
+.h-\[20px\] {
+  height: 20px;
+}
+
+.w-\[12px\] {
+  width: 12px;
+}
+
+.w-\[4px\] {
+  width: 4px;
+}
+
+.w-\[316px\] {
+  width: 316px;
+}
+
+.w-\[36px\] {
+  width: 36px;
+}
+
+.h-\[16px\] {
+  height: 16px;
+}
+
+.w-\[22px\] {
+  width: 22px;
+}
+
+.w-\[284px\] {
+  width: 284px;
+}
+
+.w-\[350px\] {
+  width: 350px;
+}
+
+.w-\[259px\] {
+  width: 259px;
+}
+
+.w-\[287px\] {
+  width: 287px;
+}
+
+.h-\[6px\] {
+  height: 6px;
+}
+
+.w-\[286px\] {
+  width: 286px;
+}
+
+.h-\[48px\] {
+  height: 48px;
+}
+
+.h-\[28px\] {
+  height: 28px;
+}
+
+.w-\[165px\] {
+  width: 165px;
+}
+
+.w-\[119px\] {
+  width: 119px;
+}
+
+.w-\[99px\] {
+  width: 99px;
+}
+
+.w-\[173px\] {
+  width: 173px;
+}
+
+.w-\[133px\] {
+  width: 133px;
+}
+
+.left-\[0px\] {
+  left: 0px;
+}
+
+.top-\[40px\] {
+  top: 40px;
+}
+
+.left-\[3290px\] {
+  left: 3290px;
+}
+
+.left-\[470px\] {
+  left: 470px;
+}
+
+.left-\[940px\] {
+  left: 940px;
+}
+
+.left-\[1410px\] {
+  left: 1410px;
+}
+
+.left-\[1880px\] {
+  left: 1880px;
+}
+
+.left-\[2350px\] {
+  left: 2350px;
+}
+
+.left-\[2820px\] {
+  left: 2820px;
+}
+
+.top-\[0px\] {
+  top: 0px;
+}
+
+.left-\[133px\] {
+  left: 133px;
+}
+
+.top-\[11px\] {
+  top: 11px;
+}
+
+.top-\[541px\] {
+  top: 541px;
+}
+
+.top-\[522px\] {
+  top: 522px;
+}
+
+.pl-\[28px\] {
+  padding-left: 28px;
+}
+
+.pr-\[28px\] {
+  padding-right: 28px;
+}
+
+.pt-\[16px\] {
+  padding-top: 16px;
+}
+
+.pb-\[10px\] {
+  padding-bottom: 10px;
+}
+
+.pl-\[12px\] {
+  padding-left: 12px;
+}
+
+.pr-\[20px\] {
+  padding-right: 20px;
+}
+
+.pt-\[4px\] {
+  padding-top: 4px;
+}
+
+.pb-\[12px\] {
+  padding-bottom: 12px;
+}
+
+.pl-\[20px\] {
+  padding-left: 20px;
+}
+
+.pt-\[8px\] {
+  padding-top: 8px;
+}
+
+.pt-\[6px\] {
+  padding-top: 6px;
+}
+
+.px-\[28px\] {
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+.pb-\[16px\] {
+  padding-bottom: 16px;
+}
+
+.pr-\[16px\] {
+  padding-right: 16px;
+}
+
+.pb-\[14px\] {
+  padding-bottom: 14px;
+}
+
+.pb-\[8px\] {
+  padding-bottom: 8px;
+}
+
+.pt-\[12px\] {
+  padding-top: 12px;
+}
+
+.px-\[14px\] {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.px-\[16px\] {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.py-\[14px\] {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.py-\[12px\] {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.pt-\[10px\] {
+  padding-top: 10px;
+}
+
+.pb-\[18px\] {
+  padding-bottom: 18px;
+}
+
+.pt-\[24px\] {
+  padding-top: 24px;
+}
+
+.p-\[14px\] {
+  padding: 14px;
+}
+
+.px-\[12px\] {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.py-\[10px\] {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.px-\[8px\] {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.px-\[10px\] {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.text-\[rgb\(87\,83\,78\)\] {
+  color: rgb(87, 83, 78);
+}
+
+.text-\[rgb\(28\,25\,23\)\] {
+  color: rgb(28, 25, 23);
+}
+
+.text-\[rgb\(120\,113\,108\)\] {
+  color: rgb(120, 113, 108);
+}
+
+.text-\[rgb\(255\,255\,255\)\] {
+  color: rgb(255, 255, 255);
+}
+
+.text-\[rgb\(63\,98\,18\)\] {
+  color: rgb(63, 98, 18);
+}
+
+.text-\[rgb\(217\,119\,6\)\] {
+  color: rgb(217, 119, 6);
+}
+
+.text-\[rgb\(168\,162\,158\)\] {
+  color: rgb(168, 162, 158);
+}
+
+.text-\[rgb\(192\,86\,60\)\] {
+  color: rgb(192, 86, 60);
+}
+
+.text-\[rgb\(77\,124\,15\)\] {
+  color: rgb(77, 124, 15);
+}
+
+.text-\[rgb\(154\,52\,18\)\] {
+  color: rgb(154, 52, 18);
+}
+
+.text-\[rgb\(154\,63\,44\)\] {
+  color: rgb(154, 63, 44);
+}
+
+.z-\[1\] {
+  z-index: 1;
+}
+
+.z-\[2\] {
+  z-index: 2;
+}
+
+.z-\[3\] {
+  z-index: 3;
+}
+
+.z-\[4\] {
+  z-index: 4;
+}
+
+[data-figma-render] .fr-5zl726 {
+  background: rgb(247, 248, 244)
+}

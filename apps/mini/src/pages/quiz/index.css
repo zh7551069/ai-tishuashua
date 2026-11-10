@@ -16,7 +16,7 @@
 }
 
 .u-nav.qs-nav .u-nav-title {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 18px;
   font-weight: 700;
   line-height: 26px;
@@ -44,14 +44,14 @@
 }
 
 .qs-kicker {
-  color: #2563eb;
+  color: var(--ts-accent-700);
   font-size: 11px;
   font-weight: 400;
   line-height: 16px;
 }
 
 .qs-pack-line {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 14px;
   font-weight: 700;
   line-height: 22px;
@@ -59,7 +59,7 @@
 
 .qs-pack-off {
   margin-top: 2px;
-  color: #6b7280;
+  color: var(--ts-muted);
   font-size: 12px;
   line-height: 18px;
 }
@@ -98,14 +98,14 @@
 }
 
 .qs-label {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 14px;
   font-weight: 700;
   line-height: 20px;
 }
 
 .qs-aside {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 11px;
   font-weight: 400;
   line-height: 16px;
@@ -136,12 +136,12 @@
 }
 
 .qs-chip-on {
-  background: #2563eb;
-  box-shadow: inset 0 0 0 1px #2563eb;
+  background: var(--ts-accent);
+  box-shadow: inset 0 0 0 1px var(--ts-accent-700);
 }
 
 .qs-chip-label {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 13px;
   font-weight: 400;
   line-height: 20px;
@@ -164,14 +164,14 @@
 }
 
 .qs-hint {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 11px;
   font-weight: 400;
   line-height: 16px;
 }
 
 .qs-alert {
-  color: #dc2626;
+  color: var(--ts-terra);
   font-size: 11px;
   font-weight: 400;
   line-height: 16px;
@@ -200,7 +200,7 @@
 
 .qs-switch-on {
   justify-content: flex-end;
-  background: #2563eb;
+  background: var(--ts-accent);
 }
 
 .qs-knob {
@@ -227,7 +227,7 @@
 }
 
 .qs-field {
-  color: #4b5563;
+  color: var(--ts-muted);
   font-size: 12px;
   font-weight: 400;
   line-height: 17px;
@@ -254,11 +254,11 @@
 }
 
 .qs-seg-on {
-  background: #2563eb;
+  background: var(--ts-accent);
 }
 
 .qs-seg-label {
-  color: #4b5563;
+  color: var(--ts-muted);
   font-size: 12px;
   font-weight: 400;
   line-height: 16px;
@@ -305,14 +305,14 @@
 }
 
 .qs-step-sign {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 20px;
   font-weight: 400;
   line-height: 24px;
 }
 
 .qs-step-num {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
@@ -327,7 +327,7 @@
 .qs-cta {
   height: 48px;
   border-radius: 14px;
-  background: #2563eb;
+  background: var(--ts-accent);
   color: #ffffff;
   font-size: 16px;
   font-weight: 700;
@@ -340,6 +340,6 @@
 
 .qs-foot .qs-cta[disabled] {
   background: #e5e7eb;
-  color: #9ca3af;
+  color: var(--ts-muted);
   opacity: 1;
 }

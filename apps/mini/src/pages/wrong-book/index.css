@@ -41,7 +41,7 @@
 .wb-search-input {
   flex: 1;
   height: 36px;
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 13px;
   line-height: 20px;
 }
@@ -72,7 +72,7 @@
 }
 
 .wb-stat-label {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 11px;
   font-weight: 400;
   line-height: 14px;
@@ -86,7 +86,7 @@
 }
 
 .wb-total {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 24px;
   font-weight: 700;
   line-height: 24px;
@@ -94,7 +94,7 @@
 
 .wb-unit,
 .wb-den {
-  color: #6b7280;
+  color: var(--ts-muted);
   font-size: 12px;
   line-height: 16px;
 }
@@ -108,7 +108,7 @@
 }
 
 .wb-cleared-num {
-  color: #16a34a;
+  color: var(--ts-accent-700);
   font-size: 20px;
   font-weight: 700;
   line-height: 20px;
@@ -169,7 +169,7 @@
 .wb-chip-text,
 .wb-cert-text,
 .wb-time-text {
-  color: #6b7280;
+  color: var(--ts-muted);
   font-weight: 400;
 }
 
@@ -179,7 +179,7 @@
 }
 
 .wb-chip-on {
-  background: #2563eb;
+  background: var(--ts-accent);
   box-shadow: none;
 }
 
@@ -223,13 +223,13 @@
 
 .wb-cert-on,
 .wb-time-on {
-  background: #eff6ff;
+  background: var(--ts-tint);
   box-shadow: none;
 }
 
 .wb-cert-on .wb-cert-text,
 .wb-time-on .wb-time-text {
-  color: #2563eb;
+  color: var(--ts-accent-700);
   font-weight: 700;
 }
 
@@ -241,9 +241,9 @@
 .wb-tip {
   padding: 10px 12px;
   border-radius: 10px;
-  background: #eff6ff;
-  box-shadow: inset 0 0 0 1px #bfdbfe;
-  color: #2563eb;
+  background: var(--ts-tint);
+  box-shadow: inset 0 0 0 1px var(--ts-accent-100);
+  color: var(--ts-accent-700);
   font-size: 12px;
   line-height: 18px;
 }
@@ -291,42 +291,42 @@
 }
 
 .wb-type {
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--ts-tint);
+  color: var(--ts-accent-700);
   font-weight: 700;
 }
 
 .wb-type-multi {
-  background: #f5f3ff;
-  color: #7c3aed;
+  background: var(--ts-tint);
+  color: var(--ts-accent-700);
 }
 
 .wb-type-judge {
-  background: #fff7ed;
-  color: #ea580c;
+  background: var(--ts-warning-bg);
+  color: var(--ts-warning);
 }
 
 .wb-wrong {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--ts-terra-bg);
+  color: var(--ts-terra);
   font-weight: 400;
 }
 
 .wb-status {
-  background: #fff7ed;
-  color: #c2410c;
+  background: var(--ts-warning-bg);
+  color: var(--ts-warning);
   font-weight: 400;
   flex-shrink: 0;
 }
 
 .wb-status-ok {
-  background: #dcfce7;
+  background: var(--ts-tint);
   color: #059669;
   font-weight: 700;
 }
 
 .wb-stem {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 13px;
   font-weight: 700;
   line-height: 20px;
@@ -342,7 +342,7 @@
 .wb-meta-main {
   flex: 1;
   min-width: 0;
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 10px;
   line-height: 14px;
   overflow: hidden;
@@ -353,7 +353,7 @@
 .wb-meta-date,
 .wb-chev {
   flex-shrink: 0;
-  color: #9ca3af;
+  color: var(--ts-muted);
 }
 
 .wb-meta-date {
@@ -368,7 +368,7 @@
 
 .wb-none {
   padding: 28px 12px;
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 13px;
   line-height: 20px;
   text-align: center;
@@ -420,7 +420,7 @@
 }
 
 .wb-err-outer {
-  background: #fee2e2;
+  background: var(--ts-terra-bg);
 }
 
 .wb-err-inner {
@@ -434,7 +434,7 @@
   width: 20px;
   height: 20px;
   border-radius: 10px;
-  background: #dc2626;
+  background: var(--ts-terra);
 }
 
 .wb-bang-stem {
@@ -458,7 +458,7 @@
 }
 
 .wb-state-title {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 17px;
   font-weight: 700;
   line-height: 24px;
@@ -466,7 +466,7 @@
 }
 
 .wb-state-sub {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 13px;
   font-weight: 400;
   line-height: 20px;
@@ -477,7 +477,7 @@
   height: 46px;
   padding: 0 28px;
   border-radius: 14px;
-  background: #2563eb;
+  background: var(--ts-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -727,7 +727,7 @@
 .wb-accent {
   height: 6px;
   align-self: stretch;
-  background: #2563eb;
+  background: var(--ts-accent);
 }
 
 .wb-accent-gap {
@@ -738,8 +738,8 @@
 .wb-kicker {
   padding: 4px 10px;
   border-radius: 999px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--ts-tint);
+  color: var(--ts-accent-700);
   font-size: 11px;
   font-weight: 700;
   line-height: 16px;
@@ -749,7 +749,7 @@
   width: 72px;
   height: 72px;
   border-radius: 36px;
-  background: #dcfce7;
+  background: var(--ts-tint);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -759,7 +759,7 @@
   width: 52px;
   height: 52px;
   border-radius: 26px;
-  background: #16a34a;
+  background: var(--ts-accent-700);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -769,7 +769,7 @@
   width: 40px;
   height: 40px;
   border-radius: 20px;
-  background: #22c55e;
+  background: var(--ts-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -783,7 +783,7 @@
 }
 
 .wb-wow {
-  color: #111827;
+  color: var(--ts-ink);
   font-size: 26px;
   font-weight: 700;
   line-height: 34px;
@@ -791,7 +791,7 @@
 }
 
 .wb-wow-sub {
-  color: #4b5563;
+  color: var(--ts-muted);
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -806,7 +806,7 @@
   justify-content: space-between;
   padding: 12px 16px;
   border-radius: 14px;
-  background: #dcfce7;
+  background: var(--ts-tint);
   box-sizing: border-box;
 }
 
@@ -817,7 +817,7 @@
 }
 
 .wb-hero-label {
-  color: #4b5563;
+  color: var(--ts-muted);
   font-size: 13px;
   font-weight: 400;
   line-height: 18px;
@@ -831,14 +831,14 @@
 }
 
 .wb-hero-num {
-  color: #16a34a;
+  color: var(--ts-accent-700);
   font-size: 36px;
   font-weight: 700;
   line-height: 40px;
 }
 
 .wb-hero-unit {
-  color: #16a34a;
+  color: var(--ts-accent-700);
   font-size: 16px;
   font-weight: 700;
   line-height: 22px;
@@ -857,14 +857,14 @@
 }
 
 .wb-mini-mark {
-  color: #16a34a;
+  color: var(--ts-accent-700);
   font-size: 14px;
   font-weight: 700;
   line-height: 18px;
 }
 
 .wb-tally {
-  color: #9ca3af;
+  color: var(--ts-muted);
   font-size: 12px;
   font-weight: 400;
   line-height: 16px;
@@ -875,7 +875,7 @@
   align-self: stretch;
   padding: 14px 0;
   border-radius: 14px;
-  background: #2563eb;
+  background: var(--ts-accent);
   display: flex;
   align-items: center;
   justify-content: center;

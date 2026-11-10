@@ -41,7 +41,7 @@ export default function SettingsPage() {
   const [ready, setReady] = useState(false);
   const [binding, setBinding] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [themeId, setThemeId] = useState<ThemeId>('blue');
+  const [themeId, setThemeId] = useState<ThemeId>('yellow-green');
   const [notify, setNotify] = useState<NotifyPrefs>({ practice: true, wrong: false });
   const [cacheKb, setCacheKb] = useState(0);
 

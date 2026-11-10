@@ -68,7 +68,7 @@ type Snapshot = {
 };
 
 export default function MePage() {
-  const [themeId, setThemeId] = useState<ThemeId>('blue');
+  const [themeId, setThemeId] = useState<ThemeId>('yellow-green');
   const [today, setToday] = useState(() => dayKey(new Date()));
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [checkin, setCheckin] = useState<CheckinState>(EMPTY_CHECKIN);
@@ -333,7 +333,7 @@ function MeBody(props: {
           glyph={<PackGlyph />}
           title="刷题包"
           meta={view.packText}
-          onClick={() => void Taro.reLaunch({ url: '/pages/home/index' })}
+          onClick={() => open('/pages/pack/index')}
         />
         <View className="ms-line" />
         <MenuRow

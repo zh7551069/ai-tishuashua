@@ -1,0 +1,48 @@
+/* 默认黄绿。主题类和 apply-theme 打到 .u-screen 后覆盖强调色。 */
+
+page,
+.u-screen,
+.ts-theme {
+  --ts-ink: #1c1917;
+  --ts-muted: #78716c;
+  --ts-canvas: #f7f8f4;
+  --ts-surface: #ffffff;
+  --ts-tint: #f4f8e8;
+  --ts-accent: #8eca3a;
+  --ts-accent-100: #c0e460;
+  --ts-accent-700: #4d7c0f;
+  --ts-warning: #d97706;
+  --ts-warning-bg: var(--ts-warning-bg);
+  --ts-terra: #c0563c;
+  --ts-terra-bg: #f6ebe7;
+  --ts-terra-dark: #9a3f2c;
+  color: var(--ts-ink);
+}
+
+.ts-theme-yellow-green {
+  --ts-accent: #8eca3a;
+  --ts-accent-100: #c0e460;
+  --ts-accent-700: #4d7c0f;
+  --ts-tint: #f4f8e8;
+}
+
+.ts-theme-forest {
+  --ts-accent: #3f5c25;
+  --ts-accent-100: #6b8f3a;
+  --ts-accent-700: #2c4218;
+  --ts-tint: #eef3e6;
+}
+
+.ts-theme-tea {
+  --ts-accent: #7a8b54;
+  --ts-accent-100: #bdc5aa;
+  --ts-accent-700: #4c5634;
+  --ts-tint: #eff1ea;
+}
+
+.ts-theme-warm-sprout {
+  --ts-accent: #c6a63a;
+  --ts-accent-100: #e3d29d;
+  --ts-accent-700: #7b6724;
+  --ts-tint: #f8f4e7;
+}

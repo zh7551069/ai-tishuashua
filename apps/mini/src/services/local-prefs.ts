@@ -1,15 +1,21 @@
 import Taro from '@tarojs/taro';
+import { normalizeHeroGender, type HeroGender } from '../theme/hero';
+import {
+  PALETTES,
+  isThemeId,
+  normalizeThemeId,
+  THEME_IDS,
+  type ThemeId,
+} from '../theme/palettes';
 import { applyCheckin, EMPTY_CHECKIN, type CheckinState } from './me-model';
 import { readToken, saveToken } from './session';
 
 const CHECKIN_KEY = 'tishuashua.checkin';
 const THEME_KEY = 'tishuashua.theme';
 const NOTIFY_KEY = 'tishuashua.notify';
+const HERO_GENDER_KEY = 'tishuashua.heroGender';
 
-/** 主色取自附件色块 SVG。浅底只在 Bridge 的默认蓝选中态里出现，其余四色按同样的浅底关系配出。 */
-export const THEME_IDS = ['blue', 'teal', 'violet', 'orange', 'rose'] as const;
-
-export type ThemeId = (typeof THEME_IDS)[number];
+export { THEME_IDS, isThemeId, type ThemeId };
 
 export type ThemeSpec = {
   id: ThemeId;
@@ -20,43 +26,42 @@ export type ThemeSpec = {
   chip: string;
 };
 
-export const THEMES: readonly ThemeSpec[] = [
-  {
-    id: 'blue',
-    name: '默认蓝',
-    color: '#2563EB',
-    soft: '#EFF6FF',
-    line: '#93C5FD',
-    chip: '#BFDBFE',
-  },
-  { id: 'teal', name: '青绿', color: '#0D9488', soft: '#F0FDFA', line: '#5EEAD4', chip: '#99F6E4' },
-  { id: 'violet', name: '紫', color: '#7C3AED', soft: '#F5F3FF', line: '#C4B5FD', chip: '#DDD6FE' },
-  { id: 'orange', name: '橙', color: '#EA580C', soft: '#FFF7ED', line: '#FDBA74', chip: '#FED7AA' },
-  { id: 'rose', name: '玫红', color: '#E11D48', soft: '#FFF1F2', line: '#FDA4AF', chip: '#FECDD3' },
-];
-
-export function isThemeId(value: unknown): value is ThemeId {
-  return typeof value === 'string' && (THEME_IDS as readonly string[]).includes(value);
-}
+export const THEMES: readonly ThemeSpec[] = PALETTES.map((palette) => ({
+  id: palette.id,
+  name: palette.name,
+  color: palette.accent,
+  soft: palette.tint,
+  line: palette.accent100,
+  chip: palette.accent100,
+}));
 
 export function themeById(id: ThemeId): ThemeSpec {
-  return THEMES.find((item) => item.id === id) ?? THEMES[0];
+  return THEMES.find((item) => item.id === id) ?? THEMES[0]!;
 }
 
 export function readThemeId(): ThemeId {
   try {
-    const value: unknown = Taro.getStorageSync(THEME_KEY);
-    if (isThemeId(value)) {
-      return value;
-    }
+    return normalizeThemeId(Taro.getStorageSync(THEME_KEY));
   } catch {
-    return 'blue';
+    return 'yellow-green';
   }
-  return 'blue';
 }
 
 export function saveThemeId(id: ThemeId): void {
-  Taro.setStorageSync(THEME_KEY, id);
+  Taro.setStorageSync(THEME_KEY, normalizeThemeId(id));
+}
+
+export function readHeroGender(): HeroGender {
+  try {
+    return normalizeHeroGender(Taro.getStorageSync(HERO_GENDER_KEY));
+  } catch {
+    return 'female';
+  }
+}
+
+/** 本期没有设置入口。测试或以后的调试可以写这个键，界面不要调用。 */
+export function saveHeroGender(gender: HeroGender): void {
+  Taro.setStorageSync(HERO_GENDER_KEY, normalizeHeroGender(gender));
 }
 
 export type NotifyPrefs = { practice: boolean; wrong: boolean };
@@ -118,10 +123,11 @@ export function readCacheKb(): number {
   }
 }
 
-/** 清掉其余本地缓存，保留登录态、主题、签到和通知开关。 */
+/** 清掉其余本地缓存，保留登录态、主题、主图性别、签到和通知开关。 */
 export function clearDisposableCache(): number {
   const token = readToken();
   const theme = readThemeId();
+  const heroGender = readHeroGender();
   const checkin = readCheckin();
   const notify = readNotify();
   try {
@@ -133,6 +139,7 @@ export function clearDisposableCache(): number {
     saveToken(token);
   }
   saveThemeId(theme);
+  saveHeroGender(heroGender);
   saveCheckin(checkin);
   saveNotify(notify);
   return readCacheKb();

@@ -161,7 +161,7 @@ export default function SessionLedgerPage() {
       navPlain
       navClassName="sl-nav"
       title={SESSION_LEDGER_PAGE_TITLE}
-      background="#f8f9fb"
+      background="#F7F8F4"
       bodyFill={failed}
     >
       {phase === 'loading' ? <LoadingBlock label="正在加载" /> : null}

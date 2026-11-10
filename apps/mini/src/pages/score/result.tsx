@@ -148,7 +148,7 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
       footerClassName={
         review ? 'sc-foot sc-foot-review' : plain ? 'sc-foot sc-foot-plain' : 'sc-foot'
       }
-      background="#f8f9fb"
+      background="#F7F8F4"
       title={review ? '错题回顾' : '答题结果'}
       onBack={review ? () => setReview(false) : leave}
       right={
@@ -317,7 +317,7 @@ function Hero(props: { hero: NonNullable<ReturnType<typeof heroFor>> }) {
     <View className="sc-hero">
       <View
         className="sc-ring"
-        style={{ background: `conic-gradient(${hero.color} ${hero.rate * 360}deg, #e5e7eb 0deg)` }}
+        style={{ background: `conic-gradient(${hero.color} ${hero.rate * 360}deg, #E7E5E4 0deg)` }}
       >
         <View className="sc-ring-hole">
           <Text className="sc-ring-num">{hero.center}</Text>
