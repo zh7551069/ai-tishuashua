@@ -11,6 +11,8 @@ export const ApiErrorCode = {
   RATE_LIMITED: 'RATE_LIMITED',
   NOT_IMPLEMENTED: 'NOT_IMPLEMENTED',
   INTERNAL: 'INTERNAL',
+  /** 每日计划读路径上的未预期失败。其它接口的未捕获异常仍用 INTERNAL。 */
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
   /** 未配置 WECHAT_APP_ID / WECHAT_APP_SECRET，且未显式打开登录 mock。 */
   WECHAT_NOT_CONFIGURED: 'WECHAT_NOT_CONFIGURED',
   /** 未配置 ADMIN_USERNAME / ADMIN_PASSWORD。代码里没有默认帐号。 */

@@ -12,6 +12,7 @@ import {
 import { holdSessionEntitlement } from '@tishuashua/shared/entitlement';
 import { randomUUID } from 'node:crypto';
 import { ApiException, logServerError } from '../common/api.exception';
+import { DailyPlanService } from '../daily-plan/daily-plan.service';
 import { EntitlementService } from '../entitlement/entitlement.service';
 import { GrowthService } from '../growth/growth.service';
 import { QuizQueueService } from './quiz-queue.service';
@@ -25,6 +26,7 @@ export class QuizService {
     @Inject(QuizQueueService) private readonly queue: QuizQueueService,
     @Inject(EntitlementService) private readonly entitlement: EntitlementService,
     @Inject(GrowthService) private readonly growth: GrowthService,
+    @Inject(DailyPlanService) private readonly dailyPlan: DailyPlanService,
   ) {}
 
   async create(
@@ -228,6 +230,9 @@ export class QuizService {
     }
     if (result === 'fresh') {
       await this.maybeFirstSubmit(userId, before);
+    }
+    if (result === 'fresh' || result === 'already') {
+      await this.dailyPlan.recordAfterSubmit(userId, sessionId);
     }
     return this.requireSession(userId, sessionId);
   }

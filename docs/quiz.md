@@ -52,7 +52,7 @@ pnpm dev:worker
 
 ## 出题设置
 
-首页「开始刷题」进入 `/pages/quiz/index`。下架包的按钮保持不可用，出题设置页如果被直接打开也会拒绝。账号、脱敏手机号和退出登录在 `/pages/settings/index`，见 [微信登录](wechat-login.md)。
+首页「开始今日刷题练习」进入 `/pages/quiz/index`，并带上 `packId`、一个 `kpIds` 和 `intent=dailyPlan`。出题设置会预填这个知识点，题量、模式和知识点仍可改。下架包的按钮保持不可用。账号、脱敏手机号和退出登录在 `/pages/settings/index`，见 [微信登录](wechat-login.md)。
 
 - 只读展示当前包、证书、领域、知识点和总分
 - 题量 10 / 20 / 30 / 50，默认 20
@@ -140,6 +140,8 @@ curl -sS -X POST http://127.0.0.1:3000/api/quiz/sessions/会话id/submit \
 ```
 
 重复交卷返回同一份成绩，不会把错题次数再加一次。
+
+`source=normal` 且 `mode=practice`、会话带有刷题包时，交卷成功后会按 `paper_questions.kp_ids` 的并集写入 `daily_plan_item_completions`。只保留仍属于该包、且 `kind=knowledge_point` 的知识点。冲突时保留第一次的完成时间和会话。考试、复练同类、题型变异、错题集、取消和未交卷不写。回写失败只记日志和 `daily_plan_upsert_fail`，不回滚成绩。详见 [每日练习计划契约](contracts/tb30-home-daily-plan-C-contracts-v0.1.0-C.md)。
 
 判分规则：
 
