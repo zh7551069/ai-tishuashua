@@ -90,6 +90,8 @@ describe('quiz generation', { concurrency: 1 }, () => {
     process.env.REDIS_URL = redisUrl;
     process.env.LLM_MOCK = 'true';
     process.env.LLM_API_KEY = '';
+    // 全量 API 测试共用同一 Redis。默认微信登录 60 次会把本文件新增的 login 打成 429。
+    process.env.RATE_LIMIT_WECHAT_LOGIN_MAX = '100000';
 
     ctx.pool = new Pool({ connectionString: databaseUrl, max: 4 });
     ctx.redis = new Redis(redisUrl, {
