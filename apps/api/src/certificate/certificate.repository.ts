@@ -81,6 +81,7 @@ export class CertificateRepository {
               ON pack_cert.id = p.cert_id
             WHERE s.user_id = $1
               AND s.status = 'submitted'
+              AND s.source <> 'wrongSet'
           ),
           session_stats AS (
             SELECT

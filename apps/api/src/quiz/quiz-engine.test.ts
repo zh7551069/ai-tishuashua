@@ -245,7 +245,7 @@ describe('quiz generation rules', () => {
     assert.equal(ApiErrorCode.LLM_UNAVAILABLE, 'LLM_UNAVAILABLE');
   });
 
-  test('创建会话校验：wrongSet 拒绝，变异题量与模式钉死，intent 冲突 400', () => {
+  test('创建会话校验：wrongSet 只要求来源场次，变异题量与模式钉死，intent 冲突 400', () => {
     const base = {
       count: 10,
       difficulty: 'medium',
@@ -253,10 +253,60 @@ describe('quiz generation rules', () => {
       timer: { enabled: false },
       mode: 'practice',
     };
-    const wrongSet = parseCreateQuizSessionRequest({ ...base, source: 'wrongSet' });
-    assert.equal(wrongSet.ok, false);
-    if (!wrongSet.ok) {
-      assert.match(wrongSet.message, /暂未开放/);
+    const sourceId = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+    const missingSource = parseCreateQuizSessionRequest({ ...base, source: 'wrongSet' });
+    assert.equal(missingSource.ok, false);
+    if (!missingSource.ok) {
+      assert.match(missingSource.message, /请指定来源场次/);
+      assert.doesNotMatch(missingSource.message, /暂未开放/);
+    }
+    const badSource = parseCreateQuizSessionRequest({
+      source: 'wrongSet',
+      sourceSessionId: 'not-a-uuid',
+    });
+    assert.equal(badSource.ok, false);
+    if (!badSource.ok) {
+      assert.equal(badSource.message, '请指定来源场次');
+    }
+    const minimal = parseCreateQuizSessionRequest({
+      source: 'wrongSet',
+      sourceSessionId: sourceId,
+      count: 7,
+      knowledgePointIds: ['bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'],
+    });
+    assert.equal(minimal.ok, true);
+    if (minimal.ok) {
+      assert.equal(minimal.request.source, 'wrongSet');
+      assert.equal(minimal.request.sourceSessionId, sourceId);
+      assert.equal(minimal.request.knowledgePointIds, null);
+      assert.equal(minimal.request.settings.mode, 'practice');
+      assert.equal(minimal.request.settings.timer.enabled, false);
+    }
+    const intentOnly = parseCreateQuizSessionRequest({
+      intent: 'wrongSet',
+      sourceSessionId: sourceId,
+    });
+    assert.equal(intentOnly.ok, true);
+    if (intentOnly.ok) {
+      assert.equal(intentOnly.request.source, 'wrongSet');
+    }
+    const wrongItem = parseCreateQuizSessionRequest({
+      source: 'wrongSet',
+      sourceSessionId: sourceId,
+      wrongItemId: KP,
+    });
+    assert.equal(wrongItem.ok, false);
+    if (!wrongItem.ok) {
+      assert.equal(wrongItem.message, 'wrongItemId 仅用于 variant');
+    }
+    const oddCount = parseCreateQuizSessionRequest({
+      source: 'wrongSet',
+      sourceSessionId: sourceId,
+      count: 0,
+    });
+    assert.equal(oddCount.ok, false);
+    if (!oddCount.ok) {
+      assert.equal(oddCount.message, '题量不正确');
     }
     const variantCount = parseCreateQuizSessionRequest({
       ...base,

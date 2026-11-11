@@ -32,6 +32,10 @@
   box-sizing: border-box;
 }
 
+.paper-review-pad {
+  padding-bottom: 24px;
+}
+
 .paper-stack {
   display: flex;
   flex-direction: column;

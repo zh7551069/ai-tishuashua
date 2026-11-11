@@ -26,6 +26,9 @@ import {
 import { bandHeadline, scoreBand } from '../../../ui/score-band';
 import iconBack from '../../../assets/me-settings/3fbuza.svg';
 import { QuizOption } from '../../../components/QuizOption';
+import { startWrongSetRetrain } from '../../../services/wrong-set-retrain-start';
+import { RetrainBar } from '../../score/retrain-bar';
+import '../../score/review.css';
 import './index.css';
 import {
   PAPER_TYPE_LABEL,
@@ -45,6 +48,7 @@ export default function QuizPaperPage() {
   const [openAnalysis, setOpenAnalysis] = useState<Record<string, boolean>>({});
   const [leftSeconds, setLeftSeconds] = useState<number | null>(null);
   const [dialog, setDialog] = useState<'submit' | 'leave' | null>(null);
+  const [retraining, setRetraining] = useState(false);
   const submitting = useRef(false);
   const timeoutSent = useRef(false);
   const handInRef = useRef<(reason: QuizSubmitReason) => Promise<void>>(async () => undefined);
@@ -175,6 +179,15 @@ export default function QuizPaperPage() {
   const current = questions[Math.min(index, Math.max(questions.length - 1, 0))];
   const unanswered = questions.filter((item) => item.selected.length === 0).length;
   const answering = Boolean(session && paper && !submitted && current);
+  const wrongCount = wrongQuestions(questions).length;
+
+  const retrainWrong = () => {
+    if (!session || retraining || wrongCount <= 0) {
+      return;
+    }
+    setRetraining(true);
+    void startWrongSetRetrain(session.id).finally(() => setRetraining(false));
+  };
 
   const goBack = () => {
     void Taro.navigateBack({
@@ -212,15 +225,27 @@ export default function QuizPaperPage() {
         submitted && paper
           ? resultFooter({
               review,
+              wrongCount,
+              busy: retraining,
               onHome: () => void Taro.reLaunch({ url: '/pages/home/index' }),
               onReview: () => setReview(true),
               onBackResult: () => setReview(false),
+              onRetrain: retrainWrong,
             })
           : null
       }
+      footerClassName={submitted && review ? 'paper-review-foot' : undefined}
     >
       {submitted ? null : <PaperNav mode={session?.mode ?? null} onBack={leave} />}
-      <View className={submitted ? 'u-pad u-pad-tight' : 'paper-body'}>
+      <View
+        className={
+          submitted
+            ? review
+              ? 'u-pad u-pad-tight paper-review-pad'
+              : 'u-pad u-pad-tight'
+            : 'paper-body'
+        }
+      >
         {error ? <ErrorBlock detail={error} onRetry={() => void load()} onBack={leave} /> : null}
         {!session && !error ? <LoadingBlock label="正在加载试卷" /> : null}
         {session && !paper ? (
@@ -383,15 +408,21 @@ function AnswerBar(props: {
 
 function resultFooter(props: {
   review: boolean;
+  wrongCount: number;
+  busy: boolean;
   onHome: () => void;
   onReview: () => void;
   onBackResult: () => void;
+  onRetrain: () => void;
 }) {
   if (props.review) {
     return (
-      <Button className="u-btn-ghost" onClick={props.onBackResult}>
-        返回结果
-      </Button>
+      <RetrainBar
+        count={props.wrongCount}
+        busy={props.busy}
+        onBack={props.onBackResult}
+        onRetrain={props.onRetrain}
+      />
     );
   }
   return (

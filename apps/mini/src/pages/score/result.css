@@ -73,9 +73,14 @@
 }
 
 .u-foot.sc-foot.sc-foot-review {
-  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
-  background: #ffffff;
-  border-top: 1px solid #e5e7eb;
+  padding: 10px 20px calc(22px + env(safe-area-inset-bottom));
+  background: #f7f8f4;
+  border-top: 0;
+  box-shadow: 0 -10px 16px rgba(247, 248, 244, 0.92);
+}
+
+.sc-stack-review {
+  padding-bottom: 24px;
 }
 
 .u-foot.sc-foot {

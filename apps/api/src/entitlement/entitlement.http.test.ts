@@ -176,7 +176,7 @@ describe('entitlement gate', { concurrency: 1 }, () => {
     assert.equal(restores.length, 2);
   });
 
-  test('wrongSet 不预扣，创建接口仍拒绝', async (t) => {
+  test('wrongSet 缺来源场次时不预扣也不建会话', async (t) => {
     if (!ready(t)) return;
     const user = await login('wrong');
     const before = await balances(user.token);
@@ -186,7 +186,8 @@ describe('entitlement gate', { concurrency: 1 }, () => {
     });
     assert.equal(response.status, 400);
     assert.equal(response.body.code, ApiErrorCode.VALIDATION_ERROR);
-    assert.match(String(response.body.message), /暂未开放/);
+    assert.match(String(response.body.message), /请指定来源场次/);
+    assert.doesNotMatch(String(response.body.message), /暂未开放/);
     assert.deepEqual(await balances(user.token), before);
     assert.equal(await reservationCount(user.userId), 0);
     assert.equal(await sessionCount(user.userId), 0);

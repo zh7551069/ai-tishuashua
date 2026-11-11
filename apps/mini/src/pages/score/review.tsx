@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
  * 错题回顾视觉对齐 design/bridge-export/wrong-review-20261107。
  * 多选/判断展开稿里，个别选项的正文色和描边跟字牌、底色对调了。
  * 这里按该状态在单选展开帧里自洽的底色、描边、正文色来画，标签色仍用多选帧上对应文案的色。
+ * 知识点 chip 只过滤下面的列表。底栏「再练这 N 道」的 N 用来源未过滤错题总数。
  */
 export function ReviewView(props: {
   session: QuizSessionView;

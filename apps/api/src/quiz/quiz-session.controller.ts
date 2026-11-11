@@ -49,7 +49,7 @@ export class QuizSessionController {
   @Post()
   @ApiOperation({
     summary: '创建出题任务',
-    description: `校验刷题包后写入会话并投递 ${JOB_GENERATE_QUIZ}。source 缺省 normal。retrain_similar 必须带 knowledgePointIds，只覆盖本次出题，不改刷题包。variant 必须带 wrongItemId，题量只能是 1，模式只能是练习，且不带入未消灭错题。wrongSet 暂未开放，也不预扣场次。normal、retrain_similar、variant 在同一事务里预扣 1 场；非会员三桶不足返回 402 ENTITLEMENT_EXHAUSTED（details.balances 另含当前 dailyFreeQuota），并且不创建会话。会员不扣日免、任务奖和库存。未消灭错题入卷不超过 ${WRONG_QUESTION_RATIO_MAX}。免费用户在后管打开 freeUserBankFirst 时，其余题优先从题库抽取，不够再由模型原创。开关关闭或会员仍走模型，新生成的题都会入库。请求体不接受该开关。证书已下架返回 PACK_UNAVAILABLE。未配置模型且未打开 LLM_MOCK 时返回 LLM_NOT_CONFIGURED。`,
+    description: `校验刷题包后写入会话并投递 ${JOB_GENERATE_QUIZ}。source 缺省 normal。retrain_similar 必须带 knowledgePointIds，只覆盖本次出题，不改刷题包。variant 必须带 wrongItemId，题量只能是 1，模式只能是练习，且不带入未消灭错题。wrongSet 只需要 source（或 intent）与 sourceSessionId，同一事务内复制来源场次未答对题目的快照并直接返回 ready，不走模型、不入队、不预扣场次，也不因未配置模型返回 LLM_NOT_CONFIGURED。客户端题量、难度、题型、计时、知识点和题单不作出卷依据。normal、retrain_similar、variant 在同一事务里预扣 1 场；非会员三桶不足返回 402 ENTITLEMENT_EXHAUSTED（details.balances 另含当前 dailyFreeQuota），并且不创建会话。会员不扣日免、任务奖和库存。未消灭错题入卷不超过 ${WRONG_QUESTION_RATIO_MAX}。免费用户在后管打开 freeUserBankFirst 时，其余题优先从题库抽取，不够再由模型原创。开关关闭或会员仍走模型，新生成的题都会入库。请求体不接受该开关。证书已下架返回 PACK_UNAVAILABLE。未配置模型且未打开 LLM_MOCK 时，除 wrongSet 外返回 LLM_NOT_CONFIGURED。`,
   })
   @ApiBody({ type: CreateQuizSessionDto })
   @ApiCreatedResponse({ type: QuizSessionViewDto })
@@ -61,7 +61,7 @@ export class QuizSessionController {
   @Get()
   @ApiOperation({
     summary: '成绩列表',
-    description: `只返回当前用户已交卷的成绩摘要，不含题目，按交卷时间从新到旧，最多 ${QUIZ_SCORE_LIST_LIMIT} 条。含 retrain_similar 与 variant。每条带 source。total 是已交卷总数，hasMore 为 true 时还有更早的记录没出现在 items 里。读取时会先把已到点的考试收卷。`,
+    description: `只返回当前用户已交卷的成绩摘要，不含题目，按交卷时间从新到旧，最多 ${QUIZ_SCORE_LIST_LIMIT} 条。含 retrain_similar 与 variant，排除 wrongSet。items 与 total 都不计 wrongSet。每条带 source。hasMore 为 true 时还有更早的记录没出现在 items 里。读取时会先把已到点的考试收卷。`,
   })
   @ApiOkResponse({ type: QuizScoreListDto })
   list(@CurrentUser() user: UserSummary) {
@@ -124,7 +124,7 @@ export class QuizSessionController {
   @ApiOperation({
     summary: '交卷并判分',
     description:
-      '练习和考试都可以主动交卷。交卷后不可改答案，并返回成绩、正确答案和解析。重复交卷返回同一成绩。考试到点后记为到时收卷；未到点即使请求写 timeout 也记为主动交卷。答错、少选和未作答写入错题本，完全答对则消灭同一题。仅 source=normal 且 mode=practice、并且会话有刷题包时，成功后按试卷题目知识点并集幂等写入今日计划；考试、复练、变异和取消不写。回写失败不改变本次交卷结果。',
+      '练习和考试都可以主动交卷。交卷后不可改答案，并返回成绩、正确答案和解析。重复交卷返回同一成绩。考试到点后记为到时收卷；未到点即使请求写 timeout 也记为主动交卷。答错、少选和未作答写入错题本，完全答对则按题干指纹消灭同一题。wrongSet 也走这条消灭钩子。仅 source=normal 且 mode=practice、并且会话有刷题包时，成功后按试卷题目知识点并集幂等写入今日计划；考试、复练、变异、wrongSet 和取消不写。回写失败不改变本次交卷结果。wrongSet 不计入练习记录，也不触发首刷奖。',
   })
   @ApiBody({ type: SubmitQuizDto, required: false })
   @ApiOkResponse({ type: QuizSessionViewDto })

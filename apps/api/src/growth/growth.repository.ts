@@ -268,7 +268,7 @@ export async function countSubmittedSessions(db: EntitlementDb, userId: string):
     `
       SELECT count(*)::int AS count
       FROM quiz_sessions
-      WHERE user_id = $1 AND status = 'submitted'
+      WHERE user_id = $1 AND status = 'submitted' AND source <> 'wrongSet'
     `,
     [userId],
   );

@@ -1,12 +1,15 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import {
   ApiErrorCode,
+  QUIZ_DIFFICULTIES,
   QUIZ_TYPES,
   parseCreateQuizSessionRequest,
   readProcessLlmEnv,
   resolveLlmMode,
   type QuizAnswerResult,
+  type QuizDifficulty,
   type QuizSessionView,
+  type QuizSettings,
   type QuizTypeCode,
 } from '@tishuashua/shared';
 import { holdSessionEntitlement } from '@tishuashua/shared/entitlement';
@@ -17,7 +20,7 @@ import { EntitlementService } from '../entitlement/entitlement.service';
 import { GrowthService } from '../growth/growth.service';
 import { QuizQueueService } from './quiz-queue.service';
 import { toQuizScoreList } from './quiz-score-list';
-import { QuizRepository } from './quiz.repository';
+import { QuizRepository, type WrongCarryQuestion } from './quiz.repository';
 
 @Injectable()
 export class QuizService {
@@ -32,38 +35,67 @@ export class QuizService {
   async create(
     userId: string,
     input: {
-      packId: string;
-      count: number;
-      difficulty: string;
+      packId?: string | null;
+      count?: number;
+      difficulty?: string;
       types?: readonly string[];
-      timer: {
+      timer?: {
         enabled: boolean;
         kind?: string;
         paperMinutes?: number;
         perQuestionSeconds?: number;
-      };
-      mode: string;
+      } | null;
+      mode?: string;
       source?: string;
       intent?: string;
       knowledgePointIds?: readonly string[];
       wrongItemId?: string;
+      sourceSessionId?: string;
+      questionIds?: readonly string[];
     },
   ): Promise<QuizSessionView> {
-    const decision = resolveLlmMode(readProcessLlmEnv());
-    if (decision.mode === 'missing') {
-      throw new ApiException(
-        HttpStatus.SERVICE_UNAVAILABLE,
-        ApiErrorCode.LLM_NOT_CONFIGURED,
-        decision.message,
-      );
+    const mentionsWrongSet = input.source === 'wrongSet' || input.intent === 'wrongSet';
+    if (!mentionsWrongSet) {
+      const decision = resolveLlmMode(readProcessLlmEnv());
+      if (decision.mode === 'missing') {
+        throw new ApiException(
+          HttpStatus.SERVICE_UNAVAILABLE,
+          ApiErrorCode.LLM_NOT_CONFIGURED,
+          decision.message,
+        );
+      }
     }
     const parsed = parseCreateQuizSessionRequest(input);
     if (!parsed.ok) {
       throw new ApiException(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, parsed.message);
     }
+    const accepted = parsed.request;
+    if (accepted.source === 'wrongSet') {
+      const sourceSessionId = accepted.sourceSessionId;
+      if (!sourceSessionId) {
+        throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          ApiErrorCode.VALIDATION_ERROR,
+          '请指定来源场次',
+        );
+      }
+      return this.createWrongSet(userId, {
+        sourceSessionId,
+        packId: input.packId ?? null,
+      });
+    }
+    const source = accepted.source;
+    const packId = input.packId;
+    if (!packId) {
+      throw new ApiException(
+        HttpStatus.BAD_REQUEST,
+        ApiErrorCode.VALIDATION_ERROR,
+        'packId 必须是 UUID',
+      );
+    }
 
     const sessionId = await this.quizzes.transaction(async (client) => {
-      const pack = await this.quizzes.loadPack(userId, input.packId, client);
+      const pack = await this.quizzes.loadPack(userId, packId, client);
       if (!pack) {
         throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '刷题包不存在');
       }
@@ -71,8 +103,8 @@ export class QuizService {
         throw unavailable();
       }
       const allowed = new Set(pack.enabledQuestionTypeCodes);
-      let types = parsed.request.settings.types;
-      if (parsed.request.source === 'variant' && parsed.request.typesOmitted) {
+      let types = accepted.settings.types;
+      if (source === 'variant' && accepted.typesOmitted) {
         types = pack.enabledQuestionTypeCodes.filter(isQuizTypeCode);
         if (types.length === 0) {
           throw new ApiException(
@@ -91,8 +123,8 @@ export class QuizService {
 
       let knowledgePointIds: string[] | null = null;
       let wrongItemId: string | null = null;
-      if (parsed.request.source === 'variant') {
-        const itemId = parsed.request.wrongItemId;
+      if (source === 'variant') {
+        const itemId = accepted.wrongItemId;
         if (!itemId) {
           throw new ApiException(
             HttpStatus.BAD_REQUEST,
@@ -130,8 +162,8 @@ export class QuizService {
         }
         knowledgePointIds = ordered;
         wrongItemId = item.id;
-      } else if (parsed.request.knowledgePointIds) {
-        const requested = parsed.request.knowledgePointIds;
+      } else if (accepted.knowledgePointIds) {
+        const requested = accepted.knowledgePointIds;
         const usable = new Set(
           await this.quizzes.usablePackKnowledgePointIds(client, pack.id, requested),
         );
@@ -147,7 +179,7 @@ export class QuizService {
 
       const id = randomUUID();
       try {
-        await holdSessionEntitlement(client, userId, parsed.request.source, id);
+        await holdSessionEntitlement(client, userId, source, id);
       } catch (error) {
         this.entitlement.rethrow(error);
       }
@@ -155,8 +187,8 @@ export class QuizService {
         id,
         userId,
         pack,
-        settings: { ...parsed.request.settings, types },
-        source: parsed.request.source,
+        settings: { ...accepted.settings, types },
+        source,
         knowledgePointIds,
         wrongItemId,
       });
@@ -169,6 +201,70 @@ export class QuizService {
       await this.quizzes.deletePending(userId, sessionId).catch(() => undefined);
       throw error;
     }
+    return this.requireSession(userId, sessionId);
+  }
+
+  private async createWrongSet(
+    userId: string,
+    input: { sourceSessionId: string; packId: string | null },
+  ): Promise<QuizSessionView> {
+    const sessionId = await this.quizzes.transaction(async (client) => {
+      const source = await this.quizzes.findWrongSetSource(client, userId, input.sourceSessionId);
+      if (!source) {
+        throw new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.NOT_FOUND, '来源场次不存在');
+      }
+      if (source.status !== 'submitted') {
+        throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          ApiErrorCode.VALIDATION_ERROR,
+          '来源场次尚未交卷，不能再练',
+        );
+      }
+      if (input.packId) {
+        const sourcePackId = source.packId?.toLowerCase() ?? null;
+        if (input.packId.toLowerCase() !== sourcePackId) {
+          throw new ApiException(
+            HttpStatus.BAD_REQUEST,
+            ApiErrorCode.VALIDATION_ERROR,
+            '刷题包与来源场次不一致',
+          );
+        }
+      }
+      const questions = await this.quizzes.listWrongCarry(client, source.id);
+      if (questions.length === 0) {
+        throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          ApiErrorCode.VALIDATION_ERROR,
+          '没有可再练的错题',
+        );
+      }
+      if (questions.length > 50) {
+        throw new ApiException(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, '题量不正确');
+      }
+      const id = randomUUID();
+      try {
+        const held = await holdSessionEntitlement(client, userId, 'wrongSet', id);
+        if (held !== 'skipped') {
+          throw new ApiException(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ApiErrorCode.VALIDATION_ERROR,
+            '错题再练不应扣场',
+          );
+        }
+      } catch (error) {
+        this.entitlement.rethrow(error);
+      }
+      await this.quizzes.insertWrongSetSession(client, {
+        id,
+        userId,
+        packId: source.packId,
+        packSnapshot: source.packSnapshot,
+        settings: wrongSetSettings(source.settings, questions),
+        sourceSessionId: source.id,
+        questions,
+      });
+      return id;
+    });
     return this.requireSession(userId, sessionId);
   }
 
@@ -292,6 +388,32 @@ export class QuizService {
 
 function isQuizTypeCode(value: string): value is QuizTypeCode {
   return (QUIZ_TYPES as readonly string[]).includes(value);
+}
+
+function wrongSetSettings(raw: unknown, questions: readonly WrongCarryQuestion[]): QuizSettings {
+  const types: QuizTypeCode[] = [];
+  for (const question of questions) {
+    if (!types.includes(question.type)) {
+      types.push(question.type);
+    }
+  }
+  return {
+    count: questions.length,
+    difficulty: readDifficulty(raw),
+    types,
+    timer: { enabled: false },
+    mode: 'practice',
+  };
+}
+
+function readDifficulty(raw: unknown): QuizDifficulty {
+  if (!raw || typeof raw !== 'object' || !('difficulty' in raw)) {
+    return 'medium';
+  }
+  const value = raw.difficulty;
+  return typeof value === 'string' && (QUIZ_DIFFICULTIES as readonly string[]).includes(value)
+    ? (value as QuizDifficulty)
+    : 'medium';
 }
 
 function unavailable(): ApiException {
