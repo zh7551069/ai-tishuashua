@@ -21,7 +21,7 @@ export const QUIZ_SESSION_STATUSES = [
 ] as const;
 export type QuizSessionStatus = (typeof QUIZ_SESSION_STATUSES)[number];
 
-/** 会话来源。wrongSet 只预留，本切片创建时必须拒绝。 */
+/** 会话来源。wrongSet 是本卷错题再练，按来源场次快照出卷，不走模型。 */
 export const QUIZ_SESSION_SOURCES = ['normal', 'retrain_similar', 'variant', 'wrongSet'] as const;
 export type QuizSessionSource = (typeof QUIZ_SESSION_SOURCES)[number];
 
@@ -104,22 +104,38 @@ export interface QuizTimerPerQuestion {
 export type QuizTimer = QuizTimerOff | QuizTimerPaper | QuizTimerPerQuestion;
 
 export interface QuizSettings {
-  /** 普通出题为 10|20|30|50；题型变异会话固定为 1。 */
-  count: QuizCount | typeof VARIANT_QUIZ_COUNT;
+  /**
+   * 普通出题为 10|20|30|50；题型变异固定为 1。
+   * wrongSet 为本场错题数，允许 1–50，不受四档限制。
+   */
+  count: number;
   difficulty: QuizDifficulty;
   types: QuizTypeCode[];
   timer: QuizTimer;
   mode: QuizMode;
 }
 
-export interface CreateQuizSessionRequest extends QuizSettings {
-  packId: string;
-  /** 缺省按 normal。wrongSet 预留，创建时拒绝。 */
+export interface CreateQuizSessionRequest {
+  /** 普通 / 复练 / 变异必填。wrongSet 可省略，若传必须与来源场次一致。 */
+  packId?: string;
+  /** 普通出题为 10|20|30|50。wrongSet 可省略，服务端用来源错题数覆盖。 */
+  count?: number;
+  difficulty?: QuizDifficulty;
+  types?: QuizTypeCode[];
+  timer?: QuizTimer;
+  mode?: QuizMode;
+  /** 缺省按 normal。wrongSet 必须带 sourceSessionId。 */
   source?: QuizSessionSource;
-  /** 会话级知识点覆盖。不写回刷题包。variant 忽略此字段。 */
+  /** 历史草案字段。未传 source 时映射为 source；与 source 冲突则 400。 */
+  intent?: QuizSessionSource;
+  /** 会话级知识点覆盖。不写回刷题包。variant 与 wrongSet 忽略此字段。 */
   knowledgePointIds?: string[];
-  /** 仅 source=variant 时必填。 */
+  /** 仅 source=variant 时必填。wrongSet 传入则 400。 */
   wrongItemId?: string;
+  /** 仅 wrongSet 必填。来源已交卷场次。 */
+  sourceSessionId?: string;
+  /** 忽略。wrongSet 出卷不接受客户端题单。 */
+  questionIds?: string[];
 }
 
 export interface QuizProgress {

@@ -215,7 +215,7 @@ export async function runQuizGeneration(
         sessionId,
         claim.token,
         ApiErrorCode.QUIZ_GENERATION_FAILED,
-        '错题再练暂未开放',
+        '错题再练不走模型出题',
       );
     }
     if (context.knowledgePoints.length === 0) {

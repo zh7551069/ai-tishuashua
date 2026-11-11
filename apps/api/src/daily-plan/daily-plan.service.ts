@@ -28,7 +28,11 @@ export class DailyPlanService {
     const [packs, completions, marked] = await Promise.all([
       this.plans.listPacks(userId),
       this.plans.listCompletions(userId, today),
-      this.plans.listCompletionDates(userId, weekDays[0]?.date ?? today, weekDays[6]?.date ?? today),
+      this.plans.listCompletionDates(
+        userId,
+        weekDays[0]?.date ?? today,
+        weekDays[6]?.date ?? today,
+      ),
     ]);
     const done = indexCompletions(completions);
     const markedDays = new Set(marked);
@@ -76,6 +80,9 @@ export class DailyPlanService {
       day = businessDate(now);
       const session = await this.plans.findSessionMeta(userId, sessionId);
       if (!session || session.status !== 'submitted') {
+        return;
+      }
+      if (session.source === 'wrongSet') {
         return;
       }
       if (session.source !== 'normal' || session.mode !== 'practice' || !session.packId) {

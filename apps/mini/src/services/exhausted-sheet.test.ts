@@ -102,7 +102,7 @@ test('预检有余量但真实 402 仍弹半屏，wrongSet 不弹也不预检', 
     },
     create: async () => {
       wrongCreates += 1;
-      throw new HttpError('暂未开放', 400, ApiErrorCode.VALIDATION_ERROR);
+      throw new HttpError('没有可再练的错题', 400, ApiErrorCode.VALIDATION_ERROR);
     },
   });
   assert.equal(wrongReads, 0);

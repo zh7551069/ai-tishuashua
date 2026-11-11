@@ -57,6 +57,8 @@ const ctx: {
   newestId: string;
   practiceId: string;
   packOnlyId: string;
+  /** source=normal，快照只有刷题包名称。用来证明小程序列表仍能读出这种快照。 */
+  packSnapshotId: string;
   unreadableId: string;
   unlinkedId: string;
   userBId: string;
@@ -82,6 +84,7 @@ const ctx: {
   newestId: '',
   practiceId: '',
   packOnlyId: '',
+  packSnapshotId: '',
   unreadableId: '',
   unlinkedId: '',
   userBId: '',
@@ -204,10 +207,17 @@ describe('admin certificates', { concurrency: 1 }, () => {
     const byOwner = await call(`/admin/certificates?userId=${ctx.userA}`, { token: admin });
     const ownerList = byOwner.body as unknown as AdminCertificateScoreList;
     assert.equal(byOwner.status, 200);
-    assert.equal(ownerList.total, 5);
+    assert.equal(ownerList.total, 6);
     assert.deepEqual(
       ownerList.items.map((item) => item.id),
-      [ctx.newestId, ctx.practiceId, ctx.packOnlyId, ctx.unreadableId, ctx.unlinkedId],
+      [
+        ctx.newestId,
+        ctx.practiceId,
+        ctx.packOnlyId,
+        ctx.unreadableId,
+        ctx.unlinkedId,
+        ctx.packSnapshotId,
+      ],
     );
     assert.equal(
       ownerList.items.some((item) => item.id === ctx.inProgressId),
@@ -248,7 +258,7 @@ describe('admin certificates', { concurrency: 1 }, () => {
     assert.equal(practice.status, 200);
     assert.deepEqual(
       practiceList.items.map((item) => item.id),
-      [ctx.practiceId, ctx.unlinkedId],
+      [ctx.practiceId, ctx.unlinkedId, ctx.packSnapshotId],
     );
     assert.equal(practiceList.items[0]?.passed, false);
     assert.equal(practiceList.items[1]?.certId, null);
@@ -275,7 +285,7 @@ describe('admin certificates', { concurrency: 1 }, () => {
       token: admin,
     });
     const pageList = page.body as unknown as AdminCertificateScoreList;
-    assert.equal(pageList.total, 5);
+    assert.equal(pageList.total, 6);
     assert.equal(pageList.page, 2);
     assert.equal(pageList.pageSize, 2);
     assert.deepEqual(
@@ -287,7 +297,7 @@ describe('admin certificates', { concurrency: 1 }, () => {
       token: admin,
     });
     const beyondList = beyond.body as unknown as AdminCertificateScoreList;
-    assert.equal(beyondList.total, 5);
+    assert.equal(beyondList.total, 6);
     assert.deepEqual(beyondList.items, []);
 
     const invalid = await call('/admin/certificates?mode=submitted', { token: admin });
@@ -393,7 +403,9 @@ describe('admin certificates', { concurrency: 1 }, () => {
     const ids = scores.items.map((item) => item.id);
     assert.equal(ids.includes(ctx.newestId), true);
     assert.equal(ids.includes(ctx.practiceId), true);
-    assert.equal(ids.includes(ctx.packOnlyId), true);
+    // wrongSet 按 TB-6 契约不进小程序成绩列表。只靠刷题包名称的快照改由 normal 会话覆盖。
+    assert.equal(ids.includes(ctx.packOnlyId), false);
+    assert.equal(ids.includes(ctx.packSnapshotId), true);
     assert.equal(ids.includes(ctx.unlinkedId), true);
     assert.equal(ids.includes(ctx.unreadableId), false);
     assert.equal(ids.includes(ctx.userBId), false);
@@ -425,6 +437,7 @@ async function seed(): Promise<void> {
   ctx.newestId = randomUUID();
   ctx.practiceId = randomUUID();
   ctx.packOnlyId = randomUUID();
+  ctx.packSnapshotId = randomUUID();
   ctx.unreadableId = randomUUID();
   ctx.unlinkedId = randomUUID();
   ctx.userBId = randomUUID();
@@ -586,6 +599,19 @@ async function seed(): Promise<void> {
     }),
     reason: 'manual',
     submittedAt: at(240_000),
+  });
+  await insertSession({
+    id: ctx.packSnapshotId,
+    userId: ctx.userA,
+    packId: null,
+    mode: 'practice',
+    source: 'normal',
+    status: 'submitted',
+    snapshot: { name: '只靠刷题包快照' },
+    score: 70,
+    pass: storedScore({ earnedScore: 70, scoreRate: 0.7, passed: true }),
+    reason: 'manual',
+    submittedAt: at(360_000),
   });
   await insertSession({
     id: ctx.userBId,

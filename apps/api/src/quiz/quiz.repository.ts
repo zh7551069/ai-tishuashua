@@ -7,7 +7,6 @@ import {
   QUIZ_SESSION_SOURCES,
   QUIZ_SUBMIT_REASONS,
   QUIZ_TYPES,
-  VARIANT_QUIZ_COUNT,
   examDeadlineAt,
   gradeSelection,
   normalizeSelection,
@@ -33,6 +32,24 @@ import { rethrowDatabaseError } from '../common/database-error';
 import { DatabaseService } from '../db/database.service';
 
 type Queryable = Pool | PoolClient;
+
+export interface WrongSetSourceRecord {
+  id: string;
+  status: string;
+  packId: string | null;
+  packSnapshot: unknown;
+  settings: unknown;
+}
+
+export interface WrongCarryQuestion {
+  type: QuizTypeCode;
+  stem: string;
+  options: QuizOption[];
+  answer: string[];
+  analysis: string;
+  kpIds: string[];
+  score: number;
+}
 
 interface PackRow {
   id: string;
@@ -490,7 +507,7 @@ export class QuizRepository {
         `
           SELECT count(*)::int AS count
           FROM quiz_sessions
-          WHERE user_id = $1 AND status = 'submitted'
+          WHERE user_id = $1 AND status = 'submitted' AND source <> 'wrongSet'
         `,
         [userId],
       );
@@ -538,7 +555,7 @@ export class QuizRepository {
             submitted_at,
             COUNT(*) OVER ()::int AS total_count
           FROM quiz_sessions
-          WHERE user_id = $1 AND status = 'submitted'
+          WHERE user_id = $1 AND status = 'submitted' AND source <> 'wrongSet'
           ORDER BY submitted_at DESC NULLS LAST, created_at DESC
           LIMIT $2
         `,
@@ -556,6 +573,157 @@ export class QuizRepository {
       return { items, total: Number.isFinite(total) ? total : items.length };
     } catch (error) {
       rethrowDatabaseError('quiz', error);
+    }
+  }
+
+  async findWrongSetSource(
+    db: Queryable,
+    userId: string,
+    sessionId: string,
+  ): Promise<WrongSetSourceRecord | null> {
+    const result = await db.query<{
+      id: string;
+      status: string;
+      pack_id: string | null;
+      pack_snapshot: unknown;
+      settings: unknown;
+    }>(
+      `
+        SELECT id, status, pack_id, pack_snapshot, settings
+        FROM quiz_sessions
+        WHERE id = $1 AND user_id = $2
+      `,
+      [sessionId, userId],
+    );
+    const row = result.rows[0];
+    if (!row) {
+      return null;
+    }
+    return {
+      id: row.id,
+      status: row.status,
+      packId: row.pack_id,
+      packSnapshot: row.pack_snapshot,
+      settings: row.settings,
+    };
+  }
+
+  /** 来源场次里 outcome !== correct 的题，按原 ordinal 升序。 */
+  async listWrongCarry(db: Queryable, sessionId: string): Promise<WrongCarryQuestion[]> {
+    const result = await db.query<{
+      type_code: string;
+      stem: string;
+      options: unknown;
+      answer: unknown;
+      analysis: string | null;
+      kp_ids: string[] | null;
+      score: number | string | null;
+      selected: unknown;
+    }>(
+      `
+        SELECT
+          q.type_code,
+          q.stem,
+          q.options,
+          q.answer,
+          q.analysis,
+          q.kp_ids,
+          q.score,
+          COALESCE(a.selected, '[]'::jsonb) AS selected
+        FROM paper_questions q
+        LEFT JOIN quiz_answers a ON a.question_id = q.id
+        WHERE q.session_id = $1
+        ORDER BY q.ordinal
+      `,
+      [sessionId],
+    );
+    const carry: WrongCarryQuestion[] = [];
+    for (const row of result.rows) {
+      if (!isQuizType(row.type_code)) {
+        continue;
+      }
+      const answer = parseStringArray(row.answer);
+      const selected = parseStringArray(row.selected);
+      const score = Number(row.score);
+      const graded = gradeSelection({
+        type: row.type_code,
+        answer,
+        selected,
+        score: Number.isFinite(score) ? score : 0,
+      });
+      if (graded.outcome === 'correct') {
+        continue;
+      }
+      carry.push({
+        type: row.type_code,
+        stem: row.stem,
+        options: parseOptions(row.options),
+        answer,
+        analysis: typeof row.analysis === 'string' ? row.analysis : '',
+        kpIds: (row.kp_ids ?? []).filter(isUuid),
+        score: Number.isFinite(score) ? score : 0,
+      });
+    }
+    return carry;
+  }
+
+  async insertWrongSetSession(
+    db: Queryable,
+    input: {
+      id: string;
+      userId: string;
+      packId: string | null;
+      packSnapshot: unknown;
+      settings: QuizSettings;
+      sourceSessionId: string;
+      questions: readonly WrongCarryQuestion[];
+    },
+  ): Promise<void> {
+    await db.query(
+      `
+        INSERT INTO quiz_sessions (
+          id, user_id, pack_id, pack_snapshot, mode, settings, status, source,
+          question_count, generated_count, source_session_id
+        )
+        VALUES (
+          $1, $2, $3, $4::jsonb, 'practice', $5::jsonb, 'ready', 'wrongSet',
+          $6, $6, $7
+        )
+      `,
+      [
+        input.id,
+        input.userId,
+        input.packId,
+        JSON.stringify(input.packSnapshot ?? {}),
+        JSON.stringify(input.settings),
+        input.questions.length,
+        input.sourceSessionId,
+      ],
+    );
+    for (const [index, question] of input.questions.entries()) {
+      await db.query(
+        `
+          INSERT INTO paper_questions (
+            id, session_id, ordinal, type_code, stem, options, answer, analysis,
+            kp_ids, source, score, bank_question_id
+          )
+          VALUES (
+            $1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9::uuid[], 'wrong_carry', $10, NULL
+          )
+        `,
+        [
+          randomUUID(),
+          input.id,
+          index + 1,
+          question.type,
+          question.stem,
+          JSON.stringify(question.options),
+          JSON.stringify(question.answer),
+          question.analysis || null,
+          question.kpIds,
+          question.score,
+        ],
+      );
     }
   }
 
@@ -701,16 +869,7 @@ function parseSettings(value: unknown): QuizSettings {
   const difficulty = body.difficulty;
   const mode = body.mode;
   const types = Array.isArray(body.types) ? body.types.filter(isQuizType) : [];
-  if (
-    (count !== VARIANT_QUIZ_COUNT &&
-      count !== 10 &&
-      count !== 20 &&
-      count !== 30 &&
-      count !== 50) ||
-    !isDifficulty(difficulty) ||
-    !isMode(mode) ||
-    types.length === 0
-  ) {
+  if (!isPaperCount(count) || !isDifficulty(difficulty) || !isMode(mode) || types.length === 0) {
     return fallback;
   }
   return {
@@ -808,6 +967,10 @@ function parseStringArray(value: unknown): string[] {
 
 function isQuizType(value: unknown): value is QuizTypeCode {
   return typeof value === 'string' && (QUIZ_TYPES as readonly string[]).includes(value);
+}
+
+function isPaperCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 50;
 }
 
 function isDifficulty(value: unknown): value is QuizSettings['difficulty'] {

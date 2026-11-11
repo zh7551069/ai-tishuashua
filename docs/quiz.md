@@ -154,7 +154,7 @@ curl -sS -X POST http://127.0.0.1:3000/api/quiz/sessions/会话id/submit \
 | 多选少选，且没有选到错误选项       | `floor(满分 / 2)` | `partial`    |
 | 多选多选了或选错                   | 0                 | `wrong`      |
 
-正确率是完全答对的题数除以题量，少选不算正确。得分率是得分除以总分。题目分值沿用成卷时已经归一化到证书总分的整数。及格线来自证书的 `pass_score`；没有及格线时 `passed` 为 `null`。
+正确率是完全答对的题数除以题量，少选不算正确。得分率是得分除以总分。普通卷题目分值沿用成卷时已经归一化到证书总分的整数。本卷错题再练复制原题分值，不把错题子集重新归一化到证书总分。及格线来自证书的 `pass_score`；没有及格线时 `passed` 为 `null`。
 
 成绩列表只含已交卷摘要，不含题目。一次最多 50 条。小程序这一页已经接通，读的就是下面这个接口：
 
@@ -163,7 +163,7 @@ curl -sS http://127.0.0.1:3000/api/quiz/sessions \
   -H "authorization: Bearer $TOKEN"
 ```
 
-响应除了 `items`，还有 `total`、`limit` 和 `hasMore`。`items` 每条是 `QuizScoreSummary`：`id`、`mode`、`source`、`certName`、`packName`、`earnedScore`、`totalScore`、`accuracy`、`scoreRate`、`correctCount`、`questionCount`、`passed`、`passScore`、`reason`、`submittedAt`。`source` 为 `normal`、`retrain_similar`、`variant` 或预留的 `wrongSet`。按交卷时间从新到旧，最多 `limit` 条（50）。`total` 是当前用户已交卷会话数，快照读不出来、因此不会出现在 `items` 里的记录也算进去。`hasMore` 在 `total` 大于 `limit` 时为 true，表示更早的成绩被截掉了。未交卷不计入。复练同类和题型变异的已交卷会话都在这张表里。未登录返回 401。打开列表时，已到点但还没交卷的考试会先被收卷，再出现在结果里。
+响应除了 `items`，还有 `total`、`limit` 和 `hasMore`。`items` 每条是 `QuizScoreSummary`：`id`、`mode`、`source`、`certName`、`packName`、`earnedScore`、`totalScore`、`accuracy`、`scoreRate`、`correctCount`、`questionCount`、`passed`、`passScore`、`reason`、`submittedAt`。`source` 为 `normal`、`retrain_similar` 或 `variant`。`wrongSet` 会写入会话，但 `items` 和 `total` 都不计入，窗口计数同样排除。按交卷时间从新到旧，最多 `limit` 条（50）。`total` 是当前用户已交卷且不是 wrongSet 的会话数，快照读不出来、因此不会出现在 `items` 里的记录也算进去。`hasMore` 在 `total` 大于 `limit` 时为 true，表示更早的成绩被截掉了。未交卷不计入。复练同类和题型变异的已交卷会话都在这张表里。未登录返回 401。打开列表时，已到点但还没交卷的考试会先被收卷，再出现在结果里。
 
 小程序首页「成绩」进入 `/pages/score/index`。列表展示证书、刷题包、模式、得分、正确率、得分率、对题数、及格与及格线、交卷原因和交卷时间。`hasMore` 为 true 时，列表上方显示「只显示最近 50 条」。没有 token 或会话失效时停在本页，引导去登录。加载中、还没有交卷记录、请求失败是分开的状态，失败可以重试。点一条进入已有的 `/pages/quiz/paper/index?sessionId=`。已交卷会话不会再次开考，沿用交卷结果页看正确答案和解析。
 
@@ -225,12 +225,12 @@ curl -sS -X POST http://127.0.0.1:3000/api/wrong-book/错题id/clear \
 
 `POST /api/quiz/sessions` 增加可选字段：
 
-| 字段                | 说明                                                                                                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `source`            | `normal`（缺省）、`retrain_similar`、`variant`。`wrongSet` 预留，请求会 `400` / `VALIDATION_ERROR`，文案含「暂未开放」 |
-| `knowledgePointIds` | 会话级知识点覆盖。不写回 `pack_knowledge_points`，也不改用户当前包                                                     |
-| `wrongItemId`       | 仅 `variant` 可传                                                                                                      |
-| `intent`            | 历史草案。没传 `source` 时映射成 `source`；两者不一致则 `400`                                                          |
+| 字段                | 说明                                                                                                              |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `source`            | `normal`（缺省）、`retrain_similar`、`variant`、`wrongSet`。wrongSet 见下方「本卷错题再练」，不再返回「暂未开放」 |
+| `knowledgePointIds` | 会话级知识点覆盖。不写回 `pack_knowledge_points`，也不改用户当前包                                                |
+| `wrongItemId`       | 仅 `variant` 可传                                                                                                 |
+| `intent`            | 历史草案。没传 `source` 时映射成 `source`；两者不一致则 `400`                                                     |
 
 `source=retrain_similar` 时 `knowledgePointIds` 必填、去重后非空。每个 id 必须是该包里已绑定、`kind=knowledge_point` 且 `online` 的知识点。有一个不满足就不创建会话，`400` / `VALIDATION_ERROR`，不会改用整包知识点继续出题。练习和考试都可以。未消灭错题仍可按现网比例带入，但只带和这次知识点有交集的错题。
 
@@ -274,7 +274,7 @@ AI 原创和题型变异在结构校验通过后写入独立表 `question_bank`�
 
 正式规则见 [TB-20 权益账本与出题门禁](contracts/tb20-entitlement-C-contracts-v0.1.0-C.md)（v0.1.0-C）。这里只记已接通的行为。
 
-`POST /api/quiz/sessions` 在校验通过后、写入会话的同一事务里预扣 1 场。`normal`、`retrain_similar`、`variant` 都走这道门，1 题的变异也算 1 场。`wrongSet` 不预扣；创建请求仍返回 `400` / `VALIDATION_ERROR`，文案含「暂未开放」。
+`POST /api/quiz/sessions` 在校验通过后、写入会话的同一事务里预扣 1 场。`normal`、`retrain_similar`、`variant` 都走这道门，1 题的变异也算 1 场。`wrongSet` 不预扣，也不返回 402；创建规则见下方「本卷错题再练」。
 
 非会员按日免、当日任务奖、库存加油包的顺序扣。库存按 `expires_at` 从近到远，没有过期时间的排在最后。三桶都不够时不写会话，返回 `402` / `ENTITLEMENT_EXHAUSTED`，响应里带 `details`（原因、业务日、三个余额和开通会员、购买加油包、做任务三个入口）。客户端遇 `ENTITLEMENT_EXHAUSTED` → 用尽半屏（TB-24）。会员在 `ends_at` 之前不扣这三桶，预扣行仍会留下。
 
@@ -284,10 +284,19 @@ AI 原创和题型变异在结构校验通过后写入独立表 `question_bank`�
 
 余额是 `GET /api/me/entitlement`。`balances` 在三个剩余之外带当前 `dailyFreeQuota`（读 `dailyFreeSessions`，缺省 2；改配不回溯当日剩余）。402 `details.balances` 同样带这个字段。流水是 `GET /api/me/entitlement/ledger`，`limit` 默认 20、最大 50，可用 `cursor` 翻页。支付、微信下单和支付回调不在这一刀。Worker 注册了 `entitlement.day-reconcile`，目前只上报任务跑过，不改余额。
 
+## 本卷错题再练
+
+正式规则见 [TB-6 契约](contracts/tb6-wrongset-retrain-C-contracts-v0.1.0-C.md)（v0.1.0-C）。这里只记已接通的行为。
+
+本卷错题回顾在错题数 N>0 时露出「再练这 N 道」。N 是本场 `outcome !== correct` 的题数，不随知识点筛选变化。点击后 `POST /api/quiz/sessions`，最小体只有 `source=wrongSet` 和 `sourceSessionId`。服务端从来源已交卷试卷复制这些题的快照，题目 `source=wrong_carry`，同一请求返回 `201` 且 `status=ready`。不走模型，不入队，不抽题库。`mode` 固定练习，计时关闭，题量为 N（1–50，不受 10/20/30/50 限制）。`source_session_id` 落在 `quiz_sessions` 上。
+
+这条路径不预扣场次，余额为 0 也不返回 402，未配置模型也不返回 `LLM_NOT_CONFIGURED`。会话会写入，但成绩列表的 `items` 和 `total`、生涯首刷奖计数都不含它。每日计划不写。交卷仍按题干指纹跑消灭：完全答对标成已消灭，答错、少选、未作答保持或回到未消灭。来源场次可以是普通卷、复练、变异，也可以是上一场 wrongSet。
+
+结果页「再练一次 / 再考一次」仍回出题设置。复练同类和题型变异的请求体不变。
+
 ## 还没做
 
 - 后管发布 Prompt。本地靠迁移种子
 - 课件提炼的会员配额。上传本身见 [课件](courseware.md)
-- `wrongSet`「再练这 N 道」。枚举已留好，创建请求会拒绝
 - 弱项临时包。复练同类只做会话级知识点覆盖
 - 每题限时没有逐题时钟，考试里把它折成整卷截止时间

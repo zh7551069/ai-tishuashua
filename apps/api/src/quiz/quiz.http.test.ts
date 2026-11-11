@@ -6,6 +6,7 @@ import { type INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   ApiErrorCode,
+  gradeSelection,
   questionContentKey,
   type QuizQuestionView,
   type QuizSessionView,
@@ -89,6 +90,8 @@ describe('quiz generation', { concurrency: 1 }, () => {
     process.env.REDIS_URL = redisUrl;
     process.env.LLM_MOCK = 'true';
     process.env.LLM_API_KEY = '';
+    // 全量 API 测试共用同一 Redis。默认微信登录 60 次会把本文件新增的 login 打成 429。
+    process.env.RATE_LIMIT_WECHAT_LOGIN_MAX = '100000';
 
     ctx.pool = new Pool({ connectionString: databaseUrl, max: 4 });
     ctx.redis = new Redis(redisUrl, {
@@ -876,7 +879,8 @@ describe('quiz generation', { concurrency: 1 }, () => {
       body: JSON.stringify(payload(ctx.packId, { source: 'wrongSet' })),
     });
     assert.equal(closed.status, 400);
-    assert.match(String(closed.body.message), /暂未开放/);
+    assert.match(String(closed.body.message), /请指定来源场次/);
+    assert.doesNotMatch(String(closed.body.message), /暂未开放/);
     assert.equal(await sessionCount(ctx.packId), beforeCount);
 
     await pool.query(`DELETE FROM wrong_items WHERE user_id = $1`, [ctx.userA]);
@@ -913,9 +917,9 @@ describe('quiz generation', { concurrency: 1 }, () => {
     });
     assert.equal(submitted.status, 200);
     const scores = await call('/quiz/sessions', ctx.tokenA);
-    const score = (
-      (scores.body as { items?: { id: string; source?: string }[] }).items ?? []
-    ).find((item) => item.id === paper.id);
+    const score = ((scores.body as { items?: { id: string; source?: string }[] }).items ?? []).find(
+      (item) => item.id === paper.id,
+    );
     assert.equal(score?.source, 'retrain_similar');
 
     const carriedWrong = await insertWrong({
@@ -1216,7 +1220,11 @@ describe('quiz generation', { concurrency: 1 }, () => {
     const seeded = await seedBank(iso, 10, '足');
     const before = await bankCount(iso.certId);
     const created = await createSessionFor(iso.token, iso.packId);
-    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    const outcome = await runGeneration(
+      created.id,
+      { mode: 'mock' },
+      { getFreeUserBankFirst: async () => true },
+    );
     assert.equal(outcome.status, 'ready');
     if (outcome.status === 'ready') {
       assert.equal(outcome.stats.bankDrawn, 10);
@@ -1240,7 +1248,11 @@ describe('quiz generation', { concurrency: 1 }, () => {
     const iso = await isolatedPack();
     await seedBank(iso, 3, '不足');
     const created = await createSessionFor(iso.token, iso.packId);
-    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    const outcome = await runGeneration(
+      created.id,
+      { mode: 'mock' },
+      { getFreeUserBankFirst: async () => true },
+    );
     assert.equal(outcome.status, 'ready');
     if (outcome.status === 'ready') {
       assert.equal(outcome.stats.bankDrawn, 3);
@@ -1288,7 +1300,11 @@ describe('quiz generation', { concurrency: 1 }, () => {
     await insertSubmitted(iso, new Date(now - 2 * 60 * 60 * 1000), null);
     await insertSubmitted(iso, new Date(now - 60 * 60 * 1000), recent);
     const created = await createSessionFor(iso.token, iso.packId);
-    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    const outcome = await runGeneration(
+      created.id,
+      { mode: 'mock' },
+      { getFreeUserBankFirst: async () => true },
+    );
     assert.equal(outcome.status, 'ready');
     if (outcome.status === 'ready') {
       assert.equal(outcome.stats.bankDrawn, 1);
@@ -1296,7 +1312,10 @@ describe('quiz generation', { concurrency: 1 }, () => {
     }
     const stored = await storedQuestions(created.id);
     assert.equal(stored.filter((question) => question.bank_question_id === old.id).length, 1);
-    assert.equal(stored.some((question) => question.bank_question_id === recent.id), false);
+    assert.equal(
+      stored.some((question) => question.bank_question_id === recent.id),
+      false,
+    );
   });
 
   test('取消或失败清掉半卷，但保留已入库的题', async (t) => {
@@ -1333,7 +1352,11 @@ describe('quiz generation', { concurrency: 1 }, () => {
     });
     assert.equal(response.status, 201, JSON.stringify(response.body));
     const created = response.body as unknown as QuizSessionView;
-    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    const outcome = await runGeneration(
+      created.id,
+      { mode: 'mock' },
+      { getFreeUserBankFirst: async () => true },
+    );
     assert.equal(outcome.status, 'ready');
     if (outcome.status === 'ready') {
       assert.equal(outcome.stats.bankDrawn, 0);
@@ -1370,8 +1393,12 @@ describe('quiz generation', { concurrency: 1 }, () => {
     assert.equal(firstOutcome.status, 'ready');
     assert.equal(secondOutcome.status, 'ready');
     assert.equal(await bankCount(iso.certId), 10);
-    const left = (await storedQuestions(first.id)).map((question) => question.bank_question_id).sort();
-    const right = (await storedQuestions(second.id)).map((question) => question.bank_question_id).sort();
+    const left = (await storedQuestions(first.id))
+      .map((question) => question.bank_question_id)
+      .sort();
+    const right = (await storedQuestions(second.id))
+      .map((question) => question.bank_question_id)
+      .sort();
     assert.deepEqual(left, right);
   });
 
@@ -1391,7 +1418,11 @@ describe('quiz generation', { concurrency: 1 }, () => {
       );
     }
     const created = await createSessionFor(iso.token, iso.packId);
-    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    const outcome = await runGeneration(
+      created.id,
+      { mode: 'mock' },
+      { getFreeUserBankFirst: async () => true },
+    );
     assert.equal(outcome.status, 'ready');
     if (outcome.status === 'ready') {
       assert.equal(outcome.stats.wrongCarried, 5);
@@ -1447,7 +1478,11 @@ describe('quiz generation', { concurrency: 1 }, () => {
     await insertBank({ ...iso, status: 'offline' }, '下架题');
     const hard = await insertBank({ ...iso, difficulty: 'hard' }, '困难题');
     const created = await createSessionFor(iso.token, iso.packId);
-    const outcome = await runGeneration(created.id, { mode: 'mock' }, { getFreeUserBankFirst: async () => true });
+    const outcome = await runGeneration(
+      created.id,
+      { mode: 'mock' },
+      { getFreeUserBankFirst: async () => true },
+    );
     assert.equal(outcome.status, 'ready');
     if (outcome.status === 'ready') {
       assert.equal(outcome.stats.bankDrawn, 1);
@@ -1455,7 +1490,9 @@ describe('quiz generation', { concurrency: 1 }, () => {
     }
     const stored = await storedQuestions(created.id);
     assert.deepEqual(
-      stored.filter((question) => question.source === 'bank').map((question) => question.bank_question_id),
+      stored
+        .filter((question) => question.source === 'bank')
+        .map((question) => question.bank_question_id),
       [hard.id],
     );
   });
@@ -1483,17 +1520,498 @@ describe('quiz generation', { concurrency: 1 }, () => {
     const created = await createSessionFor(iso.token, packId, { count: 10 });
     const outcome = await runGeneration(created.id, { mode: 'mock' });
     assert.equal(outcome.status, 'ready');
-    const rows = await requiredPool().query<{ textbook_id: string | null; domain_id: string; kp_ids: string[] }>(
-      `SELECT textbook_id, domain_id, kp_ids FROM question_bank WHERE origin_session_id = $1`,
-      [created.id],
-    );
+    const rows = await requiredPool().query<{
+      textbook_id: string | null;
+      domain_id: string;
+      kp_ids: string[];
+    }>(`SELECT textbook_id, domain_id, kp_ids FROM question_bank WHERE origin_session_id = $1`, [
+      created.id,
+    ]);
     assert.equal(rows.rows.length, 10);
     assert.equal(
       rows.rows.every(
-        (row) => row.textbook_id === null && row.domain_id === iso.domainId && row.kp_ids[0] === kpId,
+        (row) =>
+          row.textbook_id === null && row.domain_id === iso.domainId && row.kp_ids[0] === kpId,
       ),
       true,
     );
+  });
+
+  test('wrongSet 复制未答对快照、不扣场、不进列表、答对才消灭', async (t) => {
+    if (!ready(t)) return;
+    const fixture = requiredFixture();
+    const user = await login('wrongset');
+    const inviter = await login('wrongset-inviter');
+    await requiredPool().query(
+      `
+        INSERT INTO invite_relations (invitee_user_id, inviter_user_id, invite_code_used)
+        VALUES ($1, $2, 'TS-TEST')
+      `,
+      [user.user.id, inviter.user.id],
+    );
+    const packId = await createPack(user.token, fixture.certId, [fixture.kp1, fixture.kp2]);
+    const source = await readyPaper(user.token, packId, {
+      count: 10,
+      difficulty: 'hard',
+      mode: 'exam',
+      timer: { enabled: true, kind: 'paper', paperMinutes: 30 },
+    });
+    const stored = await storedQuestionRows(source.id);
+    const graded = stored.map((row) => ({
+      row,
+      outcome: gradeSelection({
+        type: row.type_code as 'single' | 'multi' | 'judge',
+        answer: row.answer,
+        selected: [],
+        score: Number(row.score),
+      }).outcome,
+    }));
+    const correct = graded[0];
+    const partial = graded.find((item) => item.row.type_code === 'multi' && item !== correct);
+    const wrong = graded.find(
+      (item) => item !== correct && item !== partial && item.row.type_code !== 'judge',
+    );
+    assert.ok(correct && partial && wrong);
+    await answerAs(user.token, source.id, correct.row.id, correct.row.answer);
+    await answerAs(user.token, source.id, partial.row.id, partial.row.answer.slice(0, 1));
+    await answerAs(user.token, source.id, wrong.row.id, wrongOption(wrong.row));
+    const submitted = await call(`/quiz/sessions/${source.id}/submit`, user.token, {
+      method: 'POST',
+      body: JSON.stringify({ reason: 'manual' }),
+    });
+    assert.equal(submitted.status, 200, JSON.stringify(submitted.body));
+    const sourceView = submitted.body as unknown as QuizSessionView;
+    const expected = (sourceView.paper?.questions ?? []).filter(
+      (question) => question.review && question.review.outcome !== 'correct',
+    );
+    assert.ok(expected.length >= 1 && expected.length < 10);
+    assert.equal(
+      expected.some((question) => question.id === correct.row.id),
+      false,
+    );
+
+    const beforeEntitlement = await call('/me/entitlement', user.token);
+    assert.equal(beforeEntitlement.status, 200);
+    const beforeBalances = (beforeEntitlement.body as { balances: unknown }).balances;
+    const previousMock = process.env.LLM_MOCK;
+    const previousKey = process.env.LLM_API_KEY;
+    process.env.LLM_MOCK = 'false';
+    process.env.LLM_API_KEY = '';
+    let createdBody: QuizSessionView;
+    try {
+      const created = await call('/quiz/sessions', user.token, {
+        method: 'POST',
+        body: JSON.stringify({
+          source: 'wrongSet',
+          sourceSessionId: source.id,
+          count: 7,
+          difficulty: 'easy',
+          mode: 'exam',
+          timer: { enabled: true, kind: 'paper', paperMinutes: 5 },
+          types: ['single'],
+          knowledgePointIds: [fixture.kp1],
+          questionIds: [expected[0]?.id],
+        }),
+      });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      assert.doesNotMatch(JSON.stringify(created.body), /暂未开放/);
+      createdBody = created.body as unknown as QuizSessionView;
+    } finally {
+      process.env.LLM_MOCK = previousMock;
+      process.env.LLM_API_KEY = previousKey;
+    }
+    assert.equal(createdBody.source, 'wrongSet');
+    assert.equal(createdBody.status, 'ready');
+    assert.equal(createdBody.mode, 'practice');
+    assert.equal(createdBody.settings.mode, 'practice');
+    assert.equal(createdBody.settings.timer.enabled, false);
+    assert.equal(createdBody.settings.difficulty, 'hard');
+    assert.equal(createdBody.settings.count, expected.length);
+    assert.equal(createdBody.progress.generated, expected.length);
+    assert.equal(createdBody.progress.total, expected.length);
+    assert.equal(createdBody.paper?.questions.length, expected.length);
+    assert.deepEqual(
+      createdBody.paper?.questions.map((question) => question.stem),
+      expected.map((question) => question.stem),
+    );
+    assert.equal(
+      createdBody.paper?.questions.every(
+        (question) => question.source === 'wrong_carry' && question.review === null,
+      ),
+      true,
+    );
+    assert.equal(
+      createdBody.paper?.questions.some((question) =>
+        expected.some((item) => item.id === question.id),
+      ),
+      false,
+    );
+    const scoreSum = (createdBody.paper?.questions ?? []).reduce(
+      (sum, question) => sum + question.score,
+      0,
+    );
+    assert.equal(createdBody.context.totalScore, scoreSum);
+    assert.equal(createdBody.paper?.totalScore, scoreSum);
+    assert.notEqual(scoreSum, sourceView.context.totalScore);
+    const linked = await requiredPool().query<{ source_session_id: string; status: string }>(
+      `SELECT source_session_id, status FROM quiz_sessions WHERE id = $1`,
+      [createdBody.id],
+    );
+    assert.equal(linked.rows[0]?.source_session_id, source.id);
+    assert.equal(linked.rows[0]?.status, 'ready');
+    const copied = await requiredPool().query<{ source: string }>(
+      `SELECT source FROM paper_questions WHERE session_id = $1`,
+      [createdBody.id],
+    );
+    assert.equal(
+      copied.rows.every((row) => row.source === 'wrong_carry'),
+      true,
+    );
+    const afterEntitlement = await call('/me/entitlement', user.token);
+    assert.deepEqual((afterEntitlement.body as { balances: unknown }).balances, beforeBalances);
+    const reserved = await requiredPool().query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM entitlement_reservations WHERE session_id = $1`,
+      [createdBody.id],
+    );
+    assert.equal(reserved.rows[0]?.count, 0);
+    const ledger = await requiredPool().query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM entitlement_ledger WHERE ref_id = $1`,
+      [createdBody.id],
+    );
+    assert.equal(ledger.rows[0]?.count, 0);
+    const awardBeforeRetrain = await requiredPool().query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM entitlement_ledger WHERE ref_id = $1`,
+      [`invite_fs_invitee:${user.user.id}`],
+    );
+
+    const scores = await call('/quiz/sessions', user.token);
+    assert.equal(scores.status, 200);
+    const scoreList = scores.body as { items: { id: string }[]; total: number };
+    assert.equal(
+      scoreList.items.some((item) => item.id === createdBody.id),
+      false,
+    );
+    assert.equal(
+      scoreList.items.some((item) => item.id === source.id),
+      true,
+    );
+    assert.equal(scoreList.total, scoreList.items.length);
+    assert.equal(scoreList.items.length, 1);
+
+    const retrainedRows = await storedQuestionRows(createdBody.id);
+    const clearTarget = retrainedRows[0];
+    const keepTarget = retrainedRows[1];
+    assert.ok(clearTarget && keepTarget);
+    await answerAs(user.token, createdBody.id, clearTarget.id, clearTarget.answer);
+    const retrainedSubmit = await call(`/quiz/sessions/${createdBody.id}/submit`, user.token, {
+      method: 'POST',
+      body: JSON.stringify({ reason: 'manual' }),
+    });
+    assert.equal(retrainedSubmit.status, 200, JSON.stringify(retrainedSubmit.body));
+    const planRows = await requiredPool().query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM daily_plan_item_completions WHERE source_session_id = $1`,
+      [createdBody.id],
+    );
+    assert.equal(planRows.rows[0]?.count, 0);
+    const afterScores = await call('/quiz/sessions', user.token);
+    const afterList = afterScores.body as { items: { id: string }[]; total: number };
+    assert.equal(
+      afterList.items.some((item) => item.id === createdBody.id),
+      false,
+    );
+    assert.equal(afterList.total, 1);
+    const wrongItems = await requiredPool().query<{
+      status: string;
+      wrong_count: number;
+      question_snapshot: { stem?: string };
+    }>(`SELECT status, wrong_count, question_snapshot FROM wrong_items WHERE user_id = $1`, [
+      user.user.id,
+    ]);
+    const cleared = wrongItems.rows.find((row) => row.question_snapshot.stem === clearTarget.stem);
+    const pending = wrongItems.rows.find((row) => row.question_snapshot.stem === keepTarget.stem);
+    assert.equal(cleared?.status, 'cleared');
+    assert.equal(pending?.status, 'pending');
+    assert.ok((pending?.wrong_count ?? 0) >= 2);
+    const award = await requiredPool().query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM entitlement_ledger WHERE ref_id = $1`,
+      [`invite_fs_invitee:${user.user.id}`],
+    );
+    assert.equal(award.rows[0]?.count, awardBeforeRetrain.rows[0]?.count ?? 0);
+
+    const againBefore = await call('/me/entitlement', user.token);
+    const again = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({ intent: 'wrongSet', sourceSessionId: createdBody.id }),
+    });
+    assert.equal(again.status, 201, JSON.stringify(again.body));
+    const againBody = again.body as unknown as QuizSessionView;
+    assert.equal(againBody.source, 'wrongSet');
+    assert.equal(againBody.status, 'ready');
+    assert.equal(againBody.settings.mode, 'practice');
+    assert.equal(againBody.settings.timer.enabled, false);
+    assert.ok((againBody.paper?.questions.length ?? 0) >= 1);
+    assert.equal(
+      againBody.paper?.questions.some((question) => question.stem === clearTarget.stem),
+      false,
+    );
+    const againBalances = (
+      (await call('/me/entitlement', user.token)).body as { balances: unknown }
+    ).balances;
+    assert.deepEqual(againBalances, (againBefore.body as { balances: unknown }).balances);
+    const againScores = await call('/quiz/sessions', user.token);
+    assert.equal((againScores.body as { total: number }).total, 1);
+
+    const only = await login('wrongset-only');
+    const onlyInviter = await login('wrongset-only-inviter');
+    await requiredPool().query(
+      `
+        INSERT INTO invite_relations (invitee_user_id, inviter_user_id, invite_code_used)
+        VALUES ($1, $2, 'TS-ONLY')
+      `,
+      [only.user.id, onlyInviter.user.id],
+    );
+    const seeded = randomUUID();
+    await requiredPool().query(
+      `
+        INSERT INTO quiz_sessions (
+          id, user_id, pack_snapshot, mode, settings, status, source,
+          question_count, generated_count, submit_reason, submitted_at
+        )
+        VALUES (
+          $1, $2, $3::jsonb, 'practice',
+          '{"count":1,"difficulty":"medium","types":["single"],"timer":{"enabled":false},"mode":"practice"}'::jsonb,
+          'submitted', 'wrongSet', 1, 1, 'manual', now()
+        )
+      `,
+      [
+        seeded,
+        only.user.id,
+        JSON.stringify({
+          name: '只再练',
+          domainName: '领域',
+          certName: '证书',
+          certId: fixture.certId,
+          totalScore: 1,
+        }),
+      ],
+    );
+    await requiredPool().query(
+      `
+        INSERT INTO paper_questions (
+          id, session_id, ordinal, type_code, stem, options, answer, analysis, kp_ids, source, score
+        )
+        VALUES (
+          $1, $2, 1, 'single', '只有再练', '[{"id":"A","text":"甲"},{"id":"B","text":"乙"}]'::jsonb,
+          '["B"]'::jsonb, '解析', $3::uuid[], 'wrong_carry', 1
+        )
+      `,
+      [randomUUID(), seeded, [fixture.kp1]],
+    );
+    const onlyCreated = await call('/quiz/sessions', only.token, {
+      method: 'POST',
+      body: JSON.stringify({ source: 'wrongSet', sourceSessionId: seeded }),
+    });
+    assert.equal(onlyCreated.status, 201, JSON.stringify(onlyCreated.body));
+    const onlyId = (onlyCreated.body as { id: string }).id;
+    const onlySubmit = await call(`/quiz/sessions/${onlyId}/submit`, only.token, {
+      method: 'POST',
+      body: '{}',
+    });
+    assert.equal(onlySubmit.status, 200, JSON.stringify(onlySubmit.body));
+    const onlyAward = await requiredPool().query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM entitlement_ledger WHERE ref_id = $1 OR ref_id = $2`,
+      [`invite_fs_invitee:${only.user.id}`, `invite_fs_inviter:${only.user.id}`],
+    );
+    assert.equal(onlyAward.rows[0]?.count, 0);
+    const onlyScores = await call('/quiz/sessions', only.token);
+    assert.equal((onlyScores.body as { total: number }).total, 0);
+  });
+
+  test('wrongSet 错误码、空余额、删包和下架证书', async (t) => {
+    if (!ready(t)) return;
+    const fixture = requiredFixture();
+    const user = await login('wrongset-errors');
+    const other = await login('wrongset-other');
+    const packId = await createPack(user.token, fixture.certId, [fixture.kp1]);
+    const missing = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({ source: 'wrongSet' }),
+    });
+    assert.equal(missing.status, 400);
+    assert.match(String(missing.body.message), /请指定来源场次/);
+    const badId = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({ source: 'wrongSet', sourceSessionId: 'not-a-uuid' }),
+    });
+    assert.equal(badId.status, 400);
+    assert.match(String(badId.body.message), /请指定来源场次/);
+    const pending = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify(payload(packId)),
+    });
+    assert.equal(pending.status, 201, JSON.stringify(pending.body));
+    const pendingId = (pending.body as { id: string }).id;
+    const notSubmitted = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({ source: 'wrongSet', sourceSessionId: pendingId }),
+    });
+    assert.equal(notSubmitted.status, 400);
+    assert.match(String(notSubmitted.body.message), /尚未交卷/);
+    const foreign = await call('/quiz/sessions', other.token, {
+      method: 'POST',
+      body: JSON.stringify({ source: 'wrongSet', sourceSessionId: pendingId }),
+    });
+    assert.equal(foreign.status, 404);
+    assert.match(String(foreign.body.message), /来源场次不存在/);
+
+    const paper = await readyPaper(user.token, packId, { count: 10 });
+    const rows = await storedQuestionRows(paper.id);
+    for (const row of rows) {
+      await answerAs(user.token, paper.id, row.id, row.answer);
+    }
+    const perfect = await call(`/quiz/sessions/${paper.id}/submit`, user.token, {
+      method: 'POST',
+      body: JSON.stringify({ reason: 'manual' }),
+    });
+    assert.equal(perfect.status, 200, JSON.stringify(perfect.body));
+    const empty = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({
+        source: 'wrongSet',
+        sourceSessionId: paper.id,
+        wrongItemId: fixture.kp1,
+      }),
+    });
+    assert.equal(empty.status, 400);
+    assert.match(String(empty.body.message), /wrongItemId 仅用于 variant/);
+    const none = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({ source: 'wrongSet', sourceSessionId: paper.id }),
+    });
+    assert.equal(none.status, 400);
+    assert.match(String(none.body.message), /没有可再练的错题/);
+
+    const redo = await readyPaper(user.token, packId, { count: 10 });
+    const redoSubmit = await call(`/quiz/sessions/${redo.id}/submit`, user.token, {
+      method: 'POST',
+      body: '{}',
+    });
+    assert.equal(redoSubmit.status, 200, JSON.stringify(redoSubmit.body));
+    const wrongPack = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({
+        source: 'wrongSet',
+        sourceSessionId: redo.id,
+        packId: randomUUID(),
+      }),
+    });
+    assert.equal(wrongPack.status, 400);
+    assert.match(String(wrongPack.body.message), /刷题包与来源场次不一致/);
+
+    const offlinePack = await createPack(user.token, fixture.certId, [fixture.kp1]);
+    const offlinePaper = await readyPaper(user.token, offlinePack, { count: 10 });
+    await call(`/quiz/sessions/${offlinePaper.id}/submit`, user.token, {
+      method: 'POST',
+      body: '{}',
+    });
+
+    await call('/me/entitlement', user.token);
+    await requiredPool().query(
+      `
+        UPDATE entitlement_accounts
+        SET daily_free_remain = 0, daily_task_remain = 0
+        WHERE user_id = $1
+      `,
+      [user.user.id],
+    );
+    await requiredPool().query(`UPDATE entitlement_lots SET remain = 0 WHERE user_id = $1`, [
+      user.user.id,
+    ]);
+    const broke = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({ source: 'wrongSet', sourceSessionId: redo.id }),
+    });
+    assert.equal(broke.status, 201, JSON.stringify(broke.body));
+    assert.notEqual(broke.body.code, ApiErrorCode.ENTITLEMENT_EXHAUSTED);
+    const still = await requiredPool().query<{
+      daily_free_remain: number;
+      daily_task_remain: number;
+    }>(
+      `
+        SELECT daily_free_remain, daily_task_remain
+        FROM entitlement_accounts
+        WHERE user_id = $1
+      `,
+      [user.user.id],
+    );
+    assert.equal(still.rows[0]?.daily_free_remain, 0);
+    assert.equal(still.rows[0]?.daily_task_remain, 0);
+
+    await requiredPool().query(`DELETE FROM packs WHERE id = $1`, [packId]);
+    const deletedPack = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({ source: 'wrongSet', sourceSessionId: redo.id }),
+    });
+    assert.equal(deletedPack.status, 201, JSON.stringify(deletedPack.body));
+    assert.equal((deletedPack.body as { packId: string | null }).packId, null);
+    assert.notEqual(deletedPack.body.code, ApiErrorCode.PACK_UNAVAILABLE);
+
+    await requiredPool().query(`UPDATE certificates SET status = 'offline' WHERE id = $1`, [
+      fixture.certId,
+    ]);
+    try {
+      const offline = await call('/quiz/sessions', user.token, {
+        method: 'POST',
+        body: JSON.stringify({ source: 'wrongSet', sourceSessionId: offlinePaper.id }),
+      });
+      assert.equal(offline.status, 201, JSON.stringify(offline.body));
+      assert.notEqual(offline.body.code, ApiErrorCode.PACK_UNAVAILABLE);
+    } finally {
+      await requiredPool().query(`UPDATE certificates SET status = 'online' WHERE id = $1`, [
+        fixture.certId,
+      ]);
+    }
+
+    const bulkyId = randomUUID();
+    await requiredPool().query(
+      `
+        INSERT INTO quiz_sessions (
+          id, user_id, pack_snapshot, mode, settings, status, source,
+          question_count, generated_count, submit_reason, submitted_at
+        )
+        VALUES (
+          $1, $2, '{}'::jsonb, 'practice',
+          '{"count":50,"difficulty":"medium","types":["single"],"timer":{"enabled":false},"mode":"practice"}'::jsonb,
+          'submitted', 'normal', 51, 51, 'manual', now()
+        )
+      `,
+      [bulkyId, user.user.id],
+    );
+    for (let ordinal = 1; ordinal <= 51; ordinal += 1) {
+      await requiredPool().query(
+        `
+          INSERT INTO paper_questions (
+            id, session_id, ordinal, type_code, stem, options, answer, analysis, source, score
+          )
+          VALUES (
+            $1, $2, $3, 'single', $4, '[{"id":"A","text":"甲"},{"id":"B","text":"乙"}]'::jsonb,
+            '["A"]'::jsonb, '解析', 'ai', 1
+          )
+        `,
+        [randomUUID(), bulkyId, ordinal, `超限题 ${ordinal}`],
+      );
+    }
+    const tooMany = await call('/quiz/sessions', user.token, {
+      method: 'POST',
+      body: JSON.stringify({ source: 'wrongSet', sourceSessionId: bulkyId }),
+    });
+    assert.equal(tooMany.status, 400);
+    assert.match(String(tooMany.body.message), /题量不正确/);
+    const children = await requiredPool().query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM quiz_sessions WHERE source_session_id = $1`,
+      [bulkyId],
+    );
+    assert.equal(children.rows[0]?.count, 0);
   });
 });
 
@@ -1638,6 +2156,76 @@ async function createSession(
   assert.equal(body.paper, null);
   assert.equal(body.progress.total, 10);
   return body;
+}
+
+async function readyPaper(
+  token: string,
+  packId: string,
+  extra?: Record<string, unknown>,
+): Promise<QuizSessionView> {
+  const response = await call('/quiz/sessions', token, {
+    method: 'POST',
+    body: JSON.stringify(payload(packId, extra)),
+  });
+  assert.equal(response.status, 201, JSON.stringify(response.body));
+  const created = response.body as unknown as QuizSessionView;
+  const outcome = await runGeneration(created.id, { mode: 'mock' });
+  assert.equal(outcome.status, 'ready', JSON.stringify(outcome));
+  const loaded = await call(`/quiz/sessions/${created.id}`, token);
+  assert.equal(loaded.status, 200, JSON.stringify(loaded.body));
+  return loaded.body as unknown as QuizSessionView;
+}
+
+async function storedQuestionRows(sessionId: string): Promise<
+  Array<{
+    id: string;
+    ordinal: number;
+    type_code: string;
+    stem: string;
+    answer: string[];
+    score: number | string;
+  }>
+> {
+  const result = await requiredPool().query<{
+    id: string;
+    ordinal: number;
+    type_code: string;
+    stem: string;
+    answer: string[] | string;
+    score: number | string;
+  }>(
+    `
+      SELECT id, ordinal, type_code, stem, answer, score
+      FROM paper_questions
+      WHERE session_id = $1
+      ORDER BY ordinal
+    `,
+    [sessionId],
+  );
+  return result.rows.map((row) => ({
+    ...row,
+    answer: Array.isArray(row.answer) ? row.answer : [],
+  }));
+}
+
+async function answerAs(
+  token: string,
+  sessionId: string,
+  questionId: string,
+  selected: string[],
+): Promise<void> {
+  const response = await call(`/quiz/sessions/${sessionId}/answers`, token, {
+    method: 'POST',
+    body: JSON.stringify({ questionId, selected }),
+  });
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+}
+
+function wrongOption(row: { type_code: string; answer: string[] }): string[] {
+  if (row.type_code === 'judge') {
+    return row.answer.includes('T') ? ['F'] : ['T'];
+  }
+  return row.answer.includes('A') ? ['B'] : ['A'];
 }
 
 async function generate(
@@ -2124,7 +2712,11 @@ async function insertBank(
   return { id, stem, type, options, answer };
 }
 
-async function insertSubmitted(iso: IsoPack, submittedAt: Date, bank: BankSeed | null): Promise<void> {
+async function insertSubmitted(
+  iso: IsoPack,
+  submittedAt: Date,
+  bank: BankSeed | null,
+): Promise<void> {
   const sessionId = randomUUID();
   await requiredPool().query(
     `

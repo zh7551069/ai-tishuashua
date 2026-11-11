@@ -404,41 +404,45 @@ export function mockVariantQuestion(input: {
 }
 
 export interface AcceptedQuizSessionRequest {
-  source: Exclude<QuizSessionSource, 'wrongSet'>;
+  source: QuizSessionSource;
   settings: QuizSettings;
-  /** null 表示未传。普通出题因此用整包。variant 恒为 null，创建时忽略该字段。 */
+  /** null 表示未传。普通出题因此用整包。variant 与 wrongSet 恒为 null。 */
   knowledgePointIds: string[] | null;
   wrongItemId: string | null;
   /** 仅 variant：请求省略了 types，创建时改用证书题型白名单。 */
   typesOmitted: boolean;
+  /** 仅 wrongSet 有值。出卷集合只由来源场次计算。 */
+  sourceSessionId: string | null;
 }
 
 /**
  * 创建会话的字段互斥与题量规则。不查库。
- * wrongSet 一律拒绝。知识点是否属于刷题包由 API 再校验，这里不回退整包。
+ * wrongSet 只校验来源场次 id，不把客户端题量 / 知识点 / 题单当出卷范围。
+ * 知识点是否属于刷题包由 API 再校验，这里不回退整包。
  */
 export function parseCreateQuizSessionRequest(input: {
-  count: unknown;
-  difficulty: unknown;
+  count?: unknown;
+  difficulty?: unknown;
   types?: unknown;
-  timer: {
+  timer?: {
     enabled: boolean;
     kind?: string;
     paperMinutes?: number;
     perQuestionSeconds?: number;
-  };
-  mode: unknown;
+  } | null;
+  mode?: unknown;
   source?: unknown;
   intent?: unknown;
   knowledgePointIds?: unknown;
   wrongItemId?: unknown;
+  sourceSessionId?: unknown;
 }): { ok: true; request: AcceptedQuizSessionRequest } | { ok: false; message: string } {
   const source = resolveSessionSource(input.source, input.intent);
   if (!source.ok) {
     return source;
   }
   if (source.source === 'wrongSet') {
-    return { ok: false, message: '错题再练暂未开放' };
+    return parseWrongSetRequest(input);
   }
   const wrongItem = readWrongItemId(input.wrongItemId);
   if (!wrongItem.ok) {
@@ -469,6 +473,9 @@ export function parseCreateQuizSessionRequest(input: {
     return { ok: false, message: '没有可用的知识点，无法复练同类' };
   }
   const typesOmitted = source.source === 'variant' && input.types === undefined;
+  if (!input.timer || typeof input.timer.enabled !== 'boolean') {
+    return { ok: false, message: '请设置计时' };
+  }
   const probe = normalizeQuizRequest({
     count: source.source === 'variant' ? 10 : (input.count as number),
     difficulty: typeof input.difficulty === 'string' ? input.difficulty : '',
@@ -491,8 +498,127 @@ export function parseCreateQuizSessionRequest(input: {
       knowledgePointIds: source.source === 'variant' ? null : points.ids,
       wrongItemId: source.source === 'variant' ? wrongItem.id : null,
       typesOmitted,
+      sourceSessionId: null,
     },
   };
+}
+
+/**
+ * wrongSet 的客户端 count / difficulty / types / timer / mode / 知识点 / 题单都不作出卷依据。
+ * settings 里的占位值由 API 按来源场次覆盖。
+ */
+function parseWrongSetRequest(input: {
+  count?: unknown;
+  difficulty?: unknown;
+  types?: unknown;
+  timer?: {
+    enabled: boolean;
+    kind?: string;
+    paperMinutes?: number;
+    perQuestionSeconds?: number;
+  } | null;
+  mode?: unknown;
+  knowledgePointIds?: unknown;
+  wrongItemId?: unknown;
+  sourceSessionId?: unknown;
+}): { ok: true; request: AcceptedQuizSessionRequest } | { ok: false; message: string } {
+  const wrongItem = readWrongItemId(input.wrongItemId);
+  if (!wrongItem.ok) {
+    return wrongItem;
+  }
+  if (wrongItem.id) {
+    return { ok: false, message: 'wrongItemId 仅用于 variant' };
+  }
+  const sourceSessionId = readSourceSessionId(input.sourceSessionId);
+  if (!sourceSessionId.ok) {
+    return sourceSessionId;
+  }
+  const overrides = rejectInvalidWrongSetOverrides(input);
+  if (!overrides.ok) {
+    return overrides;
+  }
+  return {
+    ok: true,
+    request: {
+      source: 'wrongSet',
+      settings: {
+        count: 1,
+        difficulty: 'medium',
+        types: ['single'],
+        timer: { enabled: false },
+        mode: 'practice',
+      },
+      knowledgePointIds: null,
+      wrongItemId: null,
+      typesOmitted: false,
+      sourceSessionId: sourceSessionId.id,
+    },
+  };
+}
+
+function rejectInvalidWrongSetOverrides(input: {
+  count?: unknown;
+  difficulty?: unknown;
+  types?: unknown;
+  timer?: {
+    enabled: boolean;
+    kind?: string;
+    paperMinutes?: number;
+    perQuestionSeconds?: number;
+  } | null;
+  mode?: unknown;
+}): { ok: true } | { ok: false; message: string } {
+  if (input.count !== undefined && input.count !== null) {
+    if (
+      typeof input.count !== 'number' ||
+      !Number.isInteger(input.count) ||
+      input.count < 1 ||
+      input.count > 50
+    ) {
+      return { ok: false, message: '题量不正确' };
+    }
+  }
+  if (input.difficulty !== undefined && input.difficulty !== null && input.difficulty !== '') {
+    if (typeof input.difficulty !== 'string' || !isDifficulty(input.difficulty)) {
+      return { ok: false, message: '难度不正确' };
+    }
+  }
+  if (input.mode !== undefined && input.mode !== null && input.mode !== '') {
+    if (typeof input.mode !== 'string' || !isMode(input.mode)) {
+      return { ok: false, message: '模式只能是练习或考试' };
+    }
+  }
+  if (input.types !== undefined && input.types !== null) {
+    if (!Array.isArray(input.types) || input.types.length === 0) {
+      return { ok: false, message: '请至少选择一种题型' };
+    }
+    const seen = new Set<string>();
+    for (const type of input.types) {
+      if (!isQuizType(type) || seen.has(type)) {
+        return { ok: false, message: '题型不正确' };
+      }
+      seen.add(type);
+    }
+  }
+  if (input.timer !== undefined && input.timer !== null) {
+    if (typeof input.timer.enabled !== 'boolean') {
+      return { ok: false, message: '请设置计时' };
+    }
+    const timer = normalizeTimer(input.timer);
+    if (!timer.ok) {
+      return timer;
+    }
+  }
+  return { ok: true };
+}
+
+function readSourceSessionId(
+  value: unknown,
+): { ok: true; id: string } | { ok: false; message: string } {
+  if (typeof value !== 'string' || !isUuid(value)) {
+    return { ok: false, message: '请指定来源场次' };
+  }
+  return { ok: true, id: value.toLowerCase() };
 }
 
 export function renderPrompt(
@@ -959,7 +1085,7 @@ function sameId(left: string | null, right: string): boolean {
   return (left ?? '').toLowerCase() === right.toLowerCase();
 }
 
-function isQuizCount(value: number): value is QuizSettings['count'] {
+function isQuizCount(value: number): boolean {
   return (QUIZ_COUNTS as readonly number[]).includes(value);
 }
 

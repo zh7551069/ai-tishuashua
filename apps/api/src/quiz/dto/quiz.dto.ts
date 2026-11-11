@@ -27,6 +27,7 @@ import {
   IsUUID,
   Max,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -56,44 +57,55 @@ export class QuizTimerDto {
 }
 
 export class CreateQuizSessionDto {
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description: '普通、复练、变异必填。wrongSet 可省略；若传必须与来源场次 pack_id 一致。',
+  })
+  @ValidateIf((body: CreateQuizSessionDto) => wrongSetFieldRequired(body, 'packId'))
   @IsUUID('4', { message: 'packId 必须是 UUID' })
-  packId!: string;
+  packId?: string | null;
 
-  @ApiProperty({ description: '普通出题为 10、20、30 或 50。题型变异必须是 1。' })
+  @ApiPropertyOptional({
+    description: '普通出题为 10、20、30 或 50。题型变异必须是 1。wrongSet 可省略，不作出卷依据。',
+  })
+  @ValidateIf((body: CreateQuizSessionDto) => wrongSetFieldRequired(body, 'count'))
   @IsInt({ message: '题量必须是整数' })
   @Min(1, { message: '题量不正确' })
   @Max(50, { message: '题量不正确' })
-  count!: number;
+  count?: number;
 
-  @ApiProperty({ enum: QUIZ_DIFFICULTIES })
+  @ApiPropertyOptional({ enum: QUIZ_DIFFICULTIES })
+  @ValidateIf((body: CreateQuizSessionDto) => wrongSetFieldRequired(body, 'difficulty'))
   @IsIn(QUIZ_DIFFICULTIES, { message: '难度不正确' })
-  difficulty!: 'easy' | 'medium' | 'hard';
+  difficulty?: 'easy' | 'medium' | 'hard';
 
   @ApiPropertyOptional({
     enum: QUIZ_TYPES,
     isArray: true,
-    description: '至少一种，且属于证书开放题型。variant 可省略，省略时用证书白名单。',
+    description:
+      '至少一种，且属于证书开放题型。variant 可省略，省略时用证书白名单。wrongSet 忽略。',
   })
+  @ValidateIf((body: CreateQuizSessionDto) => !isConsistentWrongSet(body))
   @IsOptional()
   @IsArray({ message: 'types 必须是数组' })
   @ArrayUnique({ message: '题型不能重复' })
   @IsIn(QUIZ_TYPES, { each: true, message: '题型不正确' })
   types?: Array<'single' | 'multi' | 'judge'>;
 
-  @ApiProperty({ type: QuizTimerDto })
+  @ApiPropertyOptional({ type: QuizTimerDto })
+  @ValidateIf((body: CreateQuizSessionDto) => wrongSetFieldRequired(body, 'timer'))
   @IsDefined({ message: '请设置计时' })
   @ValidateNested()
   @Type(() => QuizTimerDto)
-  timer!: QuizTimerDto;
+  timer?: QuizTimerDto;
 
-  @ApiProperty({ enum: QUIZ_MODES })
+  @ApiPropertyOptional({ enum: QUIZ_MODES })
+  @ValidateIf((body: CreateQuizSessionDto) => wrongSetFieldRequired(body, 'mode'))
   @IsIn(QUIZ_MODES, { message: '模式只能是练习或考试' })
-  mode!: 'practice' | 'exam';
+  mode?: 'practice' | 'exam';
 
   @ApiPropertyOptional({
     enum: QUIZ_SESSION_SOURCES,
-    description: '缺省 normal。wrongSet 会返回 400。',
+    description: '缺省 normal。wrongSet 必须同时带 sourceSessionId，由服务端按来源场次出卷。',
   })
   @IsOptional()
   @IsIn(QUIZ_SESSION_SOURCES, { message: '会话来源不正确' })
@@ -109,18 +121,49 @@ export class CreateQuizSessionDto {
 
   @ApiPropertyOptional({
     type: [String],
-    description: '会话级知识点覆盖。不写回刷题包。variant 忽略。',
+    description: '会话级知识点覆盖。不写回刷题包。variant 与 wrongSet 忽略，不作出卷范围。',
   })
+  @ValidateIf((body: CreateQuizSessionDto) => !isConsistentWrongSet(body))
   @IsOptional()
   @IsArray({ message: '知识点不正确' })
   @ArrayMaxSize(PACK_KNOWLEDGE_POINT_MAX, { message: '知识点过多' })
   @IsUUID('4', { each: true, message: '知识点不正确' })
   knowledgePointIds?: string[];
 
-  @ApiPropertyOptional({ description: '仅 source=variant 时必填。' })
+  @ApiPropertyOptional({ description: '仅 source=variant 时必填。wrongSet 传入则 400。' })
   @IsOptional()
   @IsUUID('4', { message: 'wrongItemId 不正确' })
   wrongItemId?: string;
+
+  @ApiPropertyOptional({ description: 'wrongSet 必填。来源已交卷场次的 UUID。' })
+  @ValidateIf((body: CreateQuizSessionDto) => isConsistentWrongSet(body))
+  @IsUUID('4', { message: '请指定来源场次' })
+  sourceSessionId?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: '忽略。wrongSet 不接受客户端题单作为出卷范围。',
+  })
+  @IsOptional()
+  questionIds?: string[];
+}
+
+function isConsistentWrongSet(body: { source?: string; intent?: string }): boolean {
+  if (body.source && body.intent && body.source !== body.intent) {
+    return false;
+  }
+  return body.source === 'wrongSet' || (!body.source && body.intent === 'wrongSet');
+}
+
+function wrongSetFieldRequired(
+  body: CreateQuizSessionDto,
+  field: 'packId' | 'count' | 'difficulty' | 'mode' | 'timer',
+): boolean {
+  if (!isConsistentWrongSet(body)) {
+    return true;
+  }
+  const value = body[field];
+  return value !== undefined && value !== null;
 }
 
 export class SaveQuizAnswerDto implements SaveQuizAnswerRequest {
@@ -146,7 +189,7 @@ export class QuizScoreListDto implements QuizScoreList {
   @ApiProperty({ type: 'array' })
   items!: QuizScoreList['items'];
 
-  @ApiProperty({ description: '当前用户已交卷会话数，含快照读不出来的记录' })
+  @ApiProperty({ description: '当前用户已交卷会话数，不含 wrongSet，含快照读不出来的记录' })
   total!: number;
 
   @ApiProperty({ description: '本次最多返回的条数' })

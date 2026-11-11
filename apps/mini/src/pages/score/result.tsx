@@ -1,4 +1,4 @@
-import { Button, Image, Text, View } from '@tarojs/components';
+import { Image, Text, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { type PackView, type QuizSessionView } from '@tishuashua/shared';
 import { useEffect, useState } from 'react';
@@ -7,8 +7,10 @@ import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
 import { isAuthFailure, withAuth } from '../../services/guard';
 import { fetchPack } from '../../services/pack-api';
 import { fetchQuizSession } from '../../services/quiz-api';
+import { startWrongSetRetrain } from '../../services/wrong-set-retrain-start';
 import iconChevron from './assets/icon-chevron.png';
 import iconStar from './assets/icon-star.png';
+import { RetrainBar } from './retrain-bar';
 import { ReviewView } from './review';
 import './review.css';
 import {
@@ -48,6 +50,7 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
   const [review, setReview] = useState(false);
   const [celebrate, setCelebrate] = useState(true);
   const [openAnalysis, setOpenAnalysis] = useState<Record<string, boolean>>({});
+  const [retraining, setRetraining] = useState(false);
 
   const load = async () => {
     setError('');
@@ -130,6 +133,14 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
     void Taro.navigateTo({ url: `/pages/quiz/index?packId=${session.packId}` });
   };
 
+  const retrainWrong = () => {
+    if (!session || retraining || wrong.length <= 0) {
+      return;
+    }
+    setRetraining(true);
+    void startWrongSetRetrain(session.id).finally(() => setRetraining(false));
+  };
+
   const drill = () => {
     if (!session?.packId || weak.length === 0) {
       return;
@@ -165,9 +176,12 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
       footer={
         session && result && tone ? (
           review ? (
-            <Button className="wr-back" hoverClass="none" onClick={() => setReview(false)}>
-              返回结果
-            </Button>
+            <RetrainBar
+              count={wrong.length}
+              busy={retraining}
+              onBack={() => setReview(false)}
+              onRetrain={retrainWrong}
+            />
           ) : (
             <Actions
               plain={plain}
@@ -183,7 +197,11 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
         ) : null
       }
     >
-      <View className={plain ? 'sc-stack sc-stack-plain' : 'sc-stack'}>
+      <View
+        className={[plain ? 'sc-stack sc-stack-plain' : 'sc-stack', review ? 'sc-stack-review' : '']
+          .filter(Boolean)
+          .join(' ')}
+      >
         {error ? <ErrorBlock detail={error} onRetry={() => void load()} onBack={leave} /> : null}
         {!ready && !error ? <LoadingBlock label="正在加载成绩" /> : null}
         {ready && session && session.status !== 'submitted' ? (
