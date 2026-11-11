@@ -38,3 +38,5 @@
 | TB-28 小程序场次明细          | [tb28-miniapp-session-ledger-C-contracts-v0.1.0-C.md](tb28-miniapp-session-ledger-C-contracts-v0.1.0-C.md)                 | active | 架构师 |
 | TB-29 每日分享与邀请有礼      | [tb29-daily-share-invite-C-contracts-v0.1.0-C.md](tb29-daily-share-invite-C-contracts-v0.1.0-C.md)                         | active | 架构师 |
 | TB-30～34 首页每日练习计划    | [tb30-home-daily-plan-C-contracts-v0.1.0-C.md](tb30-home-daily-plan-C-contracts-v0.1.0-C.md)                               | active | 架构师 |
+| TB-11/12/13 后管后续页        | [tishuashua-tb11-13-admin-followup-C-contracts-v0.1.0-C.md](tishuashua-tb11-13-admin-followup-C-contracts-v0.1.0-C.md)     | active | 架构师 |
+| TB-11/12/13 样式源补丁        | [tishuashua-tb11-13-admin-followup-C-contracts-v0.1.1-C.md](tishuashua-tb11-13-admin-followup-C-contracts-v0.1.1-C.md)     | active | 架构师 |

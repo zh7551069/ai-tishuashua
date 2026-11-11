@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { listAdminCourseware } from '../courseware-api';
 import { getCatalogTree, listCertificates, listDomains } from '../catalog-api';
 import { useAdminAction } from '../content/use-admin-action';
+import { getQuizGenerationStats } from '../quiz-logs-api';
 
 export function OverviewPage() {
   const { token, report } = useAdminAction();
@@ -11,6 +12,7 @@ export function OverviewPage() {
   const [missingPass, setMissingPass] = useState<string[]>([]);
   const [uploads, setUploads] = useState<number | null>(null);
   const [hintGaps, setHintGaps] = useState<number | null>(null);
+  const [failureRate, setFailureRate] = useState<number | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +58,18 @@ export function OverviewPage() {
           setUploads(null);
         }
       });
+    getQuizGenerationStats(token, 7)
+      .then((stats) => {
+        if (!cancelled) {
+          setFailureRate(stats.failureRate);
+        }
+      })
+      .catch((caught: unknown) => {
+        if (!cancelled) {
+          report(caught);
+          setFailureRate(null);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -70,11 +84,11 @@ export function OverviewPage() {
           <b>—</b>
           <small>Prompt / 证书配置草稿 · 出题配置未接入</small>
         </article>
-        <article className="metric">
+        <Link className="metric" to="/quiz-logs">
           <span>近 7 日出题失败率</span>
-          <b>—</b>
-          <small>出题日志未接入，不显示估算</small>
-        </article>
+          <b>{formatFailureRate(failureRate)}</b>
+          <small>分母是出题尝试。回落内置且成功不计失败</small>
+        </Link>
         <Link className="metric" to="/content/certificates">
           <span>已上架证书</span>
           <b>{onlineCerts === null ? '…' : onlineCerts}</b>
@@ -104,7 +118,7 @@ export function OverviewPage() {
                 ? '已读到的知识点都有 promptHint。'
                 : `${hintGaps} 个知识点缺少 promptHint，不能启用`}
           </li>
-          <li>全局 Prompt 草稿不在本切片，失败率要等出题日志。</li>
+          <li>全局 Prompt 草稿仍等出题配置。失败率来自出题日志，没有尝试时显示「—」。</li>
         </ul>
       </article>
       <div className="shortcut-row">
@@ -113,6 +127,8 @@ export function OverviewPage() {
         <Link to="/content/textbooks">教材</Link>
         <Link to="/content/knowledge">章节知识点</Link>
         <Link to="/users">用户</Link>
+        <Link to="/practice">练习记录</Link>
+        <Link to="/quiz-logs">出题日志</Link>
         <Link to="/wrong-book">错题库</Link>
         <Link to="/courseware">用户上传教材</Link>
         <Link to="/certificates">证书与成绩</Link>
@@ -120,6 +136,17 @@ export function OverviewPage() {
       </div>
     </section>
   );
+}
+
+function formatFailureRate(rate: number | null | undefined): string {
+  if (rate === undefined) {
+    return '…';
+  }
+  if (rate === null) {
+    return '—';
+  }
+  const percent = Math.round(rate * 1000) / 10;
+  return `${percent}%`;
 }
 
 async function countEmptyHints(token: string, certs: AdminCertificate[]): Promise<number> {

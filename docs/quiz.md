@@ -246,6 +246,8 @@ Worker 只把错题的题型、题干和选项交给模型，不放标准答案�
 
 Prompt 沿用证书 > 领域 > 全局 > 代码内置。变异读 `prompt_templates.templates.variant` 的 `{ system, user }`。都没有时用 `BUILTIN_QUIZ_VARIANT_PROMPT`。证书覆盖如果没写检索禁令和「题干不得与原题干相同」，服务端会把这两句补进 system。`LLM_MOCK=true` 时用内置变异题，题干带会话盐。
 
+认领成功之后，`runQuizGeneration` 会尽力往 `quiz_generation_logs` 追加一行（迁移 `016_admin_followup_tb12_logs.sql`）。成功（`status=ready`）和失败出口各记一次。写失败只打服务端日志，不改变原来的出题结果。一次尝试一行，重试再追加，不覆盖，也不回填上线前的历史场次。走 `BUILTIN_QUIZ_PROMPT` 或 `BUILTIN_QUIZ_VARIANT_PROMPT` 时 `usedBuiltin=true`，`templateCode` 为 `builtin`。回落内置仍然算出题成功，不是失败。后管只读见 [练习记录与出题日志](admin-practice-logs.md)。
+
 失败的会话不能重新拉起来出题。重试要再 `POST` 一次，拿新的会话 id。交卷后这场会出现在成绩列表里，`source` 为 `variant`。答对只按题干指纹处理，不会把 `wrong_item_id` 指向的原错题标成已消灭。用户仍可在错题详情里手动标记已消灭。
 
 小程序页面已接上（页面代码只改 `apps/mini`）：

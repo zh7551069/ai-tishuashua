@@ -72,6 +72,39 @@ async function request<T>(
   return payload as T;
 }
 
+export async function downloadAdminCsv(path: string, token: string, filename: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(`${apiBase}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new AdminApiError('网络异常，请重试', 0);
+  }
+  const text = await response.text();
+  if (!response.ok) {
+    let message = '导出失败';
+    let code: string | undefined;
+    try {
+      const payload = JSON.parse(text) as { message?: string; code?: string };
+      if (payload.message) {
+        message = payload.message;
+      }
+      code = payload.code;
+    } catch {
+      message = text.trim() || message;
+    }
+    throw new AdminApiError(message, response.status, code);
+  }
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 async function readJson(response: Response): Promise<{ code?: string; message?: string } | null> {
   const text = await response.text();
   if (!text) {

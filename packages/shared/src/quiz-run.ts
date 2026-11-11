@@ -4,25 +4,23 @@ import { type LlmProvider } from './constants';
 import { ApiErrorCode } from './errors';
 import { LlmCallError, requestAiQuestions } from './quiz-llm';
 import { questionContentKey } from './question-content-key';
+import { truncateGenerationError, keepOutcomeIfLogWriteFails } from './quiz-generation-log';
 import {
-  BUILTIN_QUIZ_PROMPT,
-  BUILTIN_QUIZ_VARIANT_PROMPT,
   buildPromptVariables,
   buildVariantPromptVariables,
   mockAiQuestions,
   mockVariantQuestion,
   normalizeQuestionScores,
   parseAiQuestions,
-  pickPublishedPrompt,
-  pickPublishedVariantPrompt,
   preferVariantTypes,
   renderPrompt,
-  sealVariantPrompt,
+  resolveQuizPrompt,
   selectBankQuestions,
   takeWrongCarry,
   type BankCandidate,
   type PaperDraft,
   type PromptCandidate,
+  type QuizPromptChoice,
 } from './quiz-engine';
 import {
   BANK_INGEST_SOURCES,
@@ -179,13 +177,32 @@ export async function runQuizGeneration(
     return { status: claim.kind };
   }
 
+  const trace = emptyAttemptTrace();
+  const outcome = await generateAfterClaim(db, sessionId, claim.token, options, deps, trace);
+  return keepOutcomeIfLogWriteFails(outcome, () =>
+    insertQuizGenerationLog(db, sessionId, trace, outcome),
+  );
+}
+
+/**
+ * 认领成功之后的一次尝试。成功和失败出口都回到 runQuizGeneration 记日志。
+ * 取消或被其它 run 接走时不记，避免把没跑完的认领算进失败率。
+ */
+async function generateAfterClaim(
+  db: SqlExecutor,
+  sessionId: string,
+  token: string,
+  options: GenerationOptions,
+  deps: GenerationDeps | undefined,
+  trace: AttemptTrace,
+): Promise<GenerationOutcome> {
   let stats = emptyStats();
   try {
     if (options.mode === 'unconfigured') {
       return await failSession(
         db,
         sessionId,
-        claim.token,
+        token,
         ApiErrorCode.LLM_NOT_CONFIGURED,
         options.message,
       );
@@ -195,16 +212,17 @@ export async function runQuizGeneration(
       return await failSession(
         db,
         sessionId,
-        claim.token,
+        token,
         ApiErrorCode.QUIZ_GENERATION_FAILED,
         '刷题包已删除，不能出题',
       );
     }
+    fillAttemptTrace(trace, context);
     if (context.certStatus !== 'online') {
       return await failSession(
         db,
         sessionId,
-        claim.token,
+        token,
         ApiErrorCode.PACK_UNAVAILABLE,
         '关联证书已下架，不能出题',
       );
@@ -213,7 +231,7 @@ export async function runQuizGeneration(
       return await failSession(
         db,
         sessionId,
-        claim.token,
+        token,
         ApiErrorCode.QUIZ_GENERATION_FAILED,
         '错题再练不走模型出题',
       );
@@ -222,15 +240,16 @@ export async function runQuizGeneration(
       return await failSession(
         db,
         sessionId,
-        claim.token,
+        token,
         ApiErrorCode.QUIZ_GENERATION_FAILED,
         context.knowledgePointOverride ? '没有可用的知识点，无法出题' : '刷题包没有可用知识点',
       );
     }
 
-    const built = await buildDrafts(db, sessionId, context, options, deps);
+    const built = await buildDrafts(db, sessionId, context, options, deps, trace);
     const drafts = built.drafts;
     stats = built.stats;
+    trace.stats = stats;
     const bankWrite = bankWriteContext(context);
     const scores = normalizeQuestionScores(
       drafts.map((draft) => draft.score),
@@ -243,7 +262,7 @@ export async function runQuizGeneration(
         return await failSession(
           db,
           sessionId,
-          claim.token,
+          token,
           ApiErrorCode.QUIZ_GENERATION_FAILED,
           '组卷结果不完整',
         );
@@ -254,33 +273,33 @@ export async function runQuizGeneration(
       const inserted = await insertQuestion(
         db,
         sessionId,
-        claim.token,
+        token,
         index + 1,
         draft,
         score,
         bankWrite,
       );
       if (!inserted) {
-        return withStats(await stopWithoutPaper(db, sessionId, claim.token), stats);
+        return withStats(await stopWithoutPaper(db, sessionId, token), stats);
       }
     }
 
     const ready = await markReady(
       db,
       sessionId,
-      claim.token,
+      token,
       drafts.length,
       context.totalScore,
       stats,
     );
     if (!ready) {
-      return withStats(await stopWithoutPaper(db, sessionId, claim.token), stats);
+      return withStats(await stopWithoutPaper(db, sessionId, token), stats);
     }
     return { status: 'ready', stats };
   } catch (error) {
     const mapped = mapGenerationError(error);
     return withStats(
-      await failSession(db, sessionId, claim.token, mapped.code, mapped.message),
+      await failSession(db, sessionId, token, mapped.code, mapped.message),
       stats,
     );
   }
@@ -292,13 +311,14 @@ async function buildDrafts(
   context: GenerationContext,
   options: Exclude<GenerationOptions, { mode: 'unconfigured' }>,
   deps: GenerationDeps | undefined,
+  trace: AttemptTrace,
 ): Promise<{ drafts: PaperDraft[]; stats: GenerationStats }> {
   if (context.source === 'variant') {
     if (context.mode !== 'practice' || context.questionCount !== VARIANT_QUIZ_COUNT) {
       throw new Error('题型变异只能练习且只有 1 题');
     }
     return {
-      drafts: [await requestVariantQuestion(db, sessionId, context, options)],
+      drafts: [await requestVariantQuestion(db, sessionId, context, options, trace)],
       stats: { wrongCarried: 0, bankDrawn: 0, aiGenerated: 1 },
     };
   }
@@ -317,7 +337,9 @@ async function buildDrafts(
   const bank = freeFirst && need > 0 ? await drawFromBank(db, sessionId, context, need, carry) : [];
   const aiNeed = need - bank.length;
   const aiQuestions =
-    aiNeed === 0 ? [] : await requestOriginalQuestions(db, sessionId, context, options, aiNeed);
+    aiNeed === 0
+      ? []
+      : await requestOriginalQuestions(db, sessionId, context, options, aiNeed, trace);
   const drafts: PaperDraft[] = [
     ...carry,
     ...bank,
@@ -504,13 +526,17 @@ async function requestOriginalQuestions(
   context: GenerationContext,
   options: Exclude<GenerationOptions, { mode: 'unconfigured' }>,
   aiCount: number,
+  trace: AttemptTrace,
 ) {
   const prompts = await loadPrompts(db, context.certId, context.domainId);
-  const template =
-    pickPublishedPrompt(prompts, { certificateId: context.certId, domainId: context.domainId }) ??
-    BUILTIN_QUIZ_PROMPT;
+  const choice = resolveQuizPrompt(
+    prompts,
+    { certificateId: context.certId, domainId: context.domainId },
+    'original',
+  );
+  rememberPrompt(trace, choice);
   const rendered = renderPrompt(
-    template,
+    choice.template,
     buildPromptVariables({
       domainName: context.domainName,
       certificateName: context.certName,
@@ -564,6 +590,7 @@ async function requestVariantQuestion(
   sessionId: string,
   context: GenerationContext,
   options: Exclude<GenerationOptions, { mode: 'unconfigured' }>,
+  trace: AttemptTrace,
 ): Promise<PaperDraft> {
   const wrong = await loadVariantSource(db, context.userId, context.wrongItemId);
   if (!wrong) {
@@ -577,14 +604,14 @@ async function requestVariantQuestion(
     throw new Error('没有可用题型');
   }
   const prompts = await loadPrompts(db, context.certId, context.domainId);
-  const template = sealVariantPrompt(
-    pickPublishedVariantPrompt(prompts, {
-      certificateId: context.certId,
-      domainId: context.domainId,
-    }) ?? BUILTIN_QUIZ_VARIANT_PROMPT,
+  const choice = resolveQuizPrompt(
+    prompts,
+    { certificateId: context.certId, domainId: context.domainId },
+    'variant',
   );
+  rememberPrompt(trace, choice);
   const rendered = renderPrompt(
-    template,
+    choice.template,
     buildVariantPromptVariables({
       domainName: context.domainName,
       certificateName: context.certName,
@@ -848,7 +875,7 @@ async function loadPrompts(
 ): Promise<PromptCandidate[]> {
   const result = await db.query(
     `
-      SELECT scope, scope_ref_id, templates, version, status
+      SELECT id, scope, scope_ref_id, templates, version, status
       FROM prompt_templates
       WHERE status = 'published'
         AND (
@@ -861,6 +888,7 @@ async function loadPrompts(
   );
   return result.rows.map((item) => {
     const row = item as {
+      id: string | null;
       scope: PromptCandidate['scope'];
       scope_ref_id: string | null;
       templates: PromptCandidate['templates'];
@@ -868,6 +896,7 @@ async function loadPrompts(
       status: string;
     };
     return {
+      id: typeof row.id === 'string' ? row.id : null,
       scope: row.scope,
       scopeRefId: row.scope_ref_id,
       templates: row.templates ?? {},
@@ -1389,4 +1418,113 @@ function isDifficulty(value: unknown): value is QuizDifficulty {
 
 function isQuizType(value: unknown): value is QuizTypeCode {
   return typeof value === 'string' && (QUIZ_TYPES as readonly string[]).includes(value);
+}
+
+interface AttemptTrace {
+  startedAtMs: number;
+  userId: string | null;
+  certId: string | null;
+  certName: string | null;
+  mode: string | null;
+  source: string | null;
+  count: number | null;
+  types: string[] | null;
+  difficulty: string | null;
+  templateId: string | null;
+  templateVersion: number | null;
+  templateCode: string | null;
+  usedBuiltin: boolean;
+  stats: GenerationStats | null;
+}
+
+function emptyAttemptTrace(): AttemptTrace {
+  return {
+    startedAtMs: Date.now(),
+    userId: null,
+    certId: null,
+    certName: null,
+    mode: null,
+    source: null,
+    count: null,
+    types: null,
+    difficulty: null,
+    templateId: null,
+    templateVersion: null,
+    templateCode: null,
+    usedBuiltin: false,
+    stats: null,
+  };
+}
+
+function fillAttemptTrace(trace: AttemptTrace, context: GenerationContext): void {
+  trace.userId = context.userId;
+  trace.certId = context.certId;
+  trace.certName = context.certName;
+  trace.mode = context.mode;
+  trace.source = context.source;
+  trace.count = context.questionCount;
+  trace.types = [...context.types];
+  trace.difficulty = context.difficulty;
+}
+
+function rememberPrompt(trace: AttemptTrace, choice: QuizPromptChoice): void {
+  trace.usedBuiltin = choice.usedBuiltin;
+  trace.templateId = choice.templateId;
+  trace.templateVersion = choice.templateVersion;
+  trace.templateCode = choice.templateCode;
+}
+
+async function insertQuizGenerationLog(
+  db: SqlExecutor,
+  sessionId: string,
+  trace: AttemptTrace,
+  outcome: GenerationOutcome,
+): Promise<void> {
+  const success = outcome.status === 'ready';
+  const errorCode = outcome.status === 'failed' ? outcome.code : null;
+  const errorMessage =
+    outcome.status === 'failed' ? truncateGenerationError(outcome.message) : null;
+  const stats =
+    outcome.status === 'ready' || outcome.status === 'failed'
+      ? (outcome.stats ?? trace.stats)
+      : trace.stats;
+  const summary = {
+    count: trace.count,
+    types: trace.types,
+    difficulty: trace.difficulty,
+    mode: trace.mode,
+    source: trace.source,
+    generationStats: stats,
+  };
+  const durationMs = Math.max(0, Math.round(Date.now() - trace.startedAtMs));
+  await db.query(
+    `
+      INSERT INTO quiz_generation_logs (
+        id, session_id, user_id, cert_id, cert_name,
+        template_id, template_version, template_code, used_builtin,
+        success, error_code, error_message, duration_ms, request_summary
+      )
+      VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9,
+        $10, $11, $12, $13, $14::jsonb
+      )
+    `,
+    [
+      randomUUID(),
+      sessionId,
+      trace.userId,
+      trace.certId,
+      trace.certName,
+      trace.templateId,
+      trace.templateVersion,
+      trace.templateCode,
+      trace.usedBuiltin,
+      success,
+      errorCode,
+      errorMessage,
+      durationMs,
+      JSON.stringify(summary),
+    ],
+  );
 }

@@ -48,7 +48,7 @@ describe('admin quiz session query', () => {
     const submitted = parseAdminQuizSessionQuery({ status: 'submitted' });
     assert.equal(submitted.ok, false);
     if (!submitted.ok) {
-      assert.match(submitted.message, /证书与成绩/);
+      assert.equal(submitted.message, '已交卷不在出题会话里，请查看证书与成绩');
     }
     assert.equal(parseAdminQuizSessionQuery({ status: 'gone' }).ok, false);
     assert.equal(parseAdminQuizSessionQuery({ mode: 'submitted' }).ok, false);

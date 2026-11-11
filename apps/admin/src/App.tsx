@@ -9,7 +9,9 @@ import { CoursewarePage } from './pages/CoursewarePage';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { PracticeRecordsPage } from './pages/PracticeRecordsPage';
 import { QuestionBankPage } from './pages/QuestionBankPage';
+import { QuizLogsPage } from './pages/QuizLogsPage';
 import { QuizSessionsPage } from './pages/QuizSessionsPage';
 import { CommerceAuditPage } from './pages/commerce/CommerceAuditPage';
 import { EntitlementsPage } from './pages/commerce/EntitlementsPage';
@@ -62,27 +64,9 @@ export function App() {
           }
         />
         <Route path="/users" element={<UsersPage />} />
-        <Route
-          path="/practice"
-          element={
-            <PlaceholderPage
-              title="练习记录"
-              note="练习记录和未交卷的出题会话不是同一份数据。这一页还没有只读接口。"
-              frame="4:667"
-            />
-          }
-        />
+        <Route path="/practice" element={<PracticeRecordsPage />} />
         <Route path="/wrong-book" element={<WrongBookPage />} />
-        <Route
-          path="/quiz-logs"
-          element={
-            <PlaceholderPage
-              title="出题日志"
-              note="出题日志只读留到后续。工作台不估算失败率。"
-              frame="9:404"
-            />
-          }
-        />
+        <Route path="/quiz-logs" element={<QuizLogsPage />} />
         <Route path="/question-bank" element={<QuestionBankPage />} />
         <Route path="/courseware" element={<CoursewarePage />} />
         <Route path="/quiz" element={<QuizSessionsPage />} />

@@ -16,6 +16,7 @@ import {
 } from '../courseware-api';
 import type { AdminOutletContext } from '../layout/AdminLayout';
 import { clearAdminSession } from '../session';
+import { formatAdminTime, QueryPager } from './QueryPager';
 
 interface Filters {
   userId: string;
@@ -41,6 +42,7 @@ export function CoursewarePage() {
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [list, setList] = useState<AdminCoursewareList | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -55,7 +57,7 @@ export function CoursewarePage() {
     let cancelled = false;
     setLoading(true);
     setError('');
-    listAdminCourseware(token, { ...applied, page })
+    listAdminCourseware(token, { ...applied, page, pageSize })
       .then((result) => {
         if (!cancelled) {
           setList(result);
@@ -78,7 +80,7 @@ export function CoursewarePage() {
     return () => {
       cancelled = true;
     };
-  }, [applied, page, reloadToken, token]);
+  }, [applied, page, pageSize, reloadToken, token]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -134,16 +136,16 @@ export function CoursewarePage() {
     setPage(1);
   }
 
-  const pageCount = Math.max(1, Math.ceil((list?.total ?? 0) / (list?.pageSize || 20)));
-
   return (
-    <section className="panel wide">
-      <h1>用户上传教材</h1>
-      <p className="muted">
-        只读查看全站课件上传和提炼任务。默认包含全部状态，按最近更新从新到旧。这里不能重新上传、取消任务或修改提炼次数。
-      </p>
+    <section className="dq-page">
+      <header className="dq-head">
+        <div>
+          <h1>用户上传教材</h1>
+          <p className="dq-note">只读对稿。不可改知识点。无封禁、无导出、无关键字检索。</p>
+        </div>
+      </header>
       <form
-        className="filters"
+        className="dq-filters"
         onSubmit={(event) => {
           event.preventDefault();
           applyFilters(draft);
@@ -206,54 +208,31 @@ export function CoursewarePage() {
       {list && list.items.length === 0 && !loading ? <p>没有符合条件的课件。</p> : null}
 
       {list && list.items.length > 0 ? (
-        <div className="table-wrap">
-          <table className="data">
+        <div className="dq-card">
+          <table>
             <thead>
               <tr>
-                <th>更新时间</th>
-                <th>用户</th>
-                <th>证书</th>
+                <th>文件名</th>
+                <th>格式</th>
                 <th>状态</th>
-                <th>进度</th>
-                <th>文件</th>
-                <th></th>
+                <th>提炼 KP 数</th>
+                <th>上传时间</th>
               </tr>
             </thead>
             <tbody>
               {list.items.map((item) => (
                 <tr key={item.id} className={item.id === selectedId ? 'selected' : undefined}>
-                  <td>{formatTime(item.updatedAt)}</td>
                   <td>
-                    <div>{item.userNick || '未设置昵称'}</div>
-                    <div className="hint">{item.userId}</div>
-                  </td>
-                  <td>
-                    <div>{certLabel(item)}</div>
-                    {item.certId ? <div className="hint">{item.certId}</div> : null}
-                  </td>
-                  <td>
-                    <span className={statusClass(item.status)}>
-                      {ADMIN_COURSEWARE_STATUS_LABELS[item.status]}
-                    </span>
-                  </td>
-                  <td>{progressLabel(item)}</td>
-                  <td className="file">
-                    <div>{item.fileName}</div>
-                    <div className="hint">
-                      {item.extension ? item.extension.toUpperCase() : '未知格式'} ·{' '}
-                      {formatBytes(item.byteSize)}
-                    </div>
-                    {item.errorCode ? <div className="hint">{item.errorCode}</div> : null}
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="tiny secondary"
-                      onClick={() => setSelectedId(item.id)}
-                    >
-                      查看
+                    <button type="button" className="linkish" onClick={() => setSelectedId(item.id)}>
+                      {item.fileName}
                     </button>
                   </td>
+                  <td>{item.extension ? item.extension.toUpperCase() : '未知'}</td>
+                  <td>
+                    <span className={statusClass(item.status)}>{ADMIN_COURSEWARE_STATUS_LABELS[item.status]}</span>
+                  </td>
+                  <td>{item.draftCount}</td>
+                  <td>{formatAdminTime(item.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -261,29 +240,18 @@ export function CoursewarePage() {
         </div>
       ) : null}
 
-      {list && list.total > 0 ? (
-        <div className="pager">
-          <button
-            type="button"
-            className="secondary"
-            disabled={loading || page <= 1}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-          >
-            上一页
-          </button>
-          <span>
-            第 {page} / {pageCount} 页，共 {list.total} 条
-          </span>
-          <button
-            type="button"
-            className="secondary"
-            disabled={loading || page >= pageCount}
-            onClick={() => setPage((value) => value + 1)}
-          >
-            下一页
-          </button>
-        </div>
-      ) : null}
+      <QueryPager
+        page={page}
+        pageSize={pageSize}
+        total={list?.total ?? 0}
+        loading={loading}
+        onPage={setPage}
+        onPageSize={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
+      <p className="dq-foot">只读查看上传和提炼。不能重新上传、取消任务或修改提炼结果。</p>
 
       {selectedId ? (
         <section className="detail">
@@ -363,7 +331,7 @@ function DetailBody(props: {
         <dt>阶段</dt>
         <dd>{detail.stage ? ADMIN_COURSEWARE_STAGE_LABELS[detail.stage] : '无提炼任务'}</dd>
         <dt>进度</dt>
-        <dd>{detail.jobId ? `${detail.progress}%` : '无'}</dd>
+        <dd>{progressLabel(detail)}</dd>
         <dt>预计</dt>
         <dd>{detail.estimatedMinutes == null ? '无' : `${detail.estimatedMinutes} 分钟`}</dd>
         <dt>回树</dt>
@@ -426,13 +394,13 @@ function progressLabel(item: AdminCoursewareSummary): string {
 }
 
 function statusClass(status: ExtractJobStatus): string {
-  if (status === 'failed') {
-    return 'tag bad';
+  if (status === 'failed' || status === 'cancelled') {
+    return 'dq-badge bad';
   }
-  if (status === 'cancelled') {
-    return 'tag off';
+  if (status === 'running' || status === 'pending') {
+    return 'dq-badge warn';
   }
-  return 'tag';
+  return 'dq-badge ok';
 }
 
 function formatBytes(value: number): string {

@@ -18,6 +18,30 @@ import {
   formatDailyPlanDate as formatDailyPlanDateFromPlan,
   resolveDailyPlanCta as resolveDailyPlanCtaFromPlan,
 } from './daily-plan';
+import {
+  EXPORT_MAX_ROWS as exportMaxRows,
+  EXPORT_MAX_SPAN_DAYS as exportMaxSpanDays,
+  EXPORT_TOO_MANY_ROWS_MESSAGE as exportTooManyRowsMessage,
+  exportSpanDays as exportSpanDaysFromWindow,
+  generationStatsSince as generationStatsSinceFromWindow,
+  parseExportBound as parseExportBoundFromWindow,
+  quizGenerationFailureRate as quizGenerationFailureRateFromWindow,
+  summarizeQuizGenerationAttempts as summarizeQuizGenerationAttemptsFromWindow,
+  validateExportWindow as validateExportWindowFromWindow,
+} from './admin-export-window';
+import type { QuizGenerationAttemptMark } from './admin-export-window';
+import type {
+  AdminPracticeRecordDetail,
+  AdminPracticeRecordList,
+  AdminPracticeRecordSummary,
+} from './admin-practice-records';
+import type {
+  AdminQuizGenerationLogDetail,
+  AdminQuizGenerationLogList,
+  AdminQuizGenerationLogStats,
+  AdminQuizGenerationLogSummary,
+  AdminQuizGenerationRequestSummary,
+} from './admin-quiz-generation-logs';
 import type {
   DailyPlanActivePack,
   DailyPlanCta,
@@ -366,6 +390,31 @@ export type {
   AdminQuizSessionStatus,
   AdminQuizSessionSummary,
 } from './admin-quiz-sessions';
+
+export {
+  exportMaxRows as EXPORT_MAX_ROWS,
+  exportMaxSpanDays as EXPORT_MAX_SPAN_DAYS,
+  exportTooManyRowsMessage as EXPORT_TOO_MANY_ROWS_MESSAGE,
+  exportSpanDaysFromWindow as exportSpanDays,
+  generationStatsSinceFromWindow as generationStatsSince,
+  parseExportBoundFromWindow as parseExportBound,
+  quizGenerationFailureRateFromWindow as quizGenerationFailureRate,
+  summarizeQuizGenerationAttemptsFromWindow as summarizeQuizGenerationAttempts,
+  validateExportWindowFromWindow as validateExportWindow,
+};
+export type { QuizGenerationAttemptMark };
+export type {
+  AdminPracticeRecordDetail,
+  AdminPracticeRecordList,
+  AdminPracticeRecordSummary,
+};
+export type {
+  AdminQuizGenerationLogDetail,
+  AdminQuizGenerationLogList,
+  AdminQuizGenerationLogStats,
+  AdminQuizGenerationLogSummary,
+  AdminQuizGenerationRequestSummary,
+};
 export {
   COURSEWARE_EXTENSIONS,
   EXTRACT_JOB_STATUSES,

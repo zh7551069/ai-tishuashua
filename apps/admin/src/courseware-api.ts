@@ -12,6 +12,7 @@ export interface AdminCoursewareFilters {
   certId: string;
   status: AdminCoursewareStatusFilter;
   page: number;
+  pageSize?: number;
 }
 
 export function listAdminCourseware(
@@ -21,6 +22,9 @@ export function listAdminCourseware(
   const params = new URLSearchParams();
   params.set('status', query.status);
   params.set('page', String(query.page));
+  if (query.pageSize) {
+    params.set('pageSize', String(query.pageSize));
+  }
   if (query.userId) {
     params.set('userId', query.userId);
   }

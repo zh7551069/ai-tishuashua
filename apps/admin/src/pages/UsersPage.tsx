@@ -1,35 +1,18 @@
-import {
-  ADMIN_USER_STATUS_LABELS,
-  type AdminUserDetail,
-  type AdminUserList,
-  type AdminUserStatus,
-} from '@tishuashua/shared';
+import { ADMIN_USER_STATUS_LABELS, type AdminUserDetail, type AdminUserList, type AdminUserStatus } from '@tishuashua/shared';
 import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { AdminApiError } from '../api';
 import type { AdminOutletContext } from '../layout/AdminLayout';
 import { clearAdminSession } from '../session';
-import { getAdminUser, listAdminUsers, type AdminUserStatusFilter } from '../users-api';
-
-interface Filters {
-  status: AdminUserStatusFilter;
-}
-
-const EMPTY_FILTERS: Filters = { status: 'all' };
-
-const STATUS_OPTIONS: { value: AdminUserStatusFilter; label: string }[] = [
-  { value: 'all', label: '全部' },
-  { value: 'active', label: ADMIN_USER_STATUS_LABELS.active },
-  { value: 'banned', label: ADMIN_USER_STATUS_LABELS.banned },
-];
+import { getAdminUser, listAdminUsers } from '../users-api';
+import { formatAdminTime, QueryPager } from './QueryPager';
 
 export function UsersPage() {
   const navigate = useNavigate();
   const { session } = useOutletContext<AdminOutletContext>();
   const token = session.token;
-  const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
-  const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [list, setList] = useState<AdminUserList | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,7 +27,7 @@ export function UsersPage() {
     let cancelled = false;
     setLoading(true);
     setError('');
-    listAdminUsers(token, { ...applied, page })
+    listAdminUsers(token, { status: 'all', page, pageSize })
       .then((result) => {
         if (!cancelled) {
           setList(result);
@@ -67,7 +50,7 @@ export function UsersPage() {
     return () => {
       cancelled = true;
     };
-  }, [applied, page, reloadToken, token]);
+  }, [page, pageSize, reloadToken, token]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -113,125 +96,60 @@ export function UsersPage() {
     return false;
   }
 
-  function applyFilters(next: Filters): void {
-    setDraft(next);
-    setApplied(next);
-    setPage(1);
-  }
-
-  const pageCount = Math.max(1, Math.ceil((list?.total ?? 0) / (list?.pageSize || 20)));
-
   return (
-    <section className="panel wide">
-      <h1>用户</h1>
-      <p className="muted">
-        只读查看全站用户摘要。昵称已脱敏，手机号只显示已经脱敏的值。封禁状态来自数据库，这里不能封禁或解封。
-      </p>
-      <form
-        className="filters"
-        onSubmit={(event) => {
-          event.preventDefault();
-          applyFilters(draft);
-        }}
-      >
-        <label>
-          状态
-          <select
-            value={draft.status}
-            onChange={(event) => setDraft({ status: event.target.value as AdminUserStatusFilter })}
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="actions">
-          <button type="submit">查询</button>
-          <button type="button" className="secondary" onClick={() => applyFilters(EMPTY_FILTERS)}>
-            重置
-          </button>
+    <section className="dq-page">
+      <header className="dq-head">
+        <div>
+          <h1>用户</h1>
+          <p className="dq-note">只读对稿。昵称和手机已脱敏。无封禁、无导出、无关键字检索。</p>
         </div>
-      </form>
-
+      </header>
       {error ? (
         <p className="form-error" role="alert">
           {error}{' '}
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => setReloadToken((value) => value + 1)}
-          >
+          <button type="button" className="secondary" onClick={() => setReloadToken((value) => value + 1)}>
             重试
           </button>
         </p>
       ) : null}
       {loading && !list ? <p className="muted">正在加载用户…</p> : null}
       {list && list.items.length === 0 && !loading ? <p>没有符合条件的用户。</p> : null}
-
       {list && list.items.length > 0 ? (
-        <div className="table-wrap">
-          <table className="data">
+        <div className="dq-card">
+          <table>
             <thead>
               <tr>
-                <th>创建时间</th>
                 <th>昵称</th>
-                <th>手机号</th>
-                <th>状态</th>
-                <th></th>
+                <th>脱敏手机</th>
               </tr>
             </thead>
             <tbody>
               {list.items.map((item) => (
                 <tr key={item.id} className={item.id === selectedId ? 'selected' : undefined}>
-                  <td>{formatTime(item.createdAt)}</td>
                   <td>
-                    <div>{item.nick || '未设置昵称'}</div>
-                    <div className="hint">{item.id}</div>
-                  </td>
-                  <td>{item.phoneMasked || '未绑定'}</td>
-                  <td>{statusLabel(item.status)}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="tiny secondary"
-                      onClick={() => setSelectedId(item.id)}
-                    >
-                      查看
+                    <button type="button" className="linkish" onClick={() => setSelectedId(item.id)}>
+                      {item.nick || '未设置昵称'}
                     </button>
                   </td>
+                  <td>{item.phoneMasked || '未绑定'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       ) : null}
-
-      {list && list.total > 0 ? (
-        <div className="pager">
-          <button
-            type="button"
-            className="secondary"
-            disabled={loading || page <= 1}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-          >
-            上一页
-          </button>
-          <span>
-            第 {page} / {pageCount} 页，共 {list.total} 条
-          </span>
-          <button
-            type="button"
-            className="secondary"
-            disabled={loading || page >= pageCount}
-            onClick={() => setPage((value) => value + 1)}
-          >
-            下一页
-          </button>
-        </div>
-      ) : null}
-
+      <QueryPager
+        page={page}
+        pageSize={pageSize}
+        total={list?.total ?? 0}
+        loading={loading}
+        onPage={setPage}
+        onPageSize={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
+      <p className="dq-foot">只读查看全站用户摘要。这里不能封禁或改资料。</p>
       {selectedId ? (
         <section className="detail">
           <div className="catalog-head">
@@ -242,52 +160,33 @@ export function UsersPage() {
           </div>
           {detailLoading ? <p className="muted">正在加载详情…</p> : null}
           {detailError ? (
-            <p className="form-error" role="alert">
+            <p className="form-error">
               {detailError}{' '}
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => setDetailReload((value) => value + 1)}
-              >
+              <button type="button" className="secondary" onClick={() => setDetailReload((value) => value + 1)}>
                 重试
               </button>
             </p>
           ) : null}
-          {detail ? <DetailBody detail={detail} /> : null}
+          {detail ? (
+            <dl className="meta-list">
+              <dt>用户 ID</dt>
+              <dd>{detail.id}</dd>
+              <dt>昵称</dt>
+              <dd>{detail.nick || '未设置昵称'}</dd>
+              <dt>手机号</dt>
+              <dd>{detail.phoneBound ? detail.phoneMasked : '未绑定'}</dd>
+              <dt>状态</dt>
+              <dd>{statusLabel(detail.status)}（只读，不能封禁）</dd>
+              <dt>创建时间</dt>
+              <dd>{formatAdminTime(detail.createdAt)}</dd>
+            </dl>
+          ) : null}
         </section>
       ) : null}
     </section>
   );
 }
 
-function DetailBody(props: { detail: AdminUserDetail }) {
-  const { detail } = props;
-  return (
-    <dl className="meta-list">
-      <dt>用户 ID</dt>
-      <dd>{detail.id}</dd>
-      <dt>昵称</dt>
-      <dd>{detail.nick || '未设置昵称'}</dd>
-      <dt>手机号</dt>
-      <dd>{detail.phoneBound ? detail.phoneMasked : '未绑定'}</dd>
-      <dt>状态</dt>
-      <dd>{statusLabel(detail.status)}</dd>
-      <dt>创建时间</dt>
-      <dd>{formatTime(detail.createdAt)}</dd>
-      <dt>更新时间</dt>
-      <dd>{formatTime(detail.updatedAt)}</dd>
-    </dl>
-  );
-}
-
 function statusLabel(status: AdminUserStatus): string {
   return ADMIN_USER_STATUS_LABELS[status];
-}
-
-function formatTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value || '无';
-  }
-  return date.toLocaleString('zh-CN', { hour12: false });
 }
