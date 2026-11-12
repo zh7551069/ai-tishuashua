@@ -875,13 +875,24 @@ async function loadPrompts(
 ): Promise<PromptCandidate[]> {
   const result = await db.query(
     `
-      SELECT id, scope, scope_ref_id, templates, version, status
-      FROM prompt_templates
-      WHERE status = 'published'
+      SELECT
+        template.id,
+        template.code,
+        template.scope,
+        template.scope_ref_id,
+        snapshot.templates,
+        snapshot.version,
+        template.status
+      FROM prompt_templates AS template
+      JOIN prompt_template_versions AS snapshot
+        ON snapshot.template_id = template.id
+       AND snapshot.version = template.current_published_version
+      WHERE template.status = 'published'
+        AND template.current_published_version IS NOT NULL
         AND (
-          (scope = 'certificate' AND scope_ref_id = $1)
-          OR (scope = 'domain' AND scope_ref_id = $2)
-          OR (scope = 'global' AND scope_ref_id IS NULL)
+          (template.scope = 'certificate' AND template.scope_ref_id = $1)
+          OR (template.scope = 'domain' AND template.scope_ref_id = $2)
+          OR (template.scope = 'global' AND template.scope_ref_id IS NULL)
         )
     `,
     [certId, domainId],
@@ -889,6 +900,7 @@ async function loadPrompts(
   return result.rows.map((item) => {
     const row = item as {
       id: string | null;
+      code: string | null;
       scope: PromptCandidate['scope'];
       scope_ref_id: string | null;
       templates: PromptCandidate['templates'];
@@ -897,6 +909,7 @@ async function loadPrompts(
     };
     return {
       id: typeof row.id === 'string' ? row.id : null,
+      code: typeof row.code === 'string' ? row.code : null,
       scope: row.scope,
       scopeRefId: row.scope_ref_id,
       templates: row.templates ?? {},

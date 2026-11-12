@@ -22,6 +22,13 @@ import { AdminPracticeRecordService } from '../admin-practice-records/admin-prac
 import { AdminQuizGenerationLogController } from '../admin-quiz-generation-logs/admin-quiz-generation-logs.controller';
 import { AdminQuizGenerationLogRepository } from '../admin-quiz-generation-logs/admin-quiz-generation-logs.repository';
 import { AdminQuizGenerationLogService } from '../admin-quiz-generation-logs/admin-quiz-generation-logs.service';
+import { CertTypeConfigController } from '../admin-generation-config/cert-type-configs.controller';
+import { CertTypeConfigService } from '../admin-generation-config/cert-type-configs.service';
+import { GenerationConfigStore } from '../admin-generation-config/generation-config.store';
+import { PromptTemplateController } from '../admin-generation-config/prompt-templates.controller';
+import { PromptTemplateService } from '../admin-generation-config/prompt-templates.service';
+import { QuestionTypeController } from '../admin-generation-config/question-types.controller';
+import { QuestionTypeService } from '../admin-generation-config/question-types.service';
 import { AdminUserController } from '../admin-users/admin-users.controller';
 import { AdminUserRepository } from '../admin-users/admin-users.repository';
 import { AdminUserService } from '../admin-users/admin-users.service';
@@ -51,6 +58,9 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminQuizSessionController,
     AdminPracticeRecordController,
     AdminQuizGenerationLogController,
+    PromptTemplateController,
+    QuestionTypeController,
+    CertTypeConfigController,
     SystemSettingsController,
     CommerceController,
     EntitlementOpsController,
@@ -77,6 +87,10 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminPracticeRecordService,
     AdminQuizGenerationLogRepository,
     AdminQuizGenerationLogService,
+    GenerationConfigStore,
+    PromptTemplateService,
+    QuestionTypeService,
+    CertTypeConfigService,
     SystemSettingsService,
     CommerceService,
     EntitlementOpsService,

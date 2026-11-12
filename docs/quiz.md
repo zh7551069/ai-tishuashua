@@ -48,7 +48,9 @@ pnpm dev:api
 pnpm dev:worker
 ```
 
-迁移 `004_quiz_generation.sql` 给 `quiz_sessions` 增加进度、错误码和运行令牌，并写入两条 `published` Prompt：一条全局，一条挂在中学教师资格上。出题时证书 Prompt 优先于领域，领域优先于全局。都没有可用的已发布模板时，用代码里的内置模板。中学教师资格的总分仍是种子里的 120，用来核对归一化。
+迁移 `004_quiz_generation.sql` 给 `quiz_sessions` 增加进度、错误码和运行令牌，并写入两条 `published` Prompt：一条全局，一条挂在中学教师资格上。出题时证书 Prompt 优先于领域，领域优先于全局。都没有可用的已发布快照时，用代码里的内置模板。中学教师资格的总分仍是种子里的 120，用来核对归一化。
+
+TB-11 之后，出题只读 `prompt_template_versions` 里 `current_published_version` 对应的已发布快照，不读工作草稿。选不到仍回落内置模板，日志 `usedBuiltin=true`，`templateCode` 为 `builtin`，这不是出题失败。已发布模板的日志带上模板 id、version 和 code。保存草稿不会改出题所用版本，直到再次发布。后管页面见 [出题配置](admin-generation-config.md)。
 
 ## 出题设置
 
@@ -244,7 +246,7 @@ curl -sS -X POST http://127.0.0.1:3000/api/wrong-book/错题id/clear \
 
 Worker 只把错题的题型、题干和选项交给模型，不放标准答案和解析，不读课件，不做向量检索。目标题型在证书白名单（以及请求里给出的题型）内，优先和原题型不同；白名单只剩原题型时允许同型，但题干不能和原题相同。生成题的 `source` 是 `ai_variant`。变异卷不带 `wrong_carry`。
 
-Prompt 沿用证书 > 领域 > 全局 > 代码内置。变异读 `prompt_templates.templates.variant` 的 `{ system, user }`。都没有时用 `BUILTIN_QUIZ_VARIANT_PROMPT`。证书覆盖如果没写检索禁令和「题干不得与原题干相同」，服务端会把这两句补进 system。`LLM_MOCK=true` 时用内置变异题，题干带会话盐。
+Prompt 沿用证书 > 领域 > 全局 > 代码内置。变异读已发布快照里 `templates.variant` 的 `{ system, user }`。都没有时用 `BUILTIN_QUIZ_VARIANT_PROMPT`。证书覆盖如果没写检索禁令和「题干不得与原题干相同」，服务端会把这两句补进 system。`LLM_MOCK=true` 时用内置变异题，题干带会话盐。
 
 认领成功之后，`runQuizGeneration` 会尽力往 `quiz_generation_logs` 追加一行（迁移 `016_admin_followup_tb12_logs.sql`）。成功（`status=ready`）和失败出口各记一次。写失败只打服务端日志，不改变原来的出题结果。一次尝试一行，重试再追加，不覆盖，也不回填上线前的历史场次。走 `BUILTIN_QUIZ_PROMPT` 或 `BUILTIN_QUIZ_VARIANT_PROMPT` 时 `usedBuiltin=true`，`templateCode` 为 `builtin`。回落内置仍然算出题成功，不是失败。后管只读见 [练习记录与出题日志](admin-practice-logs.md)。
 

@@ -1121,23 +1121,36 @@ describe('quiz generation', { concurrency: 1 }, () => {
       analysis: 'VARIANT_ANALYSIS_SENTINEL',
     });
     const promptId = randomUUID();
+    const promptCode = `cert_variant_${promptId.replace(/-/g, '').slice(0, 12)}`;
+    const variantTemplates = {
+      system: 'CERT_VARIANT_MARKER',
+      user: '普通出题不会被变异读取',
+      variant: {
+        system: 'CERT_VARIANT_MARKER',
+        user: '证书覆盖变异 {{originalStem}}',
+      },
+    };
     await pool.query(
       `
-        INSERT INTO prompt_templates (id, scope, scope_ref_id, templates, variables, version, status)
-        VALUES ($1, 'certificate', $2, $3::jsonb, '[]'::jsonb, 1, 'published')
+        INSERT INTO prompt_templates (
+          id, scope, scope_ref_id, templates, variables, version, status,
+          name, code, locked, current_published_version
+        )
+        VALUES (
+          $1, 'certificate', $2, $3::jsonb, '[]'::jsonb, 2, 'published',
+          '证书变异覆盖', $4, false, 2
+        )
       `,
-      [
-        promptId,
-        fixture.certId,
-        JSON.stringify({
-          system: 'CERT_VARIANT_MARKER',
-          user: '普通出题不会被变异读取',
-          variant: {
-            system: 'CERT_VARIANT_MARKER',
-            user: '证书覆盖变异 {{originalStem}}',
-          },
-        }),
-      ],
+      [promptId, fixture.certId, JSON.stringify(variantTemplates), promptCode],
+    );
+    await pool.query(
+      `
+        INSERT INTO prompt_template_versions (
+          id, template_id, version, templates, variables, published_by
+        )
+        VALUES ($1, $2, 2, $3::jsonb, '[]'::jsonb, 'test')
+      `,
+      [randomUUID(), promptId, JSON.stringify(variantTemplates)],
     );
     try {
       const created = await call('/quiz/sessions', ctx.tokenA, {
@@ -1179,6 +1192,7 @@ describe('quiz generation', { concurrency: 1 }, () => {
       assert.equal(captured.user.includes('VARIANT_ANALYSIS_SENTINEL'), false);
       assert.equal(captured.user.includes('普通出题不会被变异读取'), false);
     } finally {
+      await pool.query('DELETE FROM prompt_template_versions WHERE template_id = $1', [promptId]);
       await pool.query('DELETE FROM prompt_templates WHERE id = $1', [promptId]);
     }
   });

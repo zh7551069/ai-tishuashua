@@ -8,8 +8,13 @@ import { TextbooksPage } from './pages/content/TextbooksPage';
 import { CoursewarePage } from './pages/CoursewarePage';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
+import { CertTypeConfigsPage } from './pages/CertTypeConfigsPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { PracticeRecordsPage } from './pages/PracticeRecordsPage';
+import { PromptTemplateEditorPage } from './pages/PromptTemplateEditorPage';
+import { PromptTemplatesPage } from './pages/PromptTemplatesPage';
+import { PromptVersionsPage } from './pages/PromptVersionsPage';
+import { QuestionTypesPage } from './pages/QuestionTypesPage';
 import { QuestionBankPage } from './pages/QuestionBankPage';
 import { QuizLogsPage } from './pages/QuizLogsPage';
 import { QuizSessionsPage } from './pages/QuizSessionsPage';
@@ -33,36 +38,12 @@ export function App() {
         <Route path="/content/certificates" element={<ContentCertificatesPage />} />
         <Route path="/content/textbooks" element={<TextbooksPage />} />
         <Route path="/content/knowledge" element={<KnowledgePage />} />
-        <Route
-          path="/config/prompts"
-          element={
-            <PlaceholderPage
-              title="Prompt 模板"
-              note="出题配置（TB-11）本刀只留入口，不接 Prompt 后端。"
-              frame="4:2"
-            />
-          }
-        />
-        <Route
-          path="/config/question-types"
-          element={
-            <PlaceholderPage
-              title="题型管理"
-              note="题型全局定义留到 TB-11。证书表单仍使用现有单选、多选、判断。"
-              frame="4:243"
-            />
-          }
-        />
-        <Route
-          path="/config/cert-types"
-          element={
-            <PlaceholderPage
-              title="证书题型与默认参数"
-              note="默认题量、分值和配比留到 TB-11。证书启用的题型子集在内容配置证书抽屉里维护。"
-              frame="4:390"
-            />
-          }
-        />
+        <Route path="/config/prompts" element={<PromptTemplatesPage />} />
+        <Route path="/config/prompts/new" element={<PromptTemplateEditorPage />} />
+        <Route path="/config/prompts/:id/versions" element={<PromptVersionsPage />} />
+        <Route path="/config/prompts/:id" element={<PromptTemplateEditorPage />} />
+        <Route path="/config/question-types" element={<QuestionTypesPage />} />
+        <Route path="/config/cert-types" element={<CertTypeConfigsPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/practice" element={<PracticeRecordsPage />} />
         <Route path="/wrong-book" element={<WrongBookPage />} />

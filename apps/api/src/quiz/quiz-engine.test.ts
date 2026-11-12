@@ -18,6 +18,7 @@ import {
   parseCreateQuizSessionRequest,
   pickPublishedPrompt,
   questionContentKey,
+  resolveQuizPrompt,
   selectBankQuestions,
   pickPublishedVariantPrompt,
   preferVariantTypes,
@@ -107,6 +108,26 @@ describe('quiz generation rules', () => {
     );
     assert.equal(globalOnly?.user, '全局');
     assert.equal(pickPublishedPrompt([], { certificateId: 'cert-1', domainId: 'domain-1' }), null);
+    const withCode = resolveQuizPrompt(
+      [
+        {
+          ...prompt('certificate', 'cert-1', 'published', 2, '证书正文'),
+          id: '44444444-4444-4444-8444-444444444401',
+          code: 'gen_cert',
+        },
+      ],
+      { certificateId: 'cert-1', domainId: 'domain-1' },
+      'original',
+    );
+    assert.equal(withCode.usedBuiltin, false);
+    assert.equal(withCode.templateCode, 'gen_cert');
+    assert.equal(withCode.template.user, '证书正文');
+    assert.equal(withCode.templateVersion, 2);
+    const fallback = resolveQuizPrompt([], { certificateId: 'cert-1', domainId: 'domain-1' }, 'variant');
+    assert.equal(fallback.usedBuiltin, true);
+    assert.equal(fallback.templateCode, 'builtin');
+    assert.equal(fallback.templateId, null);
+    assert.equal(fallback.templateVersion, null);
 
     const rendered = renderPrompt(
       BUILTIN_QUIZ_PROMPT,

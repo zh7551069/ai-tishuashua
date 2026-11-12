@@ -1,4 +1,42 @@
+import {
+  QUESTION_TYPE_CODE_PATTERN as questionTypeCodePattern,
+  STANDARD_PROMPT_VARIABLES as standardPromptVariables,
+  VARIANT_PROMPT_VARIABLES as variantPromptVariables,
+  normalizePromptTemplates as normalizePromptTemplatesFromConfig,
+  parseCertTypeConfigWrite as parseCertTypeConfigWriteFromConfig,
+  parsePromptCreate as parsePromptCreateFromConfig,
+  parsePromptUpdate as parsePromptUpdateFromConfig,
+  parseQuestionTypeCreate as parseQuestionTypeCreateFromConfig,
+  parseQuestionTypeUpdate as parseQuestionTypeUpdateFromConfig,
+  parseRollbackVersion as parseRollbackVersionFromConfig,
+  promptDigest as promptDigestFromConfig,
+  promptExcerpt as promptExcerptFromConfig,
+  rendererSupported as rendererSupportedFromConfig,
+  templatesToJson as templatesToJsonFromConfig,
+  validatePromptPublish as validatePromptPublishFromConfig,
+} from './admin-generation-config';
+import type {
+  CertQuestionTypeConfig,
+  CertQuestionTypeConfigView,
+  NormalizedPromptTemplates,
+  PromptCreateInput,
+  PromptPublishResult,
+  PromptScope,
+  PromptStatus,
+  PromptTemplateDetail,
+  PromptTemplateList,
+  PromptTemplateStats,
+  PromptTemplateSummary,
+  PromptUpdateInput,
+  PromptVersionItem,
+  PromptVersionList,
+  QuestionTypeCreateInput,
+  QuestionTypeUpdateInput,
+  QuestionTypeView,
+} from './admin-generation-config';
 import { parsePublicSkuList as parsePublicSkuListFromPayment } from './payment';
+import { resolveQuizPrompt as resolveQuizPromptFromEngine } from './quiz-engine';
+import type { PromptCandidate, QuizPromptChoice } from './quiz-engine';
 import type { CommerceSkuPublic } from './payment';
 import {
   DAILY_PLAN_CTA_LABEL as dailyPlanCtaLabel,
@@ -131,8 +169,84 @@ export type {
   PaperDraft,
   PromptCandidate,
   PromptTemplateBody,
+  QuizPromptChoice,
   WrongItemRecord,
 } from './quiz-engine';
+
+export function resolveQuizPrompt(
+  candidates: readonly PromptCandidate[],
+  target: { certificateId: string; domainId: string },
+  kind: 'original' | 'variant',
+): QuizPromptChoice {
+  return resolveQuizPromptFromEngine(candidates, target, kind);
+}
+
+export const QUESTION_TYPE_CODE_PATTERN = questionTypeCodePattern;
+export const STANDARD_PROMPT_VARIABLES = standardPromptVariables;
+export const VARIANT_PROMPT_VARIABLES = variantPromptVariables;
+
+export function normalizePromptTemplates(
+  value: unknown,
+): ReturnType<typeof normalizePromptTemplatesFromConfig> {
+  return normalizePromptTemplatesFromConfig(value);
+}
+
+export function parseCertTypeConfigWrite(
+  body: unknown,
+): ReturnType<typeof parseCertTypeConfigWriteFromConfig> {
+  return parseCertTypeConfigWriteFromConfig(body);
+}
+
+export function parsePromptCreate(body: unknown): ReturnType<typeof parsePromptCreateFromConfig> {
+  return parsePromptCreateFromConfig(body);
+}
+
+export function parsePromptUpdate(body: unknown): ReturnType<typeof parsePromptUpdateFromConfig> {
+  return parsePromptUpdateFromConfig(body);
+}
+
+export function parseQuestionTypeCreate(
+  body: unknown,
+): ReturnType<typeof parseQuestionTypeCreateFromConfig> {
+  return parseQuestionTypeCreateFromConfig(body);
+}
+
+export function parseQuestionTypeUpdate(
+  body: unknown,
+): ReturnType<typeof parseQuestionTypeUpdateFromConfig> {
+  return parseQuestionTypeUpdateFromConfig(body);
+}
+
+export function parseRollbackVersion(
+  body: unknown,
+): ReturnType<typeof parseRollbackVersionFromConfig> {
+  return parseRollbackVersionFromConfig(body);
+}
+
+export function promptDigest(value: unknown): string {
+  return promptDigestFromConfig(value);
+}
+
+export function promptExcerpt(text: string): string {
+  return promptExcerptFromConfig(text);
+}
+
+export function rendererSupported(appRendererKey: string): boolean {
+  return rendererSupportedFromConfig(appRendererKey);
+}
+
+export function templatesToJson(
+  templates: NormalizedPromptTemplates,
+): ReturnType<typeof templatesToJsonFromConfig> {
+  return templatesToJsonFromConfig(templates);
+}
+
+export function validatePromptPublish(
+  templates: NormalizedPromptTemplates,
+  declared: readonly string[],
+): ReturnType<typeof validatePromptPublishFromConfig> {
+  return validatePromptPublishFromConfig(templates, declared);
+}
 export { questionContentKey } from './question-content-key';
 export {
   FREE_USER_BANK_FIRST_CACHE_KEY,
@@ -463,6 +577,25 @@ export {
   CATALOG_SORT_MAX,
   CATALOG_SOURCE_REF_MAX_LENGTH,
 } from './admin-catalog';
+export type {
+  CertQuestionTypeConfig,
+  CertQuestionTypeConfigView,
+  NormalizedPromptTemplates,
+  PromptCreateInput,
+  PromptPublishResult,
+  PromptScope,
+  PromptStatus,
+  PromptTemplateDetail,
+  PromptTemplateList,
+  PromptTemplateStats,
+  PromptTemplateSummary,
+  PromptUpdateInput,
+  PromptVersionItem,
+  PromptVersionList,
+  QuestionTypeCreateInput,
+  QuestionTypeUpdateInput,
+  QuestionTypeView,
+};
 export type {
   AdminCatalogDeleteResult,
   AdminCatalogTree,
