@@ -1781,3 +1781,156 @@ pre {
   gap: 8px;
   align-items: center;
 }
+
+/* 出题配置。色值来自 design/bridge-export/v2.0.0/出题配置：主色 rgb(37,99,235)，锁定字 rgb(185,28,28)，禁用底 rgb(226,232,240)。 */
+.gc-page h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.gc-crumb,
+.gc-foot {
+  margin: 0;
+  color: rgb(100, 116, 139);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.gc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.gc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+a.gc-primary,
+a.gc-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+a.gc-primary {
+  background: rgb(37, 99, 235);
+  color: rgb(255, 255, 255);
+}
+
+a.gc-link,
+button.gc-muted:disabled,
+button.secondary.gc-muted:disabled {
+  background: rgb(226, 232, 240);
+  color: rgb(100, 116, 139);
+  border: 0;
+  opacity: 1;
+}
+
+.gc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.gc-filters label {
+  margin: 0;
+  min-width: 160px;
+  color: rgb(100, 116, 139);
+  font-size: 12px;
+}
+
+.gc-lock {
+  margin: 0 0 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: rgb(185, 28, 28);
+  font-size: 14px;
+}
+
+.gc-error {
+  margin: 0 0 12px;
+  color: rgb(220, 38, 38);
+  font-size: 13px;
+}
+
+.gc-note,
+.gc-status {
+  margin: 0 0 12px;
+  color: rgb(15, 23, 42);
+  font-size: 13px;
+}
+
+.gc-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 16px;
+}
+
+.gc-var {
+  display: inline-block;
+  margin: 0 6px 6px 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: rgb(37, 99, 235);
+  font-size: 12px;
+}
+
+.gc-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgb(241, 245, 249);
+  color: rgb(100, 116, 139);
+  font-size: 12px;
+}
+
+.gc-pill.on {
+  background: #ecfdf5;
+  color: rgb(22, 163, 74);
+}
+
+.gc-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.gc-score {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.gc-tall {
+  min-height: 140px;
+}
+
+.gc-foot {
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .gc-head,
+  .gc-split {
+    display: block;
+  }
+
+  .gc-actions {
+    margin-top: 12px;
+  }
+}

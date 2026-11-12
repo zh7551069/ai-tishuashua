@@ -29,6 +29,8 @@ export interface PromptTemplateBody {
 export interface PromptCandidate {
   /** 现网 prompt_templates.id。缺省时日志里的 templateId 为空，不据此改选取。 */
   id?: string | null;
+  /** 已发布模板的 code。回落内置时不读这里。 */
+  code?: string | null;
   scope: 'global' | 'domain' | 'certificate';
   scopeRefId: string | null;
   status: string;
@@ -40,7 +42,7 @@ export interface QuizPromptChoice {
   template: PromptTemplateBody;
   templateId: string | null;
   templateVersion: number | null;
-  /** 回落内置时为 builtin。已发布模板本期没有 code 列，记 null。 */
+  /** 回落内置时为 builtin。已发布模板记 code，没有 code 时为空。 */
   templateCode: string | null;
   usedBuiltin: boolean;
 }
@@ -277,7 +279,7 @@ export function resolveQuizPrompt(
       template: sealVariantPrompt(template),
       templateId: templateIdOf(top.id),
       templateVersion: Number.isInteger(top.version) ? top.version : null,
-      templateCode: null,
+      templateCode: publishedCode(top.code),
       usedBuiltin: false,
     };
   }
@@ -290,7 +292,7 @@ export function resolveQuizPrompt(
     template,
     templateId: templateIdOf(top.id),
     templateVersion: Number.isInteger(top.version) ? top.version : null,
-    templateCode: null,
+    templateCode: publishedCode(top.code),
     usedBuiltin: false,
   };
 }
@@ -327,6 +329,13 @@ function builtinPromptChoice(template: PromptTemplateBody): QuizPromptChoice {
     templateCode: 'builtin',
     usedBuiltin: true,
   };
+}
+
+function publishedCode(value: string | null | undefined): string | null {
+  if (!value || !value.trim()) {
+    return null;
+  }
+  return value.trim();
 }
 
 function templateIdOf(value: string | null | undefined): string | null {

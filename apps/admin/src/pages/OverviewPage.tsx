@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { listAdminCourseware } from '../courseware-api';
 import { getCatalogTree, listCertificates, listDomains } from '../catalog-api';
 import { useAdminAction } from '../content/use-admin-action';
+import { getPromptStats } from '../generation-config-api';
 import { getQuizGenerationStats } from '../quiz-logs-api';
 
 export function OverviewPage() {
@@ -13,6 +14,7 @@ export function OverviewPage() {
   const [uploads, setUploads] = useState<number | null>(null);
   const [hintGaps, setHintGaps] = useState<number | null>(null);
   const [failureRate, setFailureRate] = useState<number | null | undefined>(undefined);
+  const [pendingDrafts, setPendingDrafts] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +60,18 @@ export function OverviewPage() {
           setUploads(null);
         }
       });
+    getPromptStats(token)
+      .then((stats) => {
+        if (!cancelled) {
+          setPendingDrafts(stats.pendingDraftCount);
+        }
+      })
+      .catch((caught: unknown) => {
+        if (!cancelled) {
+          report(caught);
+          setPendingDrafts(null);
+        }
+      });
     getQuizGenerationStats(token, 7)
       .then((stats) => {
         if (!cancelled) {
@@ -79,11 +93,11 @@ export function OverviewPage() {
     <section className="page">
       <h1>工作台</h1>
       <div className="metric-grid">
-        <article className="metric">
+        <Link className="metric" to="/config/prompts">
           <span>待发布草稿</span>
-          <b>—</b>
-          <small>Prompt / 证书配置草稿 · 出题配置未接入</small>
-        </article>
+          <b>{pendingDrafts === null ? '…' : pendingDrafts}</b>
+          <small>从未发布，或已发布但工作草稿和当前快照不同</small>
+        </Link>
         <Link className="metric" to="/quiz-logs">
           <span>近 7 日出题失败率</span>
           <b>{formatFailureRate(failureRate)}</b>
@@ -118,7 +132,7 @@ export function OverviewPage() {
                 ? '已读到的知识点都有 promptHint。'
                 : `${hintGaps} 个知识点缺少 promptHint，不能启用`}
           </li>
-          <li>全局 Prompt 草稿仍等出题配置。失败率来自出题日志，没有尝试时显示「—」。</li>
+          <li>待发布草稿来自出题配置。失败率来自出题日志，没有尝试时显示「—」。</li>
         </ul>
       </article>
       <div className="shortcut-row">
@@ -126,6 +140,9 @@ export function OverviewPage() {
         <Link to="/content/certificates">证书</Link>
         <Link to="/content/textbooks">教材</Link>
         <Link to="/content/knowledge">章节知识点</Link>
+        <Link to="/config/prompts">Prompt 模板</Link>
+        <Link to="/config/question-types">题型管理</Link>
+        <Link to="/config/cert-types">证书题型与默认参数</Link>
         <Link to="/users">用户</Link>
         <Link to="/practice">练习记录</Link>
         <Link to="/quiz-logs">出题日志</Link>
