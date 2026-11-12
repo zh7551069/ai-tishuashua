@@ -9,8 +9,10 @@ import { CoursewarePage } from './pages/CoursewarePage';
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { CertTypeConfigsPage } from './pages/CertTypeConfigsPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
 import { PracticeRecordsPage } from './pages/PracticeRecordsPage';
+import { RetentionPage } from './pages/RetentionPage';
+import { RolesPage } from './pages/RolesPage';
+import { SystemAuditPage } from './pages/SystemAuditPage';
 import { PromptTemplateEditorPage } from './pages/PromptTemplateEditorPage';
 import { PromptTemplatesPage } from './pages/PromptTemplatesPage';
 import { PromptVersionsPage } from './pages/PromptVersionsPage';
@@ -58,32 +60,9 @@ export function App() {
         <Route path="/commerce/entitlements" element={<EntitlementsPage />} />
         <Route path="/commerce/audit" element={<CommerceAuditPage />} />
         <Route path="/settings" element={<SystemSettingsPage />} />
-        <Route
-          path="/system/roles"
-          element={
-            <PlaceholderPage
-              title="角色权限"
-              note="角色权限（TB-13）本刀不实现。登录仍是配置文件里的一份帐密。"
-              frame="9:998"
-            />
-          }
-        />
-        <Route
-          path="/system/retention"
-          element={
-            <PlaceholderPage
-              title="数据保留周期"
-              note="保留周期（TB-13）本刀不实现，也不写入假周期。"
-              frame="4:800"
-            />
-          }
-        />
-        <Route
-          path="/system/audit"
-          element={
-            <PlaceholderPage title="操作审计" note="操作审计（TB-13）本刀不实现。" frame="4:890" />
-          }
-        />
+        <Route path="/system/roles" element={<RolesPage />} />
+        <Route path="/system/retention" element={<RetentionPage />} />
+        <Route path="/system/audit" element={<SystemAuditPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

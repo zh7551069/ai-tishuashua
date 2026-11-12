@@ -1,4 +1,41 @@
 import {
+  ADMIN_ROLE_KEYS as adminRoleKeys,
+  ADMIN_ROLE_MATRIX_KEY as adminRoleMatrixKey,
+  DATA_RETENTION_KEY as dataRetentionKey,
+  DATA_RETENTION_NOTICE as dataRetentionNotice,
+  DATA_RETENTION_PURGE_CRON as dataRetentionPurgeCron,
+  DATA_RETENTION_PURGE_JOB as dataRetentionPurgeJob,
+  DEFAULT_RETENTION_DAYS as defaultRetentionDays,
+  RETENTION_MAX_DAYS as retentionMaxDays,
+  RETENTION_MIN_DAYS as retentionMinDays,
+  ROLE_CAPABILITIES as roleCapabilities,
+  ROLE_CAPABILITY_LABELS as roleCapabilityLabels,
+  ROLE_LEVELS as roleLevels,
+  SYSTEM_AUDIT_DEFAULT_PAGE_SIZE as systemAuditDefaultPageSize,
+  SYSTEM_AUDIT_MAX_PAGE as systemAuditMaxPage,
+  SYSTEM_AUDIT_MAX_PAGE_SIZE as systemAuditMaxPageSize,
+  defaultAdminRoleMatrix as defaultAdminRoleMatrixFromSystem,
+  defaultDataRetention as defaultDataRetentionFromSystem,
+  isRetentionExpired as isRetentionExpiredFromSystem,
+  parseAdminRoleMatrixWrite as parseAdminRoleMatrixWriteFromSystem,
+  parseDataRetentionWrite as parseDataRetentionWriteFromSystem,
+  parseRetentionPreviewBody as parseRetentionPreviewBodyFromSystem,
+  parseSystemAuditQuery as parseSystemAuditQueryFromSystem,
+  retentionCutoff as retentionCutoffFromSystem,
+  roleLevelLabel as roleLevelLabelFromSystem,
+  selectExpiredRows as selectExpiredRowsFromSystem,
+  summarizeRetentionPreview as summarizeRetentionPreviewFromSystem,
+} from './admin-system';
+import type {
+  AdminRoleMatrix,
+  AdminSystemParsed,
+  DataRetention,
+  RetentionPreview,
+  RoleCapability,
+  RoleLevel,
+  SystemAuditQuery,
+} from './admin-system';
+import {
   QUESTION_TYPE_CODE_PATTERN as questionTypeCodePattern,
   STANDARD_PROMPT_VARIABLES as standardPromptVariables,
   VARIANT_PROMPT_VARIABLES as variantPromptVariables,
@@ -247,6 +284,79 @@ export function validatePromptPublish(
 ): ReturnType<typeof validatePromptPublishFromConfig> {
   return validatePromptPublishFromConfig(templates, declared);
 }
+
+export const ADMIN_ROLE_KEYS = adminRoleKeys;
+export const ADMIN_ROLE_MATRIX_KEY = adminRoleMatrixKey;
+export const DATA_RETENTION_KEY = dataRetentionKey;
+export const DATA_RETENTION_NOTICE = dataRetentionNotice;
+export const DATA_RETENTION_PURGE_CRON = dataRetentionPurgeCron;
+export const DATA_RETENTION_PURGE_JOB = dataRetentionPurgeJob;
+export const DEFAULT_RETENTION_DAYS = defaultRetentionDays;
+export const RETENTION_MAX_DAYS = retentionMaxDays;
+export const RETENTION_MIN_DAYS = retentionMinDays;
+export const ROLE_CAPABILITIES = roleCapabilities;
+export const ROLE_CAPABILITY_LABELS = roleCapabilityLabels;
+export const ROLE_LEVELS = roleLevels;
+export const SYSTEM_AUDIT_DEFAULT_PAGE_SIZE = systemAuditDefaultPageSize;
+export const SYSTEM_AUDIT_MAX_PAGE = systemAuditMaxPage;
+export const SYSTEM_AUDIT_MAX_PAGE_SIZE = systemAuditMaxPageSize;
+
+export function defaultAdminRoleMatrix(): AdminRoleMatrix {
+  return defaultAdminRoleMatrixFromSystem();
+}
+
+export function defaultDataRetention(): DataRetention {
+  return defaultDataRetentionFromSystem();
+}
+
+export function isRetentionExpired(createdAt: Date | string, cutoff: Date): boolean {
+  return isRetentionExpiredFromSystem(createdAt, cutoff);
+}
+
+export function parseAdminRoleMatrixWrite(body: unknown): AdminSystemParsed<AdminRoleMatrix> {
+  return parseAdminRoleMatrixWriteFromSystem(body);
+}
+
+export function parseDataRetentionWrite(body: unknown): AdminSystemParsed<DataRetention> {
+  return parseDataRetentionWriteFromSystem(body);
+}
+
+export function parseRetentionPreviewBody(
+  body: unknown,
+  current: DataRetention,
+): AdminSystemParsed<DataRetention> {
+  return parseRetentionPreviewBodyFromSystem(body, current);
+}
+
+export function parseSystemAuditQuery(input: unknown): AdminSystemParsed<SystemAuditQuery> {
+  return parseSystemAuditQueryFromSystem(input);
+}
+
+export function retentionCutoff(now: Date, days: number): Date {
+  return retentionCutoffFromSystem(now, days);
+}
+
+export function roleLevelLabel(capability: RoleCapability, level: RoleLevel): string {
+  return roleLevelLabelFromSystem(capability, level);
+}
+
+export function selectExpiredRows<T extends { createdAt: Date | string }>(
+  rows: readonly T[],
+  now: Date,
+  days: number,
+): T[] {
+  return selectExpiredRowsFromSystem(rows, now, days);
+}
+
+export function summarizeRetentionPreview(input: {
+  logs: readonly { createdAt: Date | string }[];
+  uploads: readonly { createdAt: Date | string }[];
+  jobs: readonly { uploadCreatedAt: Date | string }[];
+  now: Date;
+  retention: DataRetention;
+}): RetentionPreview {
+  return summarizeRetentionPreviewFromSystem(input);
+}
 export { questionContentKey } from './question-content-key';
 export {
   FREE_USER_BANK_FIRST_CACHE_KEY,
@@ -258,6 +368,17 @@ export {
   writeFreeUserBankFirst,
 } from './system-settings';
 export type { FreeUserBankFirstSetting, SettingsCache, SettingsDb } from './system-settings';
+export type {
+  AdminRoleKey,
+  AdminRoleMatrix,
+  AdminSystemParsed,
+  DataRetention,
+  RetentionPreview,
+  RetentionWindowCount,
+  RoleCapability,
+  RoleLevel,
+  SystemAuditQuery,
+} from './admin-system';
 export {
   COMMERCE_AI_REVIEW_SUMMARY,
   COMMERCE_AUDIT_ACTIONS,

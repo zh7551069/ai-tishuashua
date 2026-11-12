@@ -25,6 +25,10 @@
     "./commerce": {
       "types": "./dist/commerce-settings.d.ts",
       "default": "./dist/commerce-settings.js"
+    },
+    "./admin-system": {
+      "types": "./dist/admin-system-db.d.ts",
+      "default": "./dist/admin-system-db.js"
     }
   },
   "typesVersions": {
@@ -32,7 +36,8 @@
       "generation": ["dist/generation.d.ts"],
       "courseware": ["dist/courseware-entry.d.ts"],
       "entitlement": ["dist/entitlement-server.d.ts"],
-      "commerce": ["dist/commerce-settings.d.ts"]
+      "commerce": ["dist/commerce-settings.d.ts"],
+      "admin-system": ["dist/admin-system-db.d.ts"]
     }
   },
   "scripts": {

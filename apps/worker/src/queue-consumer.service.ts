@@ -15,6 +15,7 @@ import {
   ENTITLEMENT_DAY_RECONCILE_JOB,
   registerEntitlementDayReconcile,
 } from './commerce-jobs';
+import { DATA_RETENTION_PURGE_JOB, registerRetentionPurge } from './retention-jobs';
 import { loadWorkerEnv } from './config/env';
 import { handleExtractCourseware } from './processors/extract-courseware';
 import { handleGenerateQuiz } from './processors/generate-quiz';
@@ -26,6 +27,7 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
   private pool: Pool | null = null;
   private settingsRedis: Redis | null = null;
   private commerceClose: (() => Promise<void>) | null = null;
+  private retentionClose: (() => Promise<void>) | null = null;
 
   constructor(private readonly config: ConfigService) {}
 
@@ -108,14 +110,25 @@ export class QueueConsumerService implements OnModuleInit, OnModuleDestroy {
       const message = error instanceof Error ? error.message : '日切对账任务注册失败';
       this.logger.error(message);
     }
+    try {
+      const retention = await registerRetentionPurge(connection, pool, {
+        log: (message) => this.logger.log(message),
+      });
+      this.retentionClose = retention.close;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '保留清理任务注册失败';
+      this.logger.error(message);
+    }
     this.logger.log(
-      `listening queues: ${JOB_GENERATE_QUIZ}, ${JOB_EXTRACT_COURSEWARE}, ${ENTITLEMENT_DAY_RECONCILE_JOB}`,
+      `listening queues: ${JOB_GENERATE_QUIZ}, ${JOB_EXTRACT_COURSEWARE}, ${ENTITLEMENT_DAY_RECONCILE_JOB}, ${DATA_RETENTION_PURGE_JOB}`,
     );
   }
 
   async onModuleDestroy(): Promise<void> {
     await this.commerceClose?.().catch(() => undefined);
     this.commerceClose = null;
+    await this.retentionClose?.().catch(() => undefined);
+    this.retentionClose = null;
     await Promise.all(this.workers.map((worker) => worker.close()));
     this.settingsRedis?.disconnect();
     this.settingsRedis = null;
