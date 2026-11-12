@@ -6,12 +6,16 @@ export type AdminUserStatusFilter = AdminUserStatus | 'all';
 export interface AdminUserFilters {
   status: AdminUserStatusFilter;
   page: number;
+  pageSize?: number;
 }
 
 export function listAdminUsers(token: string, query: AdminUserFilters): Promise<AdminUserList> {
   const params = new URLSearchParams();
   params.set('status', query.status);
   params.set('page', String(query.page));
+  if (query.pageSize) {
+    params.set('pageSize', String(query.pageSize));
+  }
   return adminFetch(`/admin/users?${params.toString()}`, { token });
 }
 

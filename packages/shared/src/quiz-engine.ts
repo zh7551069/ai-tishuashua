@@ -27,11 +27,22 @@ export interface PromptTemplateBody {
 }
 
 export interface PromptCandidate {
+  /** 现网 prompt_templates.id。缺省时日志里的 templateId 为空，不据此改选取。 */
+  id?: string | null;
   scope: 'global' | 'domain' | 'certificate';
   scopeRefId: string | null;
   status: string;
   version: number;
   templates: { system?: unknown; user?: unknown; variant?: unknown };
+}
+
+export interface QuizPromptChoice {
+  template: PromptTemplateBody;
+  templateId: string | null;
+  templateVersion: number | null;
+  /** 回落内置时为 builtin。已发布模板本期没有 code 列，记 null。 */
+  templateCode: string | null;
+  usedBuiltin: boolean;
 }
 
 export interface WrongItemRecord {
@@ -232,6 +243,62 @@ export function pickPublishedPrompt(
   candidates: readonly PromptCandidate[],
   target: { certificateId: string; domainId: string },
 ): PromptTemplateBody | null {
+  const top = selectPublishedCandidate(candidates, target);
+  if (!top) {
+    return null;
+  }
+  return readTemplate(top.templates);
+}
+
+/**
+ * 选取结果给出发题日志用。优先级仍是证书 > 领域 > 全局、同级更高 version。
+ * 选不到时回落传入的内置模板，usedBuiltin=true，不算另一次失败。
+ */
+export function resolveQuizPrompt(
+  candidates: readonly PromptCandidate[],
+  target: { certificateId: string; domainId: string },
+  kind: 'original' | 'variant',
+): QuizPromptChoice {
+  if (kind === 'variant') {
+    const narrowed: PromptCandidate[] = [];
+    for (const item of candidates) {
+      const body = readVariantBody(item.templates.variant);
+      if (!body) {
+        continue;
+      }
+      narrowed.push({ ...item, templates: body });
+    }
+    const top = selectPublishedCandidate(narrowed, target);
+    const template = top ? readTemplate(top.templates) : null;
+    if (!top || !template) {
+      return builtinPromptChoice(BUILTIN_QUIZ_VARIANT_PROMPT);
+    }
+    return {
+      template: sealVariantPrompt(template),
+      templateId: templateIdOf(top.id),
+      templateVersion: Number.isInteger(top.version) ? top.version : null,
+      templateCode: null,
+      usedBuiltin: false,
+    };
+  }
+  const top = selectPublishedCandidate(candidates, target);
+  const template = top ? readTemplate(top.templates) : null;
+  if (!top || !template) {
+    return builtinPromptChoice(BUILTIN_QUIZ_PROMPT);
+  }
+  return {
+    template,
+    templateId: templateIdOf(top.id),
+    templateVersion: Number.isInteger(top.version) ? top.version : null,
+    templateCode: null,
+    usedBuiltin: false,
+  };
+}
+
+function selectPublishedCandidate(
+  candidates: readonly PromptCandidate[],
+  target: { certificateId: string; domainId: string },
+): PromptCandidate | null {
   const matching = candidates.filter((item) => {
     if (item.status !== 'published') {
       return false;
@@ -249,11 +316,24 @@ export function pickPublishedPrompt(
     return item.scope === 'global' && (item.scopeRefId === null || item.scopeRefId === '');
   });
   matching.sort((a, b) => SCOPE_RANK[b.scope] - SCOPE_RANK[a.scope] || b.version - a.version);
-  const top = matching[0];
-  if (!top) {
+  return matching[0] ?? null;
+}
+
+function builtinPromptChoice(template: PromptTemplateBody): QuizPromptChoice {
+  return {
+    template,
+    templateId: null,
+    templateVersion: null,
+    templateCode: 'builtin',
+    usedBuiltin: true,
+  };
+}
+
+function templateIdOf(value: string | null | undefined): string | null {
+  if (!value || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
     return null;
   }
-  return readTemplate(top.templates);
+  return value.toLowerCase();
 }
 
 export const BUILTIN_QUIZ_PROMPT: PromptTemplateBody = {

@@ -16,6 +16,12 @@ import { SystemSettingsService } from '../admin-system-settings/system-settings.
 import { AdminQuizSessionController } from '../admin-quiz-sessions/admin-quiz-sessions.controller';
 import { AdminQuizSessionRepository } from '../admin-quiz-sessions/admin-quiz-sessions.repository';
 import { AdminQuizSessionService } from '../admin-quiz-sessions/admin-quiz-sessions.service';
+import { AdminPracticeRecordController } from '../admin-practice-records/admin-practice-records.controller';
+import { AdminPracticeRecordRepository } from '../admin-practice-records/admin-practice-records.repository';
+import { AdminPracticeRecordService } from '../admin-practice-records/admin-practice-records.service';
+import { AdminQuizGenerationLogController } from '../admin-quiz-generation-logs/admin-quiz-generation-logs.controller';
+import { AdminQuizGenerationLogRepository } from '../admin-quiz-generation-logs/admin-quiz-generation-logs.repository';
+import { AdminQuizGenerationLogService } from '../admin-quiz-generation-logs/admin-quiz-generation-logs.service';
 import { AdminUserController } from '../admin-users/admin-users.controller';
 import { AdminUserRepository } from '../admin-users/admin-users.repository';
 import { AdminUserService } from '../admin-users/admin-users.service';
@@ -43,6 +49,8 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminCertificateController,
     AdminUserController,
     AdminQuizSessionController,
+    AdminPracticeRecordController,
+    AdminQuizGenerationLogController,
     SystemSettingsController,
     CommerceController,
     EntitlementOpsController,
@@ -65,6 +73,10 @@ import { AdminSessionGuard } from './admin-session.guard';
     AdminUserService,
     AdminQuizSessionRepository,
     AdminQuizSessionService,
+    AdminPracticeRecordRepository,
+    AdminPracticeRecordService,
+    AdminQuizGenerationLogRepository,
+    AdminQuizGenerationLogService,
     SystemSettingsService,
     CommerceService,
     EntitlementOpsService,

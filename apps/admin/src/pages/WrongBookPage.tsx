@@ -14,6 +14,7 @@ import {
   listAdminWrongBook,
   type AdminWrongBookStatusFilter,
 } from '../wrong-book-api';
+import { formatAdminTime, QueryPager } from './QueryPager';
 
 interface Filters {
   userId: string;
@@ -30,6 +31,7 @@ export function WrongBookPage() {
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [list, setList] = useState<AdminWrongBookList | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,7 +46,7 @@ export function WrongBookPage() {
     let cancelled = false;
     setLoading(true);
     setError('');
-    listAdminWrongBook(token, { ...applied, page })
+    listAdminWrongBook(token, { ...applied, page, pageSize })
       .then((result) => {
         if (!cancelled) {
           setList(result);
@@ -67,7 +69,7 @@ export function WrongBookPage() {
     return () => {
       cancelled = true;
     };
-  }, [applied, page, reloadToken, token]);
+  }, [applied, page, pageSize, reloadToken, token]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -123,16 +125,34 @@ export function WrongBookPage() {
     setPage(1);
   }
 
-  const pageCount = Math.max(1, Math.ceil((list?.total ?? 0) / (list?.pageSize || 20)));
-
   return (
-    <section className="panel wide">
-      <h1>错题库</h1>
-      <p className="muted">
-        只读查看全站错题。默认包含未消灭和已消灭，按更新时间从新到旧。这里不能消灭或删除。
-      </p>
+    <section className="dq-page">
+      <header className="dq-head">
+        <div>
+          <h1>错题库</h1>
+          <p className="dq-note">只读。不能消灭、不能删除。没有导出，也没有关键字检索。</p>
+        </div>
+      </header>
+      <div className="dq-chips" role="group" aria-label="消灭状态">
+        {(
+          [
+            ['all', '全部'],
+            ['pending', '待消灭'],
+            ['cleared', '已消灭'],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={draft.status === value ? 'active' : undefined}
+            onClick={() => applyFilters({ ...draft, status: value })}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <form
-        className="filters"
+        className="dq-filters"
         onSubmit={(event) => {
           event.preventDefault();
           applyFilters(draft);
@@ -143,7 +163,7 @@ export function WrongBookPage() {
           <input
             value={draft.userId}
             autoComplete="off"
-            placeholder="留空表示全部用户"
+            placeholder="精确 ID，不是关键字"
             onChange={(event) => setDraft({ ...draft, userId: event.target.value })}
           />
         </label>
@@ -152,22 +172,9 @@ export function WrongBookPage() {
           <input
             value={draft.certId}
             autoComplete="off"
-            placeholder="留空表示全部证书"
+            placeholder="精确 ID，不是关键字"
             onChange={(event) => setDraft({ ...draft, certId: event.target.value })}
           />
-        </label>
-        <label>
-          是否已消灭
-          <select
-            value={draft.status}
-            onChange={(event) =>
-              setDraft({ ...draft, status: event.target.value as AdminWrongBookStatusFilter })
-            }
-          >
-            <option value="all">全部</option>
-            <option value="pending">未消灭</option>
-            <option value="cleared">已消灭</option>
-          </select>
         </label>
         <div className="actions">
           <button type="submit">查询</button>
@@ -193,47 +200,31 @@ export function WrongBookPage() {
       {list && list.items.length === 0 && !loading ? <p>没有符合条件的错题。</p> : null}
 
       {list && list.items.length > 0 ? (
-        <div className="table-wrap">
-          <table className="data">
+        <div className="dq-card">
+          <table>
             <thead>
               <tr>
-                <th>更新时间</th>
-                <th>用户</th>
-                <th>证书</th>
                 <th>状态</th>
-                <th>错过次数</th>
-                <th>题干</th>
-                <th></th>
+                <th>证书</th>
+                <th>知识点</th>
+                <th>用户</th>
+                <th>最近出现</th>
               </tr>
             </thead>
             <tbody>
               {list.items.map((item) => (
                 <tr key={item.id} className={item.id === selectedId ? 'selected' : undefined}>
-                  <td>{formatTime(item.updatedAt)}</td>
                   <td>
-                    <div>{item.userNick || '未设置昵称'}</div>
-                    <div className="hint">{item.userId}</div>
-                  </td>
-                  <td>
-                    <div>
-                      {item.domainName} / {item.certName}
-                    </div>
-                    <div className="hint">{item.certId}</div>
-                  </td>
-                  <td>
-                    <span className={item.status === 'pending' ? 'tag' : 'tag off'}>
+                    <span className={item.status === 'pending' ? 'dq-badge warn' : 'dq-badge ok'}>
                       {WRONG_ITEM_STATUS_LABELS[item.status]}
                     </span>
                   </td>
-                  <td>{item.wrongCount}</td>
-                  <td className="stem">{item.stem}</td>
+                  <td>{item.certName}</td>
+                  <td>{item.stem}</td>
+                  <td>{item.userNick || '未设置昵称'}</td>
                   <td>
-                    <button
-                      type="button"
-                      className="tiny secondary"
-                      onClick={() => setSelectedId(item.id)}
-                    >
-                      查看
+                    <button type="button" className="linkish" onClick={() => setSelectedId(item.id)}>
+                      {formatAdminTime(item.updatedAt)}
                     </button>
                   </td>
                 </tr>
@@ -243,29 +234,20 @@ export function WrongBookPage() {
         </div>
       ) : null}
 
-      {list && list.total > 0 ? (
-        <div className="pager">
-          <button
-            type="button"
-            className="secondary"
-            disabled={loading || page <= 1}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-          >
-            上一页
-          </button>
-          <span>
-            第 {page} / {pageCount} 页，共 {list.total} 条
-          </span>
-          <button
-            type="button"
-            className="secondary"
-            disabled={loading || page >= pageCount}
-            onClick={() => setPage((value) => value + 1)}
-          >
-            下一页
-          </button>
-        </div>
-      ) : null}
+      <QueryPager
+        page={page}
+        pageSize={pageSize}
+        total={list?.total ?? 0}
+        loading={loading}
+        onPage={setPage}
+        onPageSize={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
+      <p className="dq-foot">
+        知识点列目前是题干摘要，详情里才有知识点 ID。近 7 天 / 近 30 天不另开检索。禁止后管直接改消灭状态。
+      </p>
 
       {selectedId ? (
         <section className="detail">
