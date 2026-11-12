@@ -39,19 +39,27 @@ export class AdminCatalogService {
     return this.catalog.listDomains().then((items) => ({ items }));
   }
 
-  createDomain(input: AdminDomainWrite): Promise<AdminDomain> {
-    return this.catalog.write((client) =>
-      this.catalog.insertDomain(client, {
+  createDomain(input: AdminDomainWrite, actor: string): Promise<AdminDomain> {
+    return this.catalog.write(async (client) => {
+      const saved = await this.catalog.insertDomain(client, {
         id: randomUUID(),
         code: input.code,
         name: input.name,
         status: input.status ?? 'online',
         sortOrder: input.sortOrder ?? 0,
-      }),
-    );
+      });
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.domain.create',
+        target: `domain:${saved.id}`,
+        before: null,
+        after: domainAudit(saved),
+      });
+      return saved;
+    });
   }
 
-  async updateDomain(id: string, input: AdminDomainPatch): Promise<AdminDomain> {
+  async updateDomain(id: string, input: AdminDomainPatch, actor: string): Promise<AdminDomain> {
     assertChange(input);
     return this.catalog.write(async (client) => {
       const current = await this.requireDomain(client, id);
@@ -59,17 +67,31 @@ export class AdminCatalogService {
       if (!saved) {
         throw notFound('领域不存在');
       }
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.domain.update',
+        target: `domain:${saved.id}`,
+        before: domainAudit(current),
+        after: domainAudit(saved),
+      });
       return saved;
     });
   }
 
-  async deleteDomain(id: string): Promise<AdminCatalogDeleteResult> {
+  async deleteDomain(id: string, actor: string): Promise<AdminCatalogDeleteResult> {
     await this.catalog.write(async (client) => {
       const current = await this.requireDomain(client, id);
       const count = await this.catalog.countCertificates(client, current.id);
       if (count > 0) {
         throw inUse('领域下还有证书，不能删除。可以改为下架。');
       }
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.domain.delete',
+        target: `domain:${current.id}`,
+        before: domainAudit(current),
+        after: null,
+      });
       await this.catalog.deleteDomain(client, current.id);
     });
     return { id };
@@ -86,13 +108,14 @@ export class AdminCatalogService {
   async createCertificate(
     domainId: string,
     input: AdminCertificateWrite,
+    actor: string,
   ): Promise<AdminCertificate> {
     const types = input.enabledQuestionTypeCodes ?? [...QUIZ_TYPES];
     assertScores(input.totalScore, input.passScore ?? null);
     return this.catalog.write(async (client) => {
       const domain = await this.requireDomain(client, domainId);
       await this.assertQuestionTypes(client, types);
-      return this.catalog.insertCertificate(client, {
+      const saved = await this.catalog.insertCertificate(client, {
         id: randomUUID(),
         domainId: domain.id,
         code: input.code,
@@ -104,10 +127,22 @@ export class AdminCatalogService {
         extraConstraint: input.extraConstraint ?? null,
         sortOrder: input.sortOrder ?? 0,
       });
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.certificate.create',
+        target: `certificate:${saved.id}`,
+        before: null,
+        after: certificateAudit(saved),
+      });
+      return saved;
     });
   }
 
-  async updateCertificate(id: string, input: AdminCertificatePatch): Promise<AdminCertificate> {
+  async updateCertificate(
+    id: string,
+    input: AdminCertificatePatch,
+    actor: string,
+  ): Promise<AdminCertificate> {
     assertChange(input);
     return this.catalog.write(async (client) => {
       const current = await this.requireCertificate(client, id);
@@ -121,17 +156,31 @@ export class AdminCatalogService {
       if (!saved) {
         throw notFound('证书不存在');
       }
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.certificate.update',
+        target: `certificate:${saved.id}`,
+        before: certificateAudit(current),
+        after: certificateAudit(saved),
+      });
       return saved;
     });
   }
 
-  async deleteCertificate(id: string): Promise<AdminCatalogDeleteResult> {
+  async deleteCertificate(id: string, actor: string): Promise<AdminCatalogDeleteResult> {
     await this.catalog.write(async (client) => {
       const current = await this.requireCertificate(client, id);
       const usage = await this.catalog.certificateUsage(client, current.id);
       if (usage.packs + usage.wrongItems + usage.uploads > 0) {
         throw inUse(certificateInUse(usage));
       }
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.certificate.delete',
+        target: `certificate:${current.id}`,
+        before: certificateAudit(current),
+        after: null,
+      });
       await this.catalog.deleteCertificate(client, current.id);
     });
     return { id };
@@ -160,6 +209,7 @@ export class AdminCatalogService {
   async createTextbook(
     certificateId: string,
     input: AdminTextbookWrite,
+    actor: string,
   ): Promise<AdminTextbookSummary> {
     return this.catalog.write(async (client) => {
       const certificate = await this.requireCertificate(client, certificateId);
@@ -172,31 +222,64 @@ export class AdminCatalogService {
         sortOrder: input.sortOrder ?? 0,
       });
       await this.catalog.linkTextbook(client, id, certificate.id);
-      return this.requireTextbook(client, id);
+      const saved = await this.requireTextbook(client, id);
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.textbook.create',
+        target: `textbook:${saved.id}`,
+        before: null,
+        after: textbookAudit(saved),
+      });
+      return saved;
     });
   }
 
-  async linkTextbook(certificateId: string, textbookId: string): Promise<AdminTextbookSummary> {
+  async linkTextbook(
+    certificateId: string,
+    textbookId: string,
+    actor: string,
+  ): Promise<AdminTextbookSummary> {
     return this.catalog.write(async (client) => {
       const certificate = await this.requireCertificate(client, certificateId);
       await this.requireTextbook(client, textbookId);
       await this.catalog.linkTextbook(client, textbookId, certificate.id);
-      return this.requireTextbook(client, textbookId);
+      const saved = await this.requireTextbook(client, textbookId);
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.textbook.link',
+        target: `textbook:${saved.id}`,
+        before: null,
+        after: { textbookId: saved.id, certificateId: certificate.id },
+      });
+      return saved;
     });
   }
 
-  async updateTextbook(id: string, input: AdminTextbookPatch): Promise<AdminTextbookSummary> {
+  async updateTextbook(
+    id: string,
+    input: AdminTextbookPatch,
+    actor: string,
+  ): Promise<AdminTextbookSummary> {
     assertChange(input);
     return this.catalog.write(async (client) => {
       const current = await this.requireTextbook(client, id);
       await this.catalog.updateTextbook(client, current.id, input);
-      return this.requireTextbook(client, current.id);
+      const saved = await this.requireTextbook(client, current.id);
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.textbook.update',
+        target: `textbook:${saved.id}`,
+        before: textbookAudit(current),
+        after: textbookAudit(saved),
+      });
+      return saved;
     });
   }
 
   async unlinkTextbook(
     certificateId: string,
     textbookId: string,
+    actor: string,
   ): Promise<AdminCatalogDeleteResult> {
     await this.catalog.write(async (client) => {
       const certificate = await this.requireCertificate(client, certificateId);
@@ -205,11 +288,18 @@ export class AdminCatalogService {
       if (!removed) {
         throw notFound('这本教材没有挂在该证书上');
       }
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.textbook.unlink',
+        target: `textbook:${textbookId}`,
+        before: { textbookId, certificateId: certificate.id },
+        after: null,
+      });
     });
     return { id: textbookId };
   }
 
-  async deleteTextbook(id: string): Promise<AdminCatalogDeleteResult> {
+  async deleteTextbook(id: string, actor: string): Promise<AdminCatalogDeleteResult> {
     await this.catalog.write(async (client) => {
       const current = await this.requireTextbook(client, id);
       const usage = await this.catalog.textbookUsage(client, current.id);
@@ -219,12 +309,23 @@ export class AdminCatalogService {
       if (usage.packPoints > 0) {
         throw inUse('教材下的知识点仍在刷题包里，不能删除。可以改为下架。');
       }
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.textbook.delete',
+        target: `textbook:${current.id}`,
+        before: textbookAudit(current),
+        after: null,
+      });
       await this.catalog.deleteTextbook(client, current.id);
     });
     return { id };
   }
 
-  createTextbookNode(textbookId: string, input: AdminKnowledgeWrite): Promise<AdminKnowledgeNode> {
+  createTextbookNode(
+    textbookId: string,
+    input: AdminKnowledgeWrite,
+    actor: string,
+  ): Promise<AdminKnowledgeNode> {
     return this.catalog.write(async (client) => {
       const textbook = await this.requireTextbook(client, textbookId);
       const kind = input.kind ?? 'knowledge_point';
@@ -243,13 +344,22 @@ export class AdminCatalogService {
         status: input.status ?? 'online',
         sortOrder: input.sortOrder ?? 0,
       });
-      return this.requireNode(client, id);
+      const saved = await this.requireNode(client, id);
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.knowledge.create',
+        target: `knowledge:${saved.id}`,
+        before: null,
+        after: knowledgeAudit(saved),
+      });
+      return saved;
     });
   }
 
   createIndependentPoint(
     certificateId: string,
     input: AdminKnowledgeWrite,
+    actor: string,
   ): Promise<AdminKnowledgeNode> {
     if (input.kind === 'group') {
       throw validation('独立知识点不能是分组');
@@ -274,11 +384,23 @@ export class AdminCatalogService {
         sortOrder: input.sortOrder ?? 0,
       });
       await this.catalog.linkKnowledge(client, id, certificate.id);
-      return this.requireNode(client, id);
+      const saved = await this.requireNode(client, id);
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.knowledge.create',
+        target: `knowledge:${saved.id}`,
+        before: null,
+        after: knowledgeAudit(saved),
+      });
+      return saved;
     });
   }
 
-  updateKnowledge(id: string, input: AdminKnowledgePatch): Promise<AdminKnowledgeNode> {
+  updateKnowledge(
+    id: string,
+    input: AdminKnowledgePatch,
+    actor: string,
+  ): Promise<AdminKnowledgeNode> {
     assertChange(input);
     return this.catalog.write(async (client) => {
       const current = await this.requireOwned(client, id);
@@ -303,11 +425,19 @@ export class AdminCatalogService {
       if (placement.delta !== 0) {
         await this.catalog.shiftLevels(client, current.id, placement.delta);
       }
-      return this.requireNode(client, current.id);
+      const saved = await this.requireNode(client, current.id);
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.knowledge.update',
+        target: `knowledge:${saved.id}`,
+        before: knowledgeAudit(current),
+        after: knowledgeAudit(saved),
+      });
+      return saved;
     });
   }
 
-  async deleteKnowledge(id: string): Promise<AdminCatalogDeleteResult> {
+  async deleteKnowledge(id: string, actor: string): Promise<AdminCatalogDeleteResult> {
     await this.catalog.write(async (client) => {
       const current = await this.requireOwned(client, id);
       const usage = await this.catalog.subtreeUsage(client, current.id);
@@ -317,6 +447,13 @@ export class AdminCatalogService {
       if (usage.packPoints > 0) {
         throw inUse('知识点或子节点仍在刷题包里，不能删除。可以改为下架。');
       }
+      await this.catalog.audit(client, {
+        actor,
+        action: 'catalog.knowledge.delete',
+        target: `knowledge:${current.id}`,
+        before: knowledgeAudit(current),
+        after: null,
+      });
       await this.catalog.deleteKnowledgeSubtree(client, current.id);
     });
     return { id };
@@ -493,6 +630,57 @@ function sameId(left: string | null, right: string | null): boolean {
     return left === right;
   }
   return left.toLowerCase() === right.toLowerCase();
+}
+
+function domainAudit(item: AdminDomain) {
+  return {
+    id: item.id,
+    code: item.code,
+    name: item.name,
+    status: item.status,
+    sortOrder: item.sortOrder,
+  };
+}
+
+function certificateAudit(item: AdminCertificate) {
+  return {
+    id: item.id,
+    code: item.code,
+    name: item.name,
+    status: item.status,
+    totalScore: item.totalScore,
+    passScore: item.passScore,
+    enabledQuestionTypeCodes: item.enabledQuestionTypeCodes,
+  };
+}
+
+function textbookAudit(item: AdminTextbookSummary) {
+  return {
+    id: item.id,
+    code: item.code,
+    name: item.name,
+    status: item.status,
+    sortOrder: item.sortOrder,
+    certificateIds: item.certificateIds,
+  };
+}
+
+function knowledgeAudit(item: {
+  id: string;
+  code: string;
+  name: string;
+  kind: string;
+  status: string;
+  parentId: string | null;
+}) {
+  return {
+    id: item.id,
+    code: item.code,
+    name: item.name,
+    kind: item.kind,
+    status: item.status,
+    parentId: item.parentId,
+  };
 }
 
 function notFound(message: string): ApiException {

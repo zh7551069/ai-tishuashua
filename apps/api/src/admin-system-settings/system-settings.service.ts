@@ -5,6 +5,7 @@ import {
   type OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { insertAdminAudit } from '@tishuashua/shared/admin-system';
 import {
   readFreeUserBankFirstRecord,
   SettingsCacheError,
@@ -79,7 +80,16 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
     updatedBy: string,
   ): Promise<FreeUserBankFirstSetting> {
     try {
-      return await writeFreeUserBankFirst(this.db(), this.cache(), enabled, updatedBy);
+      const before = await readFreeUserBankFirstRecord(this.db());
+      const saved = await writeFreeUserBankFirst(this.db(), this.cache(), enabled, updatedBy);
+      await insertAdminAudit(this.db(), {
+        actor: updatedBy,
+        action: 'system.freeUserBankFirst.update',
+        target: 'setting:freeUserBankFirst',
+        before: { enabled: before.enabled },
+        after: { enabled: saved.enabled },
+      });
+      return saved;
     } catch (error) {
       if (error instanceof SettingsCacheError) {
         throw error;

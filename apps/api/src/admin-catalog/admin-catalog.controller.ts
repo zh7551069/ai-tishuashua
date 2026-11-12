@@ -18,8 +18,10 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { parseDto } from '../common/parse-dto';
+import type { AdminSummary } from '@tishuashua/shared';
+import { CurrentAdmin } from '../admin-gateway/current-admin';
 import { AdminSessionGuard } from '../admin-gateway/admin-session.guard';
+import { parseDto } from '../common/parse-dto';
 import { AdminCatalogService } from './admin-catalog.service';
 import {
   AdminCatalogDeleteResultDto,
@@ -61,9 +63,9 @@ export class AdminCatalogController {
   @ApiOperation({ summary: '新建领域' })
   @ApiBody({ type: AdminDomainWriteDto })
   @ApiCreatedResponse({ type: AdminDomainDto })
-  async createDomain(@Body() body: unknown) {
+  async createDomain(@CurrentAdmin() admin: AdminSummary, @Body() body: unknown) {
     const dto = await parseDto(AdminDomainWriteDto, body);
-    return this.catalog.createDomain(dto);
+    return this.catalog.createDomain(dto, admin.username);
   }
 
   @Put('domains/:domainId')
@@ -73,9 +75,13 @@ export class AdminCatalogController {
   })
   @ApiBody({ type: AdminDomainPatchDto })
   @ApiOkResponse({ type: AdminDomainDto })
-  async updateDomain(@Param('domainId', uuid) domainId: string, @Body() body: unknown) {
+  async updateDomain(
+    @CurrentAdmin() admin: AdminSummary,
+    @Param('domainId', uuid) domainId: string,
+    @Body() body: unknown,
+  ) {
     const dto = await parseDto(AdminDomainPatchDto, body);
-    return this.catalog.updateDomain(domainId, dto);
+    return this.catalog.updateDomain(domainId, dto, admin.username);
   }
 
   @Delete('domains/:domainId')
@@ -84,8 +90,8 @@ export class AdminCatalogController {
     description: '领域下还有证书时返回 CATALOG_IN_USE。可以改为下架。',
   })
   @ApiOkResponse({ type: AdminCatalogDeleteResultDto })
-  deleteDomain(@Param('domainId', uuid) domainId: string) {
-    return this.catalog.deleteDomain(domainId);
+  deleteDomain(@CurrentAdmin() admin: AdminSummary, @Param('domainId', uuid) domainId: string) {
+    return this.catalog.deleteDomain(domainId, admin.username);
   }
 
   @Get('domains/:domainId/certificates')
@@ -99,9 +105,13 @@ export class AdminCatalogController {
   @ApiOperation({ summary: '新建证书' })
   @ApiBody({ type: AdminCertificateWriteDto })
   @ApiCreatedResponse({ type: AdminCertificateDto })
-  async createCertificate(@Param('domainId', uuid) domainId: string, @Body() body: unknown) {
+  async createCertificate(
+    @CurrentAdmin() admin: AdminSummary,
+    @Param('domainId', uuid) domainId: string,
+    @Body() body: unknown,
+  ) {
     const dto = await parseDto(AdminCertificateWriteDto, body);
-    return this.catalog.createCertificate(domainId, dto);
+    return this.catalog.createCertificate(domainId, dto, admin.username);
   }
 
   @Put('certificates/:certificateId')
@@ -112,11 +122,12 @@ export class AdminCatalogController {
   @ApiBody({ type: AdminCertificatePatchDto })
   @ApiOkResponse({ type: AdminCertificateDto })
   async updateCertificate(
+    @CurrentAdmin() admin: AdminSummary,
     @Param('certificateId', uuid) certificateId: string,
     @Body() body: unknown,
   ) {
     const dto = await parseDto(AdminCertificatePatchDto, body);
-    return this.catalog.updateCertificate(certificateId, dto);
+    return this.catalog.updateCertificate(certificateId, dto, admin.username);
   }
 
   @Delete('certificates/:certificateId')
@@ -125,8 +136,11 @@ export class AdminCatalogController {
     description: '仍被刷题包、错题或课件引用时返回 CATALOG_IN_USE。请改为下架。',
   })
   @ApiOkResponse({ type: AdminCatalogDeleteResultDto })
-  deleteCertificate(@Param('certificateId', uuid) certificateId: string) {
-    return this.catalog.deleteCertificate(certificateId);
+  deleteCertificate(
+    @CurrentAdmin() admin: AdminSummary,
+    @Param('certificateId', uuid) certificateId: string,
+  ) {
+    return this.catalog.deleteCertificate(certificateId, admin.username);
   }
 
   @Get('certificates/:certificateId/tree')
@@ -144,9 +158,13 @@ export class AdminCatalogController {
   @ApiOperation({ summary: '新建教材并挂到证书' })
   @ApiBody({ type: AdminTextbookWriteDto })
   @ApiCreatedResponse({ type: AdminTextbookSummaryDto })
-  async createTextbook(@Param('certificateId', uuid) certificateId: string, @Body() body: unknown) {
+  async createTextbook(
+    @CurrentAdmin() admin: AdminSummary,
+    @Param('certificateId', uuid) certificateId: string,
+    @Body() body: unknown,
+  ) {
     const dto = await parseDto(AdminTextbookWriteDto, body);
-    return this.catalog.createTextbook(certificateId, dto);
+    return this.catalog.createTextbook(certificateId, dto, admin.username);
   }
 
   @Post('certificates/:certificateId/textbooks/link')
@@ -156,9 +174,13 @@ export class AdminCatalogController {
   })
   @ApiBody({ type: AdminTextbookLinkDto })
   @ApiCreatedResponse({ type: AdminTextbookSummaryDto })
-  async linkTextbook(@Param('certificateId', uuid) certificateId: string, @Body() body: unknown) {
+  async linkTextbook(
+    @CurrentAdmin() admin: AdminSummary,
+    @Param('certificateId', uuid) certificateId: string,
+    @Body() body: unknown,
+  ) {
     const dto = await parseDto(AdminTextbookLinkDto, body);
-    return this.catalog.linkTextbook(certificateId, dto.textbookId);
+    return this.catalog.linkTextbook(certificateId, dto.textbookId, admin.username);
   }
 
   @Delete('certificates/:certificateId/textbooks/:textbookId')
@@ -168,10 +190,11 @@ export class AdminCatalogController {
   })
   @ApiOkResponse({ type: AdminCatalogDeleteResultDto })
   unlinkTextbook(
+    @CurrentAdmin() admin: AdminSummary,
     @Param('certificateId', uuid) certificateId: string,
     @Param('textbookId', uuid) textbookId: string,
   ) {
-    return this.catalog.unlinkTextbook(certificateId, textbookId);
+    return this.catalog.unlinkTextbook(certificateId, textbookId, admin.username);
   }
 
   @Put('textbooks/:textbookId')
@@ -181,9 +204,13 @@ export class AdminCatalogController {
   })
   @ApiBody({ type: AdminTextbookPatchDto })
   @ApiOkResponse({ type: AdminTextbookSummaryDto })
-  async updateTextbook(@Param('textbookId', uuid) textbookId: string, @Body() body: unknown) {
+  async updateTextbook(
+    @CurrentAdmin() admin: AdminSummary,
+    @Param('textbookId', uuid) textbookId: string,
+    @Body() body: unknown,
+  ) {
     const dto = await parseDto(AdminTextbookPatchDto, body);
-    return this.catalog.updateTextbook(textbookId, dto);
+    return this.catalog.updateTextbook(textbookId, dto, admin.username);
   }
 
   @Delete('textbooks/:textbookId')
@@ -192,8 +219,8 @@ export class AdminCatalogController {
     description: '知识点仍在刷题包里，或下面还有用户课件知识点时，返回 CATALOG_IN_USE。',
   })
   @ApiOkResponse({ type: AdminCatalogDeleteResultDto })
-  deleteTextbook(@Param('textbookId', uuid) textbookId: string) {
-    return this.catalog.deleteTextbook(textbookId);
+  deleteTextbook(@CurrentAdmin() admin: AdminSummary, @Param('textbookId', uuid) textbookId: string) {
+    return this.catalog.deleteTextbook(textbookId, admin.username);
   }
 
   @Post('textbooks/:textbookId/nodes')
@@ -203,9 +230,13 @@ export class AdminCatalogController {
   })
   @ApiBody({ type: AdminKnowledgeWriteDto })
   @ApiCreatedResponse({ type: AdminKnowledgeNodeDto })
-  async createTextbookNode(@Param('textbookId', uuid) textbookId: string, @Body() body: unknown) {
+  async createTextbookNode(
+    @CurrentAdmin() admin: AdminSummary,
+    @Param('textbookId', uuid) textbookId: string,
+    @Body() body: unknown,
+  ) {
     const dto = await parseDto(AdminKnowledgeWriteDto, body);
-    return this.catalog.createTextbookNode(textbookId, dto);
+    return this.catalog.createTextbookNode(textbookId, dto, admin.username);
   }
 
   @Post('certificates/:certificateId/knowledge-points')
@@ -213,11 +244,12 @@ export class AdminCatalogController {
   @ApiBody({ type: AdminKnowledgeWriteDto })
   @ApiCreatedResponse({ type: AdminKnowledgeNodeDto })
   async createIndependentPoint(
+    @CurrentAdmin() admin: AdminSummary,
     @Param('certificateId', uuid) certificateId: string,
     @Body() body: unknown,
   ) {
     const dto = await parseDto(AdminKnowledgeWriteDto, body);
-    return this.catalog.createIndependentPoint(certificateId, dto);
+    return this.catalog.createIndependentPoint(certificateId, dto, admin.username);
   }
 
   @Put('knowledge-points/:knowledgePointId')
@@ -228,11 +260,12 @@ export class AdminCatalogController {
   @ApiBody({ type: AdminKnowledgePatchDto })
   @ApiOkResponse({ type: AdminKnowledgeNodeDto })
   async updateKnowledge(
+    @CurrentAdmin() admin: AdminSummary,
     @Param('knowledgePointId', uuid) knowledgePointId: string,
     @Body() body: unknown,
   ) {
     const dto = await parseDto(AdminKnowledgePatchDto, body);
-    return this.catalog.updateKnowledge(knowledgePointId, dto);
+    return this.catalog.updateKnowledge(knowledgePointId, dto, admin.username);
   }
 
   @Delete('knowledge-points/:knowledgePointId')
@@ -241,7 +274,10 @@ export class AdminCatalogController {
     description: '子节点一并删除。仍被刷题包使用时返回 CATALOG_IN_USE。',
   })
   @ApiOkResponse({ type: AdminCatalogDeleteResultDto })
-  deleteKnowledge(@Param('knowledgePointId', uuid) knowledgePointId: string) {
-    return this.catalog.deleteKnowledge(knowledgePointId);
+  deleteKnowledge(
+    @CurrentAdmin() admin: AdminSummary,
+    @Param('knowledgePointId', uuid) knowledgePointId: string,
+  ) {
+    return this.catalog.deleteKnowledge(knowledgePointId, admin.username);
   }
 }

@@ -140,6 +140,25 @@ interface KnowledgeWrite {
 export class AdminCatalogRepository {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
 
+  async audit(
+    client: PoolClient,
+    input: { actor: string; action: string; target: string; before: unknown; after: unknown },
+  ): Promise<void> {
+    await client.query(
+      `
+        INSERT INTO admin_audit_logs (actor, action, target, before, after)
+        VALUES ($1, $2, $3, $4::jsonb, $5::jsonb)
+      `,
+      [
+        input.actor,
+        input.action,
+        input.target,
+        JSON.stringify(input.before ?? null),
+        JSON.stringify(input.after ?? null),
+      ],
+    );
+  }
+
   async write<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.pool().connect();
     try {

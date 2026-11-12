@@ -13,6 +13,8 @@ import { EntitlementOpsController } from '../admin-entitlement/entitlement-ops.c
 import { EntitlementOpsService } from '../admin-entitlement/entitlement-ops.service';
 import { SystemSettingsController } from '../admin-system-settings/system-settings.controller';
 import { SystemSettingsService } from '../admin-system-settings/system-settings.service';
+import { AdminSystemController } from '../admin-system/admin-system.controller';
+import { AdminSystemService } from '../admin-system/admin-system.service';
 import { AdminQuizSessionController } from '../admin-quiz-sessions/admin-quiz-sessions.controller';
 import { AdminQuizSessionRepository } from '../admin-quiz-sessions/admin-quiz-sessions.repository';
 import { AdminQuizSessionService } from '../admin-quiz-sessions/admin-quiz-sessions.service';
@@ -62,6 +64,7 @@ import { AdminSessionGuard } from './admin-session.guard';
     QuestionTypeController,
     CertTypeConfigController,
     SystemSettingsController,
+    AdminSystemController,
     CommerceController,
     EntitlementOpsController,
     AdminOrdersController,
@@ -92,6 +95,7 @@ import { AdminSessionGuard } from './admin-session.guard';
     QuestionTypeService,
     CertTypeConfigService,
     SystemSettingsService,
+    AdminSystemService,
     CommerceService,
     EntitlementOpsService,
   ],
