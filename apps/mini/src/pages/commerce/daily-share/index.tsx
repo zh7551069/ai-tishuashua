@@ -1,7 +1,6 @@
-import { Button, Image, Text, View } from '@tarojs/components';
+import { Button, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useShareAppMessage, useShareTimeline } from '@tarojs/taro';
 import { useRef, useState } from 'react';
-import shareMark from '../../../assets/me-commerce/share-a.svg';
 import { Screen } from '../../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { fetchGrowth, postGrowthShareToken } from '../../../services/commerce-api';
@@ -17,7 +16,7 @@ import { BridgeBack } from '../../../ui/glyphs';
 import './index.css';
 
 /**
- * 每日分享领场。对稿 122:8（子层 127:8910 / 127:8920 / 127:8923 / 127:8926 / 127:8928）。
+ * 每日分享领场。对稿 design/bridge-export/commerce-v2-20261114。
  * 奖额和状态只读 growth。空点分享不记已领。不支付。
  */
 export default function DailySharePage() {
@@ -129,7 +128,30 @@ export default function DailySharePage() {
       navPlain
       navClassName="ds-nav"
       title={DAILY_SHARE_TITLE}
+      background="#f5f5f7"
       backMark={<BridgeBack />}
+      footer={
+        phase === 'ready' && card ? (
+          <View className="ds-bar">
+            <Button
+              className={card.canShare ? 'ds-btn ds-btn-primary' : 'ds-btn ds-btn-primary ds-btn-off'}
+              openType={shareToken ? 'share' : undefined}
+              onClick={onFriend}
+            >
+              {card.friendCta}
+            </Button>
+            <Button
+              className={
+                card.canShare ? 'ds-btn ds-btn-secondary' : 'ds-btn ds-btn-secondary ds-btn-off'
+              }
+              onClick={onMoment}
+            >
+              {card.momentCta}
+            </Button>
+          </View>
+        ) : null
+      }
+      footerClassName="ds-foot"
     >
       {phase === 'loading' ? (
         <View className="ds-page">
@@ -142,39 +164,22 @@ export default function DailySharePage() {
       {phase === 'ready' && card ? (
         <View className="ds-page">
           <View className="ds-card ds-hero">
-            <View className="ds-badge">
-              <Image className="ds-badge-mark" src={shareMark} mode="aspectFit" />
-            </View>
             <Text className="ds-hero-title">{card.heroTitle}</Text>
             <Text className="ds-hero-note">{card.heroNote}</Text>
           </View>
           <View className="ds-card ds-rules">
             <Text className="ds-card-title">领取规则</Text>
             {card.rules.map((rule, index) => (
-              <Text key={`${index}-${rule}`} className="ds-rule">
-                {index + 1}. {rule}
-              </Text>
+              <View key={`${index}-${rule}`} className="ds-rule">
+                <Text className="ds-rule-n">{index + 1}.</Text>
+                <Text className="ds-rule-t">{rule}</Text>
+              </View>
             ))}
           </View>
           <View className="ds-card ds-status">
             <Text className="ds-status-label">{card.statusLabel}</Text>
             <Text className="ds-status-value">{card.statusText}</Text>
           </View>
-          <Button
-            className={card.canShare ? 'ds-btn ds-btn-primary' : 'ds-btn ds-btn-primary ds-btn-off'}
-            openType={shareToken ? 'share' : undefined}
-            onClick={onFriend}
-          >
-            {card.friendCta}
-          </Button>
-          <Button
-            className={
-              card.canShare ? 'ds-btn ds-btn-secondary' : 'ds-btn ds-btn-secondary ds-btn-off'
-            }
-            onClick={onMoment}
-          >
-            {card.momentCta}
-          </Button>
         </View>
       ) : null}
     </Screen>

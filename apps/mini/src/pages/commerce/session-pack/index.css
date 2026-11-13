@@ -1,4 +1,4 @@
-/* 对稿 design/bridge-export/mini-commerce-v2 购买场次加油包。390 画板 px。不带版本角标。 */
+/* 对稿 design/bridge-export/commerce-v2-20261114 购买场次加油包。独立路由，观感半屏。 */
 
 .pack-mask {
   position: fixed;
@@ -7,8 +7,7 @@
   top: 0;
   bottom: 0;
   z-index: 1;
-  background: rgba(17, 27, 56, 0.6);
-  backdrop-filter: blur(1.5px);
+  background: rgba(28, 25, 23, 0.52);
 }
 
 .pack-sheet {
@@ -18,28 +17,20 @@
   bottom: 0;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   box-sizing: border-box;
-  min-height: 464px;
   max-height: 86%;
-  padding: 10px 24px calc(16px + env(safe-area-inset-bottom));
+  padding: 22px 20px calc(36px + env(safe-area-inset-bottom));
   background: #ffffff;
-  border-radius: 14px 14px 0 0;
-}
-
-.pack-handle {
-  width: 41px;
-  height: 7px;
-  margin: 0 auto 19px;
-  background: #d1d5db;
-  border-radius: 4px;
-  flex-shrink: 0;
+  border-radius: 24px 24px 0 0;
 }
 
 .pack-title {
   color: var(--ts-ink);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
-  line-height: 26px;
+  line-height: 28px;
+  text-align: left;
   flex-shrink: 0;
 }
 
@@ -53,13 +44,14 @@
 .pack-card {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  min-height: 100px;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 0;
   margin-top: 8px;
-  padding: 16px;
-  border-radius: 14px;
-  background: #fffbeb;
-  box-shadow: inset 0 0 0 1px #fde68a;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--ts-tint);
+  box-shadow: inset 0 0 0 1.5px var(--ts-accent-100);
   box-sizing: border-box;
 }
 
@@ -68,27 +60,7 @@
 }
 
 .pack-card-on {
-  box-shadow: inset 0 0 0 1.5px var(--ts-warning);
-}
-
-.pack-mark {
-  position: relative;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-}
-
-.pack-ring {
-  width: 32px;
-  height: 32px;
-}
-
-.pack-note {
-  position: absolute;
-  left: 5px;
-  top: 10px;
-  width: 22px;
-  height: 13px;
+  box-shadow: inset 0 0 0 2px var(--ts-accent-100);
 }
 
 .pack-copy {
@@ -96,42 +68,43 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  margin-left: 16px;
+  gap: 4px;
 }
 
 .pack-name {
   color: var(--ts-ink);
   font-size: 15px;
   font-weight: 700;
-  line-height: 22px;
+  line-height: 20px;
 }
 
 .pack-sub {
-  margin-top: 6px;
   color: var(--ts-muted);
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 17px;
 }
 
 .pack-price {
-  margin-left: 8px;
-  color: var(--ts-warning);
-  font-size: 24px;
+  color: var(--ts-ink);
+  font-size: 26px;
   font-weight: 700;
-  line-height: 35px;
+  line-height: 32px;
   flex-shrink: 0;
 }
 
 .pack-rules {
-  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .pack-rule {
   display: block;
-  color: var(--ts-muted);
-  font-size: 12px;
-  font-weight: 400;
+  color: #44403c;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 20px;
 }
 
@@ -139,9 +112,9 @@
   display: block;
   margin-top: 8px;
   color: var(--ts-muted);
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 17px;
 }
 
 .pack-actions {
@@ -153,15 +126,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 48px;
+  height: 50px;
   margin: 0;
   padding: 0 8px;
-  border-radius: 14px;
+  border-radius: 999px;
   background: var(--ts-accent);
   color: #ffffff;
   font-size: 16px;
   font-weight: 700;
-  line-height: 23px;
+  line-height: 22px;
   box-sizing: border-box;
 }
 
@@ -177,11 +150,11 @@
 
 .pack-close {
   display: block;
-  margin-top: 12px;
-  padding: 4px 0;
+  height: 44px;
+  margin-top: 0;
   color: var(--ts-muted);
   font-size: 14px;
-  font-weight: 400;
-  line-height: 20px;
+  font-weight: 500;
+  line-height: 44px;
   text-align: center;
 }

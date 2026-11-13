@@ -1,4 +1,4 @@
-/* 对稿 design/bridge-export/mini-commerce-v2 场次明细（122:9）。390 画板 px。不带版本角标。 */
+/* 对稿 design/bridge-export/commerce-v2-20261114 场次明细。390 画板 px。 */
 
 .sl-nav .u-nav-title {
   font-size: 18px;
@@ -6,17 +6,16 @@
 }
 
 .sl-page {
-  padding: 8px 16px calc(24px + env(safe-area-inset-bottom));
+  padding: 4px 20px calc(24px + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
 .sl-card {
   display: flex;
   flex-direction: row;
-  height: 102px;
-  border-radius: 12px;
+  min-height: 108px;
+  border-radius: 20px;
   background: #ffffff;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -87,7 +86,7 @@
   width: 1px;
   height: 54px;
   margin-top: 24px;
-  background: #e5e7eb;
+  background: #e7e5e4;
   flex-shrink: 0;
 }
 
@@ -125,12 +124,11 @@
 }
 
 .sl-tab {
-  width: 48px;
-  height: 30px;
+  height: 32px;
   margin-right: 8px;
+  padding: 0 14px;
   border-radius: 999px;
   background: #ffffff;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -138,7 +136,6 @@
 
 .sl-tab-on {
   background: var(--ts-accent);
-  box-shadow: inset 0 0 0 1px var(--ts-accent-700);
 }
 
 .sl-tab-text {
@@ -154,17 +151,32 @@
 }
 
 .sl-list {
-  margin-top: 14px;
+  margin-top: 12px;
   background: #ffffff;
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
+  border-radius: 20px;
   overflow: hidden;
 }
 
 .sl-row {
   position: relative;
-  height: 58px;
-  margin: 0 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 72px;
+  margin: 0 16px;
+  padding: 12px 0;
+  box-sizing: border-box;
+}
+
+.sl-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
 
 .sl-row-line {
@@ -173,31 +185,25 @@
   right: 0;
   bottom: 0;
   height: 1px;
-  background: #e5e7eb;
+  background: #e7e5e4;
 }
 
 .sl-badge {
-  position: absolute;
-  left: 0;
-  top: 13px;
-  width: 34px;
-  height: 17px;
-  border-radius: 8px;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .sl-badge-credit {
-  background: var(--ts-tint);
+  background: #ecfcd9;
 }
 
-.sl-badge-debit {
-  background: var(--ts-terra-bg);
-}
-
+.sl-badge-debit,
 .sl-badge-neutral {
-  background: #f3f4f6;
+  background: #f5f5f4;
 }
 
 .sl-badge-text {
@@ -207,11 +213,11 @@
 }
 
 .sl-badge-text-credit {
-  color: #059669;
+  color: var(--ts-accent-700);
 }
 
 .sl-badge-text-debit {
-  color: var(--ts-terra);
+  color: var(--ts-muted);
 }
 
 .sl-badge-text-neutral {
@@ -219,10 +225,7 @@
 }
 
 .sl-row-title {
-  position: absolute;
-  left: 0;
-  right: 100px;
-  top: 33px;
+  max-width: 100%;
   color: var(--ts-ink);
   font-size: 13px;
   font-weight: 700;
@@ -233,10 +236,7 @@
 }
 
 .sl-delta {
-  position: absolute;
-  right: 0;
-  top: 12px;
-  width: 94px;
+  flex-shrink: 0;
   text-align: right;
   font-size: 15px;
   font-weight: 700;
@@ -244,11 +244,11 @@
 }
 
 .sl-delta-credit {
-  color: #059669;
+  color: var(--ts-accent-700);
 }
 
 .sl-delta-debit {
-  color: var(--ts-terra);
+  color: var(--ts-ink);
 }
 
 .sl-delta-neutral {
@@ -256,13 +256,8 @@
 }
 
 .sl-time {
-  position: absolute;
-  right: 0;
-  top: 36px;
-  width: 96px;
-  text-align: right;
   color: var(--ts-muted);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 15px;
 }
 

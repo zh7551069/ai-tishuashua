@@ -13,9 +13,9 @@ export const SESSION_PACK_MEMBER_NOTE = '会员期内库存暂不扣';
 export const SESSION_PACK_PAYING_LABEL = '支付处理中';
 
 export const SESSION_PACK_RULES = [
-  '1 场 = 成功「AI 开始出题」进入答题页',
-  '「再练这 N 道」不额外扣场',
   '扣场顺序：日免 → 当日奖励 → 场次加油库存',
+  '「再练这 N 道」不额外扣场',
+  '1 场 = 成功「AI 开始出题」进入答题页',
 ] as const;
 
 export function sessionPackHeadline(sku: CommerceSkuPublic): string {

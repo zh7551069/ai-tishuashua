@@ -1,0 +1,269 @@
+/* 「我」页商业化三态。只作用在 .ms-home，不改设置 / 主题色。 */
+
+.ms-home .ms-body {
+  gap: 12px;
+  padding: 4px 20px calc(16px + env(safe-area-inset-bottom));
+}
+
+.ms-home .ms-card {
+  border-radius: 20px;
+  box-shadow: none;
+}
+
+.ms-home .ms-profile {
+  position: relative;
+  height: 124px;
+  padding: 18px 16px 16px 18px;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.ms-home .ms-profile-art,
+.ms-home .ms-profile-fade {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 196px;
+  height: 124px;
+}
+
+.ms-home .ms-profile-fade {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.ms-home .ms-profile-copy {
+  position: relative;
+  z-index: 1;
+  gap: 6px;
+}
+
+.ms-home .ms-name {
+  font-size: 20px;
+  line-height: 26px;
+}
+
+.ms-home .ms-stats {
+  height: 84px;
+  padding: 0;
+  border-radius: 18px;
+}
+
+.ms-home .ms-stat {
+  gap: 4px;
+  justify-content: center;
+}
+
+.ms-home .ms-vdiv {
+  align-self: stretch;
+  height: auto;
+  background: #e7e5e4;
+}
+
+.ms-home .ms-num-value {
+  font-size: 22px;
+  line-height: 26px;
+}
+
+.ms-home .ms-usage,
+.ms-home .ms-member {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow: none;
+}
+
+.ms-home .ms-usage {
+  min-height: 96px;
+  padding: 14px 14px 14px 16px;
+  background: #ffffff;
+}
+
+.ms-home .ms-usage-art,
+.ms-home .ms-member-art {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.ms-home .ms-usage-copy,
+.ms-home .ms-usage-cta,
+.ms-home .ms-member-copy,
+.ms-home .ms-member-badge {
+  position: relative;
+  z-index: 1;
+}
+
+.ms-home .ms-usage-label {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 15px;
+}
+
+.ms-home .ms-usage-num {
+  color: var(--ts-ink);
+  font-size: 28px;
+  line-height: 32px;
+}
+
+.ms-home .ms-usage-unit {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.ms-home .ms-usage-sub {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 15px;
+}
+
+.ms-home .ms-usage-cta {
+  width: auto;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+}
+
+.ms-home .ms-usage-cta-text {
+  font-size: 14px;
+  letter-spacing: 0.1px;
+}
+
+.ms-home .ms-member {
+  display: block;
+  min-height: 113px;
+  padding: 16px 16px 14px 18px;
+  background: var(--ts-tint);
+  box-shadow: inset 0 0 0 1.5px var(--ts-accent-100);
+}
+
+.ms-home .ms-member-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #ecfcd9;
+}
+
+.ms-home .ms-member-title {
+  color: var(--ts-accent-700);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.ms-home .ms-member-sub {
+  display: block;
+  margin-top: 8px;
+  color: var(--ts-ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.ms-home .ms-member-note {
+  display: block;
+  margin-top: 8px;
+  color: var(--ts-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.ms-home .ms-checkin {
+  padding: 16px 16px 18px;
+}
+
+.ms-home .ms-week {
+  height: auto;
+  min-height: 54px;
+  padding: 0;
+  align-items: flex-end;
+}
+
+.ms-home .ms-day {
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.ms-home .ms-today-pill {
+  height: 14px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ts-accent-100);
+  color: var(--ts-accent-700);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+.ms-home .ms-dot-today {
+  background: var(--ts-tint);
+  box-shadow: none;
+}
+
+.ms-home .ms-dot-ring {
+  width: 37px;
+  height: 37px;
+  border-radius: 999px;
+  background: var(--ts-accent-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ms-home .ms-dot-ring .ms-dot {
+  box-shadow: 0 0 0 3px var(--ts-tint);
+}
+
+.ms-home .ms-cta {
+  height: 50px;
+  border-radius: 999px;
+  gap: 6px;
+}
+
+.ms-home .ms-cta-done {
+  background: #ecfcd9;
+}
+
+.ms-home .ms-growth-tile {
+  min-height: 72px;
+  padding: 14px 12px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.ms-home .ms-growth-well {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background: var(--ts-tint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ms-home .ms-growth-meta {
+  color: var(--ts-muted);
+}
+
+.ms-home .ms-line {
+  background: #e7e5e4;
+}
+
+.ms-home .ms-badge {
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--ts-accent-700);
+}

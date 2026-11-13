@@ -3,12 +3,8 @@ import Taro, { useDidShow } from '@tarojs/taro';
 import { formatPriceYuan, type CommerceSkuPublic, type EntitlementView } from '@tishuashua/shared';
 import { useEffect, useRef, useState } from 'react';
 import iconChevron from '../../../assets/commerce/chevron.svg';
-import iconCrown from '../../../assets/commerce/crown.svg';
-import iconPack from '../../../assets/commerce/pack-note.svg';
-import iconDot from '../../../assets/commerce/radio-dot.svg';
-import iconOff from '../../../assets/commerce/radio-off.svg';
-import iconOn from '../../../assets/commerce/radio-on.svg';
 import iconWechat from '../../../assets/commerce/wechat.svg';
+import heroArt from './assets/hero-art-bg.png';
 import { Screen } from '../../../components/Screen';
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { EXHAUSTED_ROUTES } from '../../../services/exhausted-sheet';
@@ -28,7 +24,7 @@ import {
   MEMBER_HERO_TITLE,
   MEMBER_PAGE_TITLE,
   MEMBER_PAY_CAPTION,
-  MEMBER_RECOMMENDED_BADGE,
+  memberPlanBadge,
   MEMBER_RULE_BODY,
   MEMBER_RULE_TITLE,
   MEMBER_SUCCESS_TOAST,
@@ -255,7 +251,7 @@ export default function MemberPricingPage() {
       navPlain
       navClassName="mem-nav"
       title={MEMBER_PAGE_TITLE}
-      background="#ffffff"
+      background="#f5f5f7"
       footerClassName="mem-foot"
       footer={
         showPay ? (
@@ -274,7 +270,6 @@ export default function MemberPricingPage() {
       {status === 'ready' ? (
         <View className="mem-page">
           <MemberHeroCard />
-          <MemberBenefitChips />
           {skus.length === 0 ? (
             <EmptyBlock title="暂无可购会员" detail="会员档位暂时下架" />
           ) : (
@@ -294,24 +289,17 @@ export default function MemberPricingPage() {
 function MemberHeroCard() {
   return (
     <View className="mem-hero">
-      <View className="mem-hero-copy">
-        <Text className="mem-hero-title">{MEMBER_HERO_TITLE}</Text>
-        <Text className="mem-hero-sub">{MEMBER_HERO_SUB}</Text>
-        <Text className="mem-hero-note">{MEMBER_HERO_NOTE}</Text>
+      <Image className="mem-hero-art" src={heroArt} mode="aspectFill" />
+      <Text className="mem-hero-title">{MEMBER_HERO_TITLE}</Text>
+      <Text className="mem-hero-sub">{MEMBER_HERO_SUB}</Text>
+      <Text className="mem-hero-note">{MEMBER_HERO_NOTE}</Text>
+      <View className="mem-chips">
+        {MEMBER_CHIPS.map((chip) => (
+          <View key={chip} className="mem-chip">
+            <Text className="mem-chip-text">{chip}</Text>
+          </View>
+        ))}
       </View>
-      <Image className="mem-crown" src={iconCrown} mode="aspectFit" />
-    </View>
-  );
-}
-
-function MemberBenefitChips() {
-  return (
-    <View className="mem-chips">
-      {MEMBER_CHIPS.map((chip) => (
-        <View key={chip} className="mem-chip">
-          <Text className="mem-chip-text">{chip}</Text>
-        </View>
-      ))}
     </View>
   );
 }
@@ -336,35 +324,25 @@ function MemberSkuList(props: {
 }
 
 function MemberSkuRow(props: { sku: CommerceSkuPublic; selected: boolean; onSelect: () => void }) {
-  const subtitle = memberSkuSubtitle(props.sku);
+  const badge = memberPlanBadge(props.sku);
+  const note = memberSkuSubtitle(props.sku);
+  const average = note && badge?.text !== note ? note : '';
   return (
     <View className={props.selected ? 'mem-sku mem-sku-on' : 'mem-sku'} onClick={props.onSelect}>
-      {props.sku.recommended ? (
-        <View className="mem-badge">
-          <Text className="mem-badge-text">{MEMBER_RECOMMENDED_BADGE}</Text>
-        </View>
-      ) : null}
-      <View className="mem-radio">
-        <Image
-          className="mem-radio-ring"
-          src={props.selected ? iconOn : iconOff}
-          mode="aspectFit"
-        />
-        {props.selected ? <Image className="mem-radio-dot" src={iconDot} mode="aspectFit" /> : null}
-      </View>
-      <View className="mem-sku-copy">
+      <View className="mem-sku-main">
         <Text className="mem-sku-name">{props.sku.name}</Text>
-        {subtitle ? (
-          <Text className={props.selected ? 'mem-sku-sub mem-sku-sub-on' : 'mem-sku-sub'}>
-            {subtitle}
-          </Text>
+        {badge ? (
+          <View className={`mem-badge mem-badge-${badge.tone}`}>
+            <Text className={`mem-badge-text mem-badge-text-${badge.tone}`}>{badge.text}</Text>
+          </View>
         ) : null}
       </View>
       <View className="mem-sku-price">
-        <Text className={props.selected ? 'mem-sku-fen mem-sku-fen-on' : 'mem-sku-fen'}>
-          ¥{formatPriceYuan(props.sku.priceFen)}
-        </Text>
-        <Text className="mem-sku-unit">{memberPeriodSuffix(props.sku)}</Text>
+        <View className="mem-sku-yen">
+          <Text className="mem-sku-fen">¥{formatPriceYuan(props.sku.priceFen)}</Text>
+          <Text className="mem-sku-unit">{memberPeriodSuffix(props.sku)}</Text>
+        </View>
+        {average ? <Text className="mem-sku-avg">{average}</Text> : null}
       </View>
     </View>
   );
@@ -382,7 +360,6 @@ function MemberRulesCard() {
 function SessionPackEntryRow(props: { label: string; onOpen: () => void }) {
   return (
     <View className="mem-pack" onClick={props.onOpen}>
-      <Image className="mem-pack-icon" src={iconPack} mode="aspectFit" />
       <Text className="mem-pack-label">{props.label}</Text>
       <Image className="mem-pack-chevron" src={iconChevron} mode="aspectFit" />
     </View>
