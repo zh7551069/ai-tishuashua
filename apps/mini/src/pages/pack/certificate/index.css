@@ -1,0 +1,69 @@
+.cert-sheet .pack-nav {
+  height: auto;
+  min-height: 52px;
+  padding: 4px 8px 6px;
+  gap: 2px;
+}
+
+.cert-sheet .pack-nav-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 24px;
+}
+
+.cert-sheet .pack-nav-sub {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--ts-accent-700);
+}
+
+.cert-sheet .cert-search-wrap {
+  padding: 0 20px 8px;
+}
+
+.cert-sheet .cert-list {
+  gap: 10px;
+  padding: 16px 20px 20px;
+}
+
+.cert-sheet .cert-section {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 22px;
+}
+
+.cert-sheet .cert-card {
+  gap: 12px;
+  min-height: 67px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.06),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.cert-sheet .cert-card-copy {
+  gap: 4px;
+}
+
+.cert-sheet .cert-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 22px;
+}
+
+.cert-sheet .cert-card-sub {
+  color: var(--ts-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.cert-sheet .cert-chev {
+  width: 18px;
+  height: 18px;
+}

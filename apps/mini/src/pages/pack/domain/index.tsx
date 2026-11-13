@@ -3,17 +3,22 @@ import Taro, { useDidShow } from '@tarojs/taro';
 import type { DomainSummary } from '@tishuashua/shared';
 import { useMemo, useState } from 'react';
 import { Screen } from '../../../components/Screen';
-import { Steps } from '../../../components/Steps';
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { fetchCertificates, fetchDomains } from '../../../services/catalog-api';
 import { withAuth } from '../../../services/guard';
 import { domainBlurb, domainIcon, type DomainIcon } from '../../../ui/catalog-present';
+import iconBack from '../../../assets/me-settings/3fbuza.svg';
+import emptyShelf from '../assets/empty-shelf.png';
+import heroDomain from '../assets/hero-domain.png';
 import iconAi from './assets/icon-ai.png';
 import iconChevron from './assets/icon-chevron.png';
 import iconEdu from './assets/icon-edu.png';
 import iconMoney from './assets/icon-money.png';
 import iconPlain from './assets/icon-plain.png';
 import iconSearch from './assets/icon-search.png';
+import { FlowSteps, SelectEmpty, goBackToHome } from '../flow';
+import '../flow.css';
+import './index.css';
 
 const DOMAIN_ICONS: Record<DomainIcon, string> = {
   ai: iconAi,
@@ -87,16 +92,9 @@ export default function DomainPage() {
   }, [items, query]);
 
   const emptyShell = ready && items.length === 0;
-  const titled = emptyShell || Boolean(error);
-  const search = (
-    <DomainSearch
-      placeholder={emptyShell ? '搜索' : '搜索领域'}
-      value={query}
-      onChange={setQuery}
-    />
-  );
+  const search = <DomainSearch value={query} onChange={setQuery} />;
 
-  if (titled) {
+  if (error) {
     return (
       <Screen
         back
@@ -105,20 +103,10 @@ export default function DomainPage() {
         subtitle="选领域 → 证书 → 知识点"
         subtitleTone="muted"
         titleSize="page"
-        bodyFill={emptyShell}
+        onBack={goBackToHome}
       >
-        <View className={emptyShell ? 'u-pad u-pad-pick u-pad-fill' : 'u-pad u-pad-pick'}>
-          {error ? null : search}
-          {error ? <ErrorBlock detail={error} onRetry={() => void load()} /> : null}
-          {ready && visible.length === 0 ? (
-            <EmptyBlock
-              fill={emptyShell}
-              title="暂无领域"
-              detail={query ? '换个关键词搜索' : '稍后再试，或换个关键词搜索'}
-              action={query ? '清除搜索' : '重试'}
-              onAction={() => (query ? setQuery('') : void load())}
-            />
-          ) : null}
+        <View className="u-pad u-pad-pick">
+          <ErrorBlock detail={error} onRetry={() => void load()} />
         </View>
       </Screen>
     );
@@ -132,23 +120,42 @@ export default function DomainPage() {
           style={{ marginTop: `-${inset}px`, paddingTop: `${inset}px` }}
         >
           <View className="domain-header">
-            <View className="domain-title-row">
-              <Text className="domain-hello">你好，备考人</Text>
+            <View className="domain-back" onClick={goBackToHome}>
+              <Image className="u-back-ico" src={iconBack} mode="aspectFit" />
             </View>
-            <Text className="domain-crumb">选领域 → 证书 → 知识点</Text>
+            <View className="domain-title-copy">
+              <Text className="domain-hello">你好，备考人</Text>
+              <Text className="domain-crumb">选领域 → 证书 → 知识点</Text>
+            </View>
           </View>
-          <Steps className="domain-steps" current={1} />
+          <FlowSteps current={1} />
           <View className="domain-search">{search}</View>
         </View>
-        <View className="domain-list">
-          {!ready && !error ? <LoadingBlock skeleton label="正在加载领域" /> : null}
-          {ready && visible.length === 0 ? (
-            <EmptyBlock
+        <View className={emptyShell ? 'domain-list domain-list-empty' : 'domain-list'}>
+          {!ready ? <LoadingBlock skeleton label="正在加载领域" /> : null}
+          {emptyShell ? (
+            <SelectEmpty
+              image={query ? undefined : emptyShelf}
+              art={query ? undefined : 'shelf'}
               title="暂无领域"
-              detail={query ? '换个关键词搜索' : '稍后再试，或换个关键词搜索'}
+              detail={query ? '换个关键词搜索' : '暂时没有可选择的领域，请稍后再试'}
               action={query ? '清除搜索' : '重试'}
+              tone={query ? 'soft' : 'solid'}
               onAction={() => (query ? setQuery('') : void load())}
             />
+          ) : null}
+          {ready && !emptyShell && visible.length === 0 ? (
+            <EmptyBlock
+              title="暂无领域"
+              detail="换个关键词搜索"
+              action="清除搜索"
+              onAction={() => setQuery('')}
+            />
+          ) : null}
+          {ready && visible.length > 0 ? (
+            <View className="domain-hero">
+              <Image className="domain-hero-img" src={heroDomain} mode="aspectFill" />
+            </View>
           ) : null}
           {ready && visible.length > 0 ? (
             <Text className="domain-section">选择备考领域</Text>
@@ -182,18 +189,14 @@ export default function DomainPage() {
   );
 }
 
-function DomainSearch(props: {
-  placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
+function DomainSearch(props: { value: string; onChange: (value: string) => void }) {
   return (
     <View className="u-search">
       <Image className="domain-search-ico" src={iconSearch} mode="aspectFit" />
       <Input
         className="u-search-input"
-        placeholder={props.placeholder}
-        placeholderStyle="color:#9ca3af"
+        placeholder="搜索领域"
+        placeholderStyle="color:rgba(87,83,78,0.2);font-size:14px;"
         value={props.value}
         onInput={(event) => props.onChange(event.detail.value)}
       />

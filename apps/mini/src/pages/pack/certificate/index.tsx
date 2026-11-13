@@ -2,17 +2,20 @@ import { Image, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import type { CertificateSummary } from '@tishuashua/shared';
 import { useMemo, useState } from 'react';
-import { BridgeSteps } from '../../../components/BridgeSteps';
 import { Screen } from '../../../components/Screen';
-import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
+import { ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { fetchCertificates, fetchDomains, fetchKnowledgeTree } from '../../../services/catalog-api';
 import { withAuth } from '../../../services/guard';
 import { queryValue } from '../../../services/query';
 import { countKnowledgePoints } from '../../../ui/knowledge-meta';
 import iconChevron from '../assets/icon-chevron.png';
+import emptyShelf from '../assets/empty-shelf.png';
 import iconSearch from '../assets/icon-search.png';
+import { FlowSteps, SelectEmpty, goBackToHome } from '../flow';
 import { PackSearch } from '../PackSearch';
 import { PackTopBar } from '../PackTopBar';
+import '../flow.css';
+import './index.css';
 
 function readInset(): number {
   try {
@@ -20,14 +23,6 @@ function readInset(): number {
   } catch {
     return 0;
   }
-}
-
-function goBack() {
-  void Taro.navigateBack({
-    fail: () => {
-      void Taro.reLaunch({ url: '/pages/home/index' });
-    },
-  });
 }
 
 export default function CertificatePage() {
@@ -103,48 +98,43 @@ export default function CertificatePage() {
     <Screen bare background="#F7F8F4" bodyFill>
       <View className="cert-sheet">
         <View className="cert-head" style={headStyle}>
-          {emptyShell ? (
-            <View className="cert-empty-head">
-              <Text className="cert-empty-title">选择证书</Text>
-              <Text className="cert-empty-sub">选领域 → 证书 → 知识点</Text>
-            </View>
-          ) : (
-            <PackTopBar
-              title="选择证书"
-              subtitle={domainName ? `领域 · ${domainName}` : undefined}
-              onBack={goBack}
-            />
-          )}
-          {emptyShell || error ? null : <BridgeSteps current={2} numWeight="bold" />}
+          <PackTopBar
+            title="选择证书"
+            subtitle={domainName ? `领域 · ${domainName}` : undefined}
+            onBack={goBackToHome}
+          />
+          {error ? null : <FlowSteps current={2} />}
           {error ? null : (
             <View className="cert-search-wrap">
               <PackSearch
-                placeholder={emptyShell ? '搜索' : '搜索证书'}
+                className="flow-search"
+                placeholder="搜索证书"
                 value={query}
                 onChange={setQuery}
-                icon={emptyShell ? undefined : iconSearch}
+                icon={iconSearch}
               />
             </View>
           )}
         </View>
-        <View className="cert-list">
+        <View className={emptyShell ? 'cert-list cert-list-empty' : 'cert-list'}>
           {!ready && !error ? <LoadingBlock skeleton /> : null}
           {error ? (
             <ErrorBlock
               className="pack-state"
               detail={error}
               onRetry={() => void load()}
-              onBack={goBack}
+              onBack={goBackToHome}
             />
           ) : null}
           {ready && visible.length === 0 ? (
-            <EmptyBlock
-              fill={emptyShell}
-              className="pack-state"
+            <SelectEmpty
+              image={query ? undefined : emptyShelf}
+              art={query ? undefined : 'shelf'}
               title="暂无证书"
               detail={query ? '换个关键词搜索' : '该领域下暂无可用证书'}
               action={query ? '清除搜索' : '返回领域'}
-              onAction={() => (query ? setQuery('') : goBack())}
+              tone={query ? 'soft' : 'solid'}
+              onAction={() => (query ? setQuery('') : goBackToHome())}
             />
           ) : null}
           {ready && visible.length > 0 ? (

@@ -13,7 +13,6 @@ import {
   type TextbookNode,
 } from '@tishuashua/shared';
 import { useState } from 'react';
-import { BridgeSteps } from '../../../components/BridgeSteps';
 import { Screen } from '../../../components/Screen';
 import { EmptyBlock, ErrorBlock } from '../../../components/StateBlock';
 import { fetchCertificates, fetchDomains, fetchKnowledgeTree } from '../../../services/catalog-api';
@@ -21,16 +20,16 @@ import { readCoursewareJob } from '../../../services/courseware-api';
 import { isAuthFailure, withAuth } from '../../../services/guard';
 import { createPack, fetchPack, updatePack } from '../../../services/pack-api';
 import { queryValue } from '../../../services/query';
-import {
-  aiQuestionCount,
-  knowledgeStatLabel,
-  materialKind,
-  type MaterialKind,
-} from '../../../ui/knowledge-meta';
+import { knowledgeStatLabel, materialKind, type MaterialKind } from '../../../ui/knowledge-meta';
+import emptySearch from '../assets/empty-search.png';
 import iconSearch from '../assets/icon-search-kp.png';
+import { FlowSteps, SelectEmpty, goBackToHome } from '../flow';
 import { PackSearch } from '../PackSearch';
 import { PackTopBar } from '../PackTopBar';
 import iconCheck from '../../../pages/pack/assets/icon-check.png';
+import { knowledgeFootCopy, knowledgeListTip } from './copy';
+import '../flow.css';
+import './index.css';
 
 type ErrorKind = '' | 'network' | 'missing' | 'unavailable';
 
@@ -42,14 +41,6 @@ function readInset(): number {
   } catch {
     return 0;
   }
-}
-
-function goBack() {
-  void Taro.navigateBack({
-    fail: () => {
-      void Taro.reLaunch({ url: '/pages/home/index' });
-    },
-  });
 }
 
 export default function KnowledgePage() {
@@ -233,7 +224,10 @@ export default function KnowledgePage() {
   }
 
   const tip =
-    ready && visible.length > 0 ? selectionTip(tree?.nodes ?? [], selected, collapsed) : '';
+    ready && visible.length > 0
+      ? knowledgeListTip(selected.length, selectionTip(tree?.nodes ?? [], selected, collapsed))
+      : '';
+  const noneSelected = selected.length === 0;
 
   return (
     <Screen
@@ -245,14 +239,17 @@ export default function KnowledgePage() {
         showFoot ? (
           <View className="kp-foot-stack">
             {saveError ? <Text className="u-foot-error">{saveError}</Text> : null}
-            <Text className="kp-foot-copy">
-              已选 {selected.length} 个知识点 · AI 将生成约 {aiQuestionCount(selected.length)} 题
-            </Text>
+            <Text className="kp-foot-copy">{knowledgeFootCopy(selected.length)}</Text>
             <Button
-              className="u-btn kp-cta"
-              disabled={saving || selected.length === 0}
+              className={noneSelected ? 'u-btn kp-cta kp-cta-off' : 'u-btn kp-cta'}
+              disabled={saving || noneSelected}
               loading={saving}
-              onClick={() => void save()}
+              onClick={() => {
+                if (noneSelected) {
+                  return;
+                }
+                void save();
+              }}
             >
               开始刷题
             </Button>
@@ -262,10 +259,11 @@ export default function KnowledgePage() {
     >
       <View className="kp-sheet">
         <View className="kp-head" style={headStyle}>
-          <PackTopBar title="选择知识点" subtitle={subtitle} onBack={goBack} />
-          <BridgeSteps current={3} numWeight="regular" />
+          <PackTopBar title="选择知识点" subtitle={subtitle} onBack={goBackToHome} />
+          <FlowSteps current={3} />
           <View className="kp-search-wrap">
             <PackSearch
+              className="flow-search"
               placeholder="搜索教材或知识点"
               value={query}
               onChange={setQuery}
@@ -305,24 +303,34 @@ export default function KnowledgePage() {
           {!ready && !error ? <KnowledgeSkeleton /> : null}
           {error && !ready ? (
             <ErrorBlock
-              className="pack-state"
+              className={errorKind === 'network' ? 'pack-state kp-fail' : 'pack-state'}
               title={errorTitle(errorKind)}
               detail={errorKind === 'network' ? '网络好像不太稳定，请检查后重试' : error}
               onRetry={() => void load()}
               retryLabel={errorKind === 'network' ? '重新加载' : '重试'}
-              onBack={errorKind === 'network' ? undefined : goBack}
+              onBack={errorKind === 'network' ? undefined : goBackToHome}
             />
           ) : null}
-          {ready && visible.length === 0 ? (
+          {ready && visible.length === 0 && query ? (
+            <SelectEmpty
+              fill
+              image={emptySearch}
+              art="search"
+              title="没有找到相关教材或知识点"
+              detail="换个关键词，或上传课件让 AI 提炼"
+              action="清除搜索"
+              tone="soft"
+              onAction={() => setQuery('')}
+            />
+          ) : null}
+          {ready && visible.length === 0 && !query ? (
             <EmptyBlock
               className="pack-state"
-              title={query ? '没有找到相关教材或知识点' : '暂无知识点'}
-              detail={
-                query ? '换个关键词，或上传课件让 AI 提炼' : '可以上传课件，提炼后再加入刷题包。'
-              }
-              action={query ? '清除搜索' : '上传课件'}
-              tone={query ? 'soft' : 'solid'}
-              onAction={() => (query ? setQuery('') : openCourseware())}
+              title="暂无知识点"
+              detail="可以上传课件，提炼后再加入刷题包。"
+              action="上传课件"
+              tone="solid"
+              onAction={() => openCourseware()}
             />
           ) : null}
           {ready && visible.length > 0 ? (
@@ -579,12 +587,26 @@ function PointRow(props: {
 
 function Check(props: { state: CheckState }) {
   if (props.state === 'unchecked') {
-    return <View className="kp-check" />;
+    return (
+      <View className="kp-check-hit">
+        <View className="kp-check" />
+      </View>
+    );
   }
-  const dash = props.state === 'indeterminate';
+  if (props.state === 'indeterminate') {
+    return (
+      <View className="kp-check-hit">
+        <View className="kp-check kp-check-on">
+          <View className="kp-check-bar" />
+        </View>
+      </View>
+    );
+  }
   return (
-    <View className="kp-check kp-check-on">
-      <Image src={iconCheck} mode="aspectFit" className={dash ? 'kp-check-dash' : 'kp-check-mark'}></Image>
+    <View className="kp-check-hit">
+      <View className="kp-check kp-check-on">
+        <Image className="kp-check-mark" src={iconCheck} mode="aspectFit" />
+      </View>
     </View>
   );
 }
