@@ -7,8 +7,7 @@ test('分享和邀请文案跟 growth 数字走', () => {
   const share = presentDailyShare(view({ rewardSessions: 2, statusText: '今日未领' }));
   assert.equal(share.heroTitle, '分享给好友，打开后领 +2 场');
   assert.equal(share.rules[0], '每日可领 2 场（后台可配）');
-  assert.match(share.rules[3] ?? '', /不另发场次\/提炼次/);
-  assert.equal(share.rules.join('\n').includes('改发'), false);
+  assert.equal(share.rules[3], '会员不限场时，默认改发「提炼次 +1」');
 
   const invite = presentInvite(view({ dailyCap: 4, weeklyCap: 9, dailyUsed: 4, weeklyUsed: 1 }));
   assert.equal(invite.capLine, '日封顶 4 场 · 周封顶 9 场');

@@ -1,9 +1,7 @@
-import { Button, Image, Text, View } from '@tarojs/components';
+import { Button, Text, View } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import type { CommerceSkuPublic, EntitlementView } from '@tishuashua/shared';
 import { useRef, useState } from 'react';
-import iconNote from '../../../assets/commerce/session-pack-note.svg';
-import iconRing from '../../../assets/commerce/pack-ring.svg';
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { withAuth } from '../../../services/guard';
 import {
@@ -148,7 +146,6 @@ export default function SessionPackPage() {
           event.stopPropagation();
         }}
       >
-        <View className="pack-handle" />
         <Text className="pack-title">{SESSION_PACK_TITLE}</Text>
         <View className="pack-body">
           {status === 'loading' ? <LoadingBlock label="正在加载加油包" /> : null}
@@ -215,10 +212,6 @@ function SessionPackSkuCard(props: {
       className={props.selected ? 'pack-card pack-card-on' : 'pack-card'}
       onClick={props.onSelect}
     >
-      <View className="pack-mark">
-        <Image className="pack-ring" src={iconRing} mode="aspectFit" />
-        <Image className="pack-note" src={iconNote} mode="aspectFit" />
-      </View>
       <View className="pack-copy">
         <Text className="pack-name">{sessionPackHeadline(props.sku)}</Text>
         <Text className="pack-sub">{sessionPackSubtitle(props.sku)}</Text>

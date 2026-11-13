@@ -8,7 +8,8 @@ export const INVITE_TITLE = '邀请有礼';
 export const SHARE_FRIEND_CTA = '分享给微信好友';
 export const SHARE_MOMENT_CTA = '分享到朋友圈';
 export const INVITE_SHARE_CTA = '分享邀请海报 / 链接';
-export const SHARE_RULE_MEMBER = '会员不限场时不另发场次/提炼次，展示今日已享会员不限场';
+export const SHARE_RULE_MEMBER = '会员不限场时，默认改发「提炼次 +1」';
+export const INVITE_CODE_LABEL = '我的邀请码';
 
 export interface DailySharePresent {
   heroTitle: string;

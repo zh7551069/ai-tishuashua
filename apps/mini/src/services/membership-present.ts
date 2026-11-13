@@ -15,16 +15,46 @@ import {
 
 export const MEMBER_PAGE_TITLE = '开通会员';
 export const MEMBER_HERO_TITLE = '题刷刷会员';
-export const MEMBER_HERO_SUB = '不限场次 · 会员提炼不限 · AI 点评不限';
-export const MEMBER_HERO_NOTE = '免费上传提炼终身仅 1 次 · 会员期内提炼不限次';
-export const MEMBER_CHIPS = ['不限 AI 出题场次', '会员提炼不限', 'AI 点评摘要不限'] as const;
+export const MEMBER_HERO_SUB = '不限场次 · 课件提炼 · AI 点评';
+export const MEMBER_HERO_NOTE = '免费上传提炼终身仅 1 次';
+export const MEMBER_CHIPS = ['不限 AI 出题场次', '每月提炼5次', 'AI 点评摘要不限'] as const;
 export const MEMBER_RULE_TITLE = '升级可补差价 · 不支持降级';
 export const MEMBER_RULE_BODY = '续费延长到期日 · 会员不受日免场次限制';
 export const MEMBER_PAY_CAPTION = '微信支付 · 开通后立即生效';
 export const MEMBER_TERMS_LABEL = '用户协议';
 export const MEMBER_TERMS_ROUTE = '/pages/legal/terms/index';
 export const MEMBER_SUCCESS_TOAST = '开通成功';
+export const MEMBER_BADGE_POPULAR = '最受欢迎';
 export const MEMBER_RECOMMENDED_BADGE = '推荐';
+
+export type MemberBadgeTone = 'popular' | 'recommend' | 'soft';
+
+export interface MemberBadge {
+  text: string;
+  tone: MemberBadgeTone;
+}
+
+/** 角标只改开通会员页展示。月卡 / 季卡跟稿，周卡用 SKU summary，不改 recommended 语义。 */
+export function memberPlanBadge(sku: {
+  code: string;
+  durationDays: number | null;
+  summary: string;
+}): MemberBadge | null {
+  const period = memberPeriodSuffix(sku);
+  if (period === '/月') {
+    return { text: MEMBER_BADGE_POPULAR, tone: 'popular' };
+  }
+  if (period === '/季') {
+    return { text: MEMBER_RECOMMENDED_BADGE, tone: 'recommend' };
+  }
+  if (period === '/周') {
+    const summary = sku.summary.trim();
+    if (summary) {
+      return { text: summary, tone: 'soft' };
+    }
+  }
+  return null;
+}
 
 export interface MemberPayBlock {
   disabled: boolean;

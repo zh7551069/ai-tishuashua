@@ -37,6 +37,7 @@ import {
   memberPayBlock,
   memberPayLabel,
   memberPeriodSuffix,
+  memberPlanBadge,
   memberSkuSubtitle,
   sessionPackEntryLabel,
 } from './membership-present';
@@ -471,9 +472,13 @@ test('展示价来自服务端分，季年写月均，加油包没有价就不�
   assert.equal(sessionPackEntryLabel(null).includes('¥'), false);
   assert.equal(MEMBER_PAGE_TITLE, '开通会员');
   assert.equal(MEMBER_HERO_TITLE, '题刷刷会员');
-  assert.equal(MEMBER_HERO_SUB, '不限场次 · 会员提炼不限 · AI 点评不限');
-  assert.equal(MEMBER_HERO_NOTE, '免费上传提炼终身仅 1 次 · 会员期内提炼不限次');
-  assert.deepEqual(MEMBER_CHIPS, ['不限 AI 出题场次', '会员提炼不限', 'AI 点评摘要不限']);
+  assert.equal(MEMBER_HERO_SUB, '不限场次 · 课件提炼 · AI 点评');
+  assert.equal(MEMBER_HERO_NOTE, '免费上传提炼终身仅 1 次');
+  assert.deepEqual(MEMBER_CHIPS, ['不限 AI 出题场次', '每月提炼5次', 'AI 点评摘要不限']);
+  assert.equal(memberPlanBadge(month({ summary: '' }))?.text, '最受欢迎');
+  assert.equal(memberPlanBadge(quarter({ summary: '' }))?.text, '推荐');
+  assert.equal(memberPlanBadge(week({ summary: '灵活尝鲜' }))?.text, '灵活尝鲜');
+  assert.equal(memberPlanBadge(year({ summary: '' })), null);
   assert.equal(MEMBER_RULE_TITLE, '升级可补差价 · 不支持降级');
   assert.equal(MEMBER_RULE_BODY, '续费延长到期日 · 会员不受日免场次限制');
   assert.equal(MEMBER_PAY_CAPTION, '微信支付 · 开通后立即生效');

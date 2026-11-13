@@ -31,7 +31,7 @@ import {
 import './index.css';
 
 /**
- * 场次明细。对稿 design/bridge-export/mini-commerce-v2（122:9 / 127:8932）。
+ * 场次明细。对稿 design/bridge-export/commerce-v2-20261114。
  * 只读 entitlement + ledger。不下单，不带版本角标。
  */
 export default function SessionLedgerPage() {
@@ -219,14 +219,16 @@ export default function SessionLedgerPage() {
             ) : (
               visible.map((row) => (
                 <View key={row.id} className="sl-row">
-                  <View className={`sl-badge sl-badge-${row.mark}`}>
-                    <Text className={`sl-badge-text sl-badge-text-${row.mark}`}>
-                      {row.markLabel}
-                    </Text>
+                  <View className="sl-main">
+                    <View className={`sl-badge sl-badge-${row.mark}`}>
+                      <Text className={`sl-badge-text sl-badge-text-${row.mark}`}>
+                        {row.markLabel}
+                      </Text>
+                    </View>
+                    <Text className="sl-time">{row.timeLabel}</Text>
+                    <Text className="sl-row-title">{row.title}</Text>
                   </View>
-                  <Text className="sl-row-title">{row.title}</Text>
                   <Text className={`sl-delta sl-delta-${row.mark}`}>{row.deltaLabel}</Text>
-                  <Text className="sl-time">{row.timeLabel}</Text>
                   <View className="sl-row-line" />
                 </View>
               ))

@@ -1,12 +1,12 @@
-import { Button, Image, Text, View } from '@tarojs/components';
+import { Button, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useShareAppMessage, useShareTimeline } from '@tarojs/taro';
 import { useRef, useState } from 'react';
-import gift from '../../../assets/me-commerce/gift.svg';
 import { Screen } from '../../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../../components/StateBlock';
 import { fetchGrowth } from '../../../services/commerce-api';
 import { withAuth } from '../../../services/guard';
 import {
+  INVITE_CODE_LABEL,
   INVITE_TITLE,
   inviteLaunchPath,
   presentInvite,
@@ -16,7 +16,7 @@ import { BridgeBack } from '../../../ui/glyphs';
 import './index.css';
 
 /**
- * 邀请有礼。对稿 122:10（子层 127:9028 / 127:9033 / 127:9047 / 127:9052）。
+ * 邀请有礼。对稿 design/bridge-export/commerce-v2-20261114。
  * 邀请码、奖额和封顶只读 growth。不支付。
  */
 export default function InvitePage() {
@@ -65,7 +65,16 @@ export default function InvitePage() {
       navPlain
       navClassName="iv-nav"
       title={INVITE_TITLE}
+      background="#f5f5f7"
       backMark={<BridgeBack />}
+      footer={
+        phase === 'ready' && card ? (
+          <Button className="iv-btn" openType="share">
+            {card.cta}
+          </Button>
+        ) : null
+      }
+      footerClassName="iv-footbar"
     >
       {phase === 'loading' ? (
         <View className="iv-page">
@@ -78,11 +87,11 @@ export default function InvitePage() {
       {phase === 'ready' && card ? (
         <View className="iv-page">
           <View className="iv-card iv-hero">
-            <Image className="iv-gift" src={gift} mode="aspectFit" />
-            <View className="iv-copy">
-              <Text className="iv-headline">{card.headline}</Text>
-              <Text className="iv-subline">{card.subline}</Text>
-              <Text className="iv-code">{card.codeLine}</Text>
+            <Text className="iv-headline">{card.headline}</Text>
+            <Text className="iv-subline">{card.subline}</Text>
+            <View className="iv-codebox">
+              <Text className="iv-code-k">{INVITE_CODE_LABEL}</Text>
+              <Text className="iv-code">{card.code}</Text>
             </View>
           </View>
           <View className="iv-card">
@@ -114,9 +123,6 @@ export default function InvitePage() {
               </Text>
             ))}
           </View>
-          <Button className="iv-btn" openType="share">
-            {card.cta}
-          </Button>
         </View>
       ) : null}
     </Screen>

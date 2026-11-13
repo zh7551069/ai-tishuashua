@@ -1,58 +1,64 @@
-/* 对稿 design/bridge-export/mini-commerce-v2 开通会员。390 画板 px。不带版本角标。 */
+/* 对稿 design/bridge-export/commerce-v2-20261114 开通会员。390 画板 px。 */
 
 .mem-page {
-  padding: 4px 16px 16px;
-  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 20px 8px;
   box-sizing: border-box;
 }
 
 .mem-hero {
   position: relative;
   display: flex;
-  align-items: center;
-  height: 80px;
-  padding: 0 48px 0 16px;
-  border-radius: 12px;
-  background: var(--ts-accent);
-  box-shadow: inset 0 0 0 1px var(--ts-accent-700);
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 150px;
+  padding: 18px 16px 16px;
+  border-radius: 20px;
+  background: #ffffff;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
-.mem-hero-copy {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+.mem-hero-art {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 150px;
+  z-index: 0;
+}
+
+.mem-hero-title,
+.mem-hero-sub,
+.mem-hero-note,
+.mem-chips {
+  position: relative;
+  z-index: 1;
 }
 
 .mem-hero-title {
-  color: #ffffff;
-  font-size: 18px;
+  color: var(--ts-ink);
+  font-size: 20px;
   font-weight: 700;
   line-height: 26px;
 }
 
 .mem-hero-sub {
-  margin-top: 1px;
-  color: #c6dbff;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 17px;
+  margin-top: 6px;
+  color: var(--ts-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 19px;
 }
 
 .mem-hero-note {
-  margin-top: 2px;
-  color: #adc9fc;
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 14px;
-}
-
-.mem-crown {
-  position: absolute;
-  right: 21px;
-  top: 28px;
-  width: 23px;
-  height: 23px;
+  margin-top: 10px;
+  color: var(--ts-accent-700);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 17px;
 }
 
 .mem-chips {
@@ -68,195 +74,178 @@
   align-items: center;
   justify-content: center;
   height: 26px;
-  padding: 0 8px;
+  padding: 0 10px;
   border-radius: 999px;
   background: var(--ts-tint);
-  box-shadow: inset 0 0 0 1px #e5e7eb;
+  box-shadow: inset 0 0 0 1px var(--ts-accent-100);
   box-sizing: border-box;
 }
 
 .mem-chip-text {
   color: var(--ts-accent-700);
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 15px;
 }
 
 .mem-skus {
-  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .mem-sku {
-  position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
-  height: 64px;
-  margin-top: 8px;
-  padding: 0 12px 0 10px;
-  border-radius: 12px;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 12px 16px;
+  border-radius: 16px;
   background: #ffffff;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
+  box-shadow: inset 0 0 0 1.5px #e7e5e4;
   box-sizing: border-box;
-}
-
-.mem-skus .mem-sku:first-child {
-  margin-top: 0;
 }
 
 .mem-sku-on {
   background: var(--ts-tint);
-  box-shadow: inset 0 0 0 1px var(--ts-accent-700);
+  box-shadow: inset 0 0 0 2px var(--ts-accent-100);
 }
 
-.mem-radio {
-  position: relative;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.mem-radio-ring {
-  width: 18px;
-  height: 18px;
-}
-
-.mem-radio-dot {
-  position: absolute;
-  left: 5px;
-  top: 5px;
-  width: 8px;
-  height: 8px;
-}
-
-.mem-sku-copy {
+.mem-sku-main {
   display: flex;
-  flex-direction: column;
-  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
-  margin-left: 12px;
 }
 
 .mem-sku-name {
   color: var(--ts-ink);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 22px;
 }
 
-.mem-sku-sub {
-  color: var(--ts-muted);
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 16px;
+.mem-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
-.mem-sku-sub-on {
-  color: var(--ts-accent-700);
+.mem-badge-popular {
+  background: var(--ts-accent);
+}
+
+.mem-badge-recommend {
+  background: var(--ts-accent-700);
+}
+
+.mem-badge-soft {
+  background: #f5f5f4;
+}
+
+.mem-badge-text {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+.mem-badge-text-popular,
+.mem-badge-text-recommend {
+  color: #ffffff;
+}
+
+.mem-badge-text-soft {
+  color: var(--ts-muted);
 }
 
 .mem-sku-price {
   display: flex;
-  flex-direction: row;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
   flex-shrink: 0;
   margin-left: 8px;
 }
 
-.mem-sku-fen {
-  color: var(--ts-ink);
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 28px;
+.mem-sku-yen {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 2px;
 }
 
-.mem-sku-fen-on {
-  color: var(--ts-accent-700);
+.mem-sku-fen {
+  color: var(--ts-ink);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 26px;
+}
+
+.mem-sku-unit,
+.mem-sku-avg {
+  color: var(--ts-muted);
+  font-weight: 500;
 }
 
 .mem-sku-unit {
-  color: var(--ts-muted);
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
 }
 
-.mem-badge {
-  position: absolute;
-  top: -1px;
-  right: 9px;
-  min-width: 31px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--ts-accent);
-  box-shadow: inset 0 0 0 1px var(--ts-accent-700);
-  box-sizing: border-box;
-}
-
-.mem-badge-text {
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 18px;
-  text-align: center;
+.mem-sku-avg {
+  font-size: 11px;
+  line-height: 15px;
 }
 
 .mem-rules {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  height: 54px;
-  margin-top: 8px;
-  padding: 0 12px;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
-  box-sizing: border-box;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.mem-rules-title,
+.mem-rules-body,
+.mem-pack-label {
+  display: block;
 }
 
 .mem-rules-title {
   color: var(--ts-ink);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  line-height: 17px;
+  line-height: 19px;
 }
 
-.mem-rules-body {
-  margin-top: 4px;
+.mem-rules-body,
+.mem-pack-label {
   color: var(--ts-muted);
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
 }
 
 .mem-pack {
   display: flex;
   flex-direction: row;
   align-items: center;
-  height: 42px;
-  margin-top: 8px;
-  padding: 0 8px;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
-  box-sizing: border-box;
-}
-
-.mem-pack-icon {
-  width: 20px;
-  height: 13px;
-  flex-shrink: 0;
+  gap: 8px;
+  padding: 0 4px;
 }
 
 .mem-pack-label {
   flex: 1;
   min-width: 0;
-  margin-left: 8px;
-  color: var(--ts-warning);
-  font-size: 12px;
+  color: var(--ts-accent-700);
   font-weight: 700;
-  line-height: 17px;
 }
 
 .mem-pack-chevron {
@@ -267,15 +256,18 @@
 
 .mem-nav .u-nav-title {
   font-size: 18px;
-  line-height: 26px;
+  line-height: 22px;
 }
 
 .mem-foot.u-foot {
-  padding: 0 0 calc(8px + env(safe-area-inset-bottom));
+  padding: 10px 20px calc(8px + env(safe-area-inset-bottom));
+  background: #f5f5f7;
+  border-top: none;
+  box-shadow: 0 -10px 16px rgba(247, 248, 244, 0.92);
 }
 
 .mem-foot-note {
-  padding: 12px 16px 8px;
+  padding: 0 0 8px;
 }
 
 .mem-diff {
@@ -339,15 +331,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 44px;
-  margin: 0 16px;
+  height: 50px;
+  margin: 0;
   padding: 0 8px;
-  border-radius: 12px;
+  border-radius: 999px;
   background: var(--ts-accent);
   color: #ffffff;
   font-size: 16px;
   font-weight: 700;
-  line-height: 23px;
+  line-height: 22px;
   box-sizing: border-box;
 }
 

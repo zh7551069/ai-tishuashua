@@ -1,81 +1,59 @@
-/* 对稿 design/bridge-export/mini-commerce-v2 每日分享领场（122:8 / 127:8910）。390 画板 px。不带版本角标。 */
+/* 对稿 design/bridge-export/commerce-v2-20261114 每日分享领场。390 画板 px。 */
 
 .ds-nav .u-nav-title {
   font-size: 18px;
-  line-height: 26px;
+  line-height: 22px;
 }
 
 .ds-page {
-  padding: 8px 16px calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 20px 8px;
   box-sizing: border-box;
 }
 
 .ds-card {
-  margin-top: 12px;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 18px;
   background: #ffffff;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
   box-sizing: border-box;
 }
 
 .ds-hero {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  min-height: 142px;
-  margin-top: 0;
-  padding-top: 18px;
-  padding-bottom: 16px;
-}
-
-.ds-badge {
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
-  background: var(--ts-tint);
-  box-shadow: inset 0 0 0 1px #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ds-badge-mark {
-  width: 23px;
-  height: 23px;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px 16px 16px;
+  border-radius: 20px;
 }
 
 .ds-hero-title,
 .ds-hero-note,
-.ds-rule,
 .ds-status-label,
-.ds-status-value {
+.ds-status-value,
+.ds-card-title,
+.ds-rule-n,
+.ds-rule-t {
   display: block;
 }
 
 .ds-hero-title {
-  margin-top: 17px;
   color: var(--ts-ink);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
-  line-height: 23px;
-  text-align: center;
+  line-height: 26px;
 }
 
 .ds-hero-note {
-  margin-top: 4px;
   color: var(--ts-muted);
-  font-size: 12px;
-  line-height: 17px;
-  text-align: center;
-}
-
-.ds-rules {
-  min-height: 170px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 19px;
 }
 
 .ds-card-title {
-  display: block;
   color: var(--ts-ink);
   font-size: 15px;
   font-weight: 700;
@@ -83,28 +61,64 @@
 }
 
 .ds-rule {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
   margin-top: 8px;
-  color: var(--ts-muted);
+}
+
+.ds-rule-n {
+  width: 18px;
+  flex-shrink: 0;
+  color: #44403c;
   font-size: 13px;
-  line-height: 22px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.ds-rule-t {
+  flex: 1;
+  min-width: 0;
+  color: #44403c;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
 }
 
 .ds-status {
-  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: #fff7ed;
 }
 
 .ds-status-label {
-  color: var(--ts-muted);
-  font-size: 12px;
-  line-height: 17px;
-}
-
-.ds-status-value {
-  margin-top: 6px;
-  color: var(--ts-accent-700);
+  color: var(--ts-ink);
   font-size: 15px;
   font-weight: 700;
   line-height: 22px;
+}
+
+.ds-status-value {
+  color: var(--ts-warning);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.ds-foot.u-foot {
+  padding: 10px 20px calc(8px + env(safe-area-inset-bottom));
+  background: #f5f5f7;
+  border-top: none;
+  box-shadow: 0 -10px 16px rgba(247, 248, 244, 0.92);
+}
+
+.ds-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .ds-btn {
@@ -112,13 +126,13 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 48px;
-  margin: 12px 0 0;
+  height: 50px;
+  margin: 0;
   padding: 0;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 16px;
   font-weight: 700;
-  line-height: 48px;
+  line-height: 22px;
 }
 
 .ds-btn::after {
@@ -131,9 +145,8 @@
 }
 
 .ds-btn-secondary {
-  background: #ffffff;
+  background: #f7f8f4;
   color: var(--ts-ink);
-  box-shadow: inset 0 0 0 1px #e5e7eb;
 }
 
 .ds-btn-off {

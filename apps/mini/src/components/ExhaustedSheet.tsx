@@ -1,6 +1,5 @@
-import { Button, Image, Text, View } from '@tarojs/components';
+import { Button, Text, View } from '@tarojs/components';
 import type { EntitlementCtaType } from '@tishuashua/shared';
-import iconBanknote from '../assets/commerce/ld7krb.svg';
 import {
   EXHAUSTED_CTA_ORDER,
   EXHAUSTED_LATER,
@@ -36,10 +35,6 @@ export function ExhaustedSheet(props: {
       }}
     >
       <View className="exh-sheet" catchMove onClick={(event) => event.stopPropagation()}>
-        <View className="exh-handle" />
-        <View className="exh-icon">
-          <Image className="exh-note" src={iconBanknote} mode="aspectFit" />
-        </View>
         <Text className="exh-title">{EXHAUSTED_TITLE}</Text>
         <Text className="exh-summary">{exhaustedSummary(props.snapshot)}</Text>
         <Text className="exh-sub">{EXHAUSTED_SUBTITLE}</Text>

@@ -1,9 +1,10 @@
 import { Image, Text, View } from '@tarojs/components';
-import iconCrown from '../../assets/me-commerce/crown.svg';
 import iconGift from '../../assets/me-commerce/gift.svg';
 import iconShareA from '../../assets/me-commerce/share-a.svg';
 import iconShareB from '../../assets/me-commerce/share-b.svg';
 import iconShareDot from '../../assets/me-commerce/share-dot.svg';
+import memberArt from './assets/member-art-bg.png';
+import quotaArt from './assets/quota-art-bg.png';
 import {
   ME_OPEN_MEMBER_LABEL,
   ME_USAGE_TITLE,
@@ -16,22 +17,22 @@ export function MeStatusCard(props: { commerce: MeEntitlementPresent; onOpenMemb
   if (props.commerce.active) {
     return (
       <View className="ms-member" onClick={props.onOpenMember}>
-        <Image className="ms-crown" src={iconCrown} mode="aspectFit" />
-        <View className="ms-member-copy">
+        <Image className="ms-member-art" src={memberArt} mode="aspectFill" />
+        <View className="ms-member-badge">
           <Text className="ms-member-title">{props.commerce.memberTitle}</Text>
-          {props.commerce.memberSubtitle ? (
-            <Text className="ms-member-sub">{props.commerce.memberSubtitle}</Text>
-          ) : null}
-          {props.commerce.memberNote ? (
-            <Text className="ms-member-note">{props.commerce.memberNote}</Text>
-          ) : null}
         </View>
-        <View className="ms-member-chev" />
+        {props.commerce.memberSubtitle ? (
+          <Text className="ms-member-sub">{props.commerce.memberSubtitle}</Text>
+        ) : null}
+        {props.commerce.memberNote ? (
+          <Text className="ms-member-note">{props.commerce.memberNote}</Text>
+        ) : null}
       </View>
     );
   }
   return (
     <View className="ms-usage">
+      <Image className="ms-usage-art" src={quotaArt} mode="aspectFill" />
       <View className="ms-usage-copy">
         <Text className="ms-usage-label">{ME_USAGE_TITLE}</Text>
         <View className="ms-usage-count">
@@ -58,14 +59,18 @@ export function MeGrowthRow(props: {
   return (
     <View className="ms-growth">
       <View className="ms-growth-tile ms-growth-share" onClick={props.onOpenShare}>
-        <ShareMark />
+        <View className="ms-growth-well">
+          <ShareMark />
+        </View>
         <View className="ms-growth-copy">
           <Text className="ms-growth-title">{copy.shareTitle}</Text>
           <Text className="ms-growth-meta">{copy.shareMeta}</Text>
         </View>
       </View>
       <View className="ms-growth-tile ms-growth-invite" onClick={props.onOpenInvite}>
-        <Image className="ms-gift" src={iconGift} mode="aspectFit" />
+        <View className="ms-growth-well">
+          <Image className="ms-gift" src={iconGift} mode="aspectFit" />
+        </View>
         <View className="ms-growth-copy">
           <Text className="ms-growth-title">{copy.inviteTitle}</Text>
           <Text className="ms-growth-meta">{copy.inviteMeta}</Text>

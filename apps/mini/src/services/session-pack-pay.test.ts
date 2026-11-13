@@ -332,9 +332,9 @@ test('黄卡和支付文案跟服务端数字走，规则固定且不含刷题�
   assert.equal(SESSION_PACK_SUCCESS_TOAST, '购买成功');
   assert.equal(SESSION_PACK_MEMBER_NOTE, '会员期内库存暂不扣');
   assert.deepEqual(SESSION_PACK_RULES, [
-    '1 场 = 成功「AI 开始出题」进入答题页',
-    '「再练这 N 道」不额外扣场',
     '扣场顺序：日免 → 当日奖励 → 场次加油库存',
+    '「再练这 N 道」不额外扣场',
+    '1 场 = 成功「AI 开始出题」进入答题页',
   ]);
 });
 

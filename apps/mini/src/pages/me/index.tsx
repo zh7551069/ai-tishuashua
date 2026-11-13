@@ -1,4 +1,4 @@
-import { Text, View } from '@tarojs/components';
+import { Image, Text, View } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import type { PackView, UserSummary } from '@tishuashua/shared';
 import type { ReactNode } from 'react';
@@ -17,7 +17,6 @@ import { HttpError } from '../../services/http';
 import { checkInToday, readCheckin, readThemeId, type ThemeId } from '../../services/local-prefs';
 import {
   APP_FOOTER,
-  avatarChar,
   badgeLabel,
   buildCenter,
   countRecent,
@@ -50,12 +49,13 @@ import {
   GearGlyph,
   ListGlyph,
   PackGlyph,
-  ProfileChevron,
   RecordGlyph,
   WrongGlyph,
 } from '../../ui/glyphs';
 import '../../ui/me-settings.css';
 import { MeGrowthRow, MeStatusCard } from './commerce-blocks';
+import profileArt from './assets/profile-art.png';
+import './commerce.css';
 
 type Snapshot = {
   user: UserSummary;
@@ -211,7 +211,7 @@ export default function MePage() {
       bodyFill={failed}
       backMark={<BridgeBack />}
     >
-      <View className={failed ? `ms-error-fill ms-theme-${themeId}` : `ms-theme-${themeId}`}>
+      <View className={failed ? `ms-home ms-error-fill ms-theme-${themeId}` : `ms-home ms-theme-${themeId}`}>
         {!ready && !error ? (
           <View className="ms-body">
             <LoadingBlock label="正在读取个人中心" />
@@ -228,7 +228,6 @@ export default function MePage() {
         {ready && snapshot && view && commerce && checkinCopy ? (
           <MeBody
             nick={displayNick(snapshot.user.nick)}
-            initial={avatarChar(snapshot.user.nick)}
             view={view}
             commerce={commerce}
             checkinButton={checkinCopy.button}
@@ -244,7 +243,6 @@ export default function MePage() {
 
 function MeBody(props: {
   nick: string;
-  initial: string;
   view: CenterView;
   commerce: MeEntitlementPresent;
   checkinButton: string;
@@ -256,14 +254,12 @@ function MeBody(props: {
   return (
     <View className="ms-body">
       <View className="ms-card ms-profile" onClick={() => open('/pages/settings/index')}>
-        <View className="ms-avatar ms-brand-soft ms-brand-line">
-          <Text className="ms-avatar-text ms-brand-fg">{props.initial}</Text>
-        </View>
+        <Image className="ms-profile-art" src={profileArt} mode="aspectFill" />
+        <View className="ms-profile-fade" />
         <View className="ms-profile-copy">
           <Text className="ms-name">{props.nick}</Text>
           <Text className="ms-sub">{view.subtitle}</Text>
         </View>
-        <ProfileChevron />
       </View>
       <MeStatusCard commerce={props.commerce} onOpenMember={() => open(ME_MEMBER_ROUTE)} />
       <View className="ms-card ms-stats">
@@ -284,17 +280,17 @@ function MeBody(props: {
           {view.week.map((day) => (
             <View key={day.label} className="ms-day">
               <Text className="ms-day-label">{day.label}</Text>
+              {day.dot === 'today' ? <Text className="ms-today-pill">今天</Text> : null}
               <DayDot dot={day.dot} />
             </View>
           ))}
         </View>
         <Text className="ms-checkin-note">{props.checkinNote}</Text>
         <View
-          className={
-            props.rewardChecked ? 'ms-cta ms-brand-soft ms-brand-line' : 'ms-cta ms-brand-bg'
-          }
+          className={props.rewardChecked ? 'ms-cta ms-cta-done' : 'ms-cta ms-brand-bg'}
           onClick={props.onCheckIn}
         >
+          {props.rewardChecked ? <CheckMark /> : null}
           <Text className={props.rewardChecked ? 'ms-cta-text ms-brand-fg' : 'ms-cta-text'}>
             {props.checkinButton}
           </Text>
@@ -354,29 +350,34 @@ function Stat(props: { label: string; value: string; unit?: string; muted?: bool
   const valueClass = props.muted ? 'ms-num-value ms-num-muted' : 'ms-num-value';
   return (
     <View className="ms-stat">
-      <Text className="ms-stat-label">{props.label}</Text>
       <View className="ms-num">
         <Text className={valueClass}>{props.value}</Text>
         {props.unit ? <Text className="ms-num-unit">{props.unit}</Text> : null}
       </View>
+      <Text className="ms-stat-label">{props.label}</Text>
     </View>
   );
 }
 
 function DayDot(props: { dot: WeekDot }) {
-  if (props.dot === 'past' || props.dot === 'today-on') {
+  if (props.dot === 'today-on') {
     return (
-      <View className={props.dot === 'past' ? 'ms-dot ms-brand-bg' : 'ms-dot ms-dot-today-on'}>
+      <View className="ms-dot-ring">
+        <View className="ms-dot ms-brand-bg">
+          <CheckMark />
+        </View>
+      </View>
+    );
+  }
+  if (props.dot === 'past') {
+    return (
+      <View className="ms-dot ms-brand-bg">
         <CheckMark />
       </View>
     );
   }
   if (props.dot === 'today') {
-    return (
-      <View className="ms-dot ms-brand-soft">
-        <Text className="ms-dot-today-text ms-brand-fg">今</Text>
-      </View>
-    );
+    return <View className="ms-dot ms-dot-today" />;
   }
   return <View className="ms-dot ms-dot-hollow" />;
 }
