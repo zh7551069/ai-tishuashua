@@ -1,109 +1,125 @@
 import type { UserSummary } from '@tishuashua/shared';
 
-export type ProfileTone = 'blue' | 'orange';
+export type ProfileMode = 'syncing' | 'ready' | 'failed';
+
+/** later：未下发手机号，不是失败。 */
+export type RowState = 'pending' | 'done' | 'failed' | 'later';
 
 export interface ProfileRowModel {
   key: 'avatar' | 'nick' | 'phone';
   label: string;
   value: string;
-  done: boolean;
+  state: RowState;
   mark: string;
-  tone: ProfileTone;
   initial: string;
   imageUrl: string;
-  valueSize: 'sm' | 'md';
 }
 
 export interface ProfileModel {
-  syncing: boolean;
+  mode: ProfileMode;
   title: string;
   subtitle: string;
-  cardHint: string;
   rows: ProfileRowModel[];
   doneCount: number;
-  complete: boolean;
   progressLabel: string;
-  cta: string;
-  ctaNote: string;
+  /** full 仅三行都写入；其余用橄榄比例。 */
+  fill: 'full' | 'partial';
 }
+
+const FAILED_VALUE = '未能写入';
 
 function firstChar(value: string): string {
   return Array.from(value)[0] ?? '';
 }
 
+function row(
+  key: ProfileRowModel['key'],
+  label: string,
+  value: string,
+  state: RowState,
+  mark: string,
+  initial: string,
+  imageUrl: string,
+): ProfileRowModel {
+  return { key, label, value, state, mark, initial, imageUrl };
+}
+
 /**
  * 登录响应里的摘要直接填进资料卡。
- * 手机号不在微信登录接口里，未绑定时不计入完成，也不挡住「开始备考」。
+ * 手机号不在微信登录接口里。未绑定不计入完成，也不挡住「开始备考」。
+ * 整次登录失败没有字段级结果，三行都标未能写入，不套用稿面示例号。
  */
-export function buildProfile(user: UserSummary | null, syncing: boolean): ProfileModel {
+export function buildProfile(user: UserSummary | null, mode: ProfileMode): ProfileModel {
+  if (mode === 'syncing') {
+    return {
+      mode,
+      title: '正在同步微信资料',
+      subtitle: '授权已通过，请稍候即可开始备考',
+      rows: [
+        row('avatar', '头像', '同步中…', 'pending', '', '', ''),
+        row('nick', '昵称', '同步中…', 'pending', '昵', '', ''),
+        row('phone', '手机号', '同步中…', 'pending', '机', '', ''),
+      ],
+      doneCount: 0,
+      progressLabel: '资料补全中 0/3',
+      fill: 'partial',
+    };
+  }
+
+  if (mode === 'failed') {
+    return {
+      mode,
+      title: '同步失败',
+      subtitle: '微信资料未能写入，请重试',
+      rows: [
+        row('avatar', '头像', FAILED_VALUE, 'failed', '', '', ''),
+        row('nick', '昵称', FAILED_VALUE, 'failed', '昵', '', ''),
+        row('phone', '手机号', FAILED_VALUE, 'failed', '机', '', ''),
+      ],
+      doneCount: 0,
+      progressLabel: '资料写入失败 0/3',
+      fill: 'partial',
+    };
+  }
+
   const nick = user?.nick?.trim() ?? '';
   const phone = user?.phoneBound ? (user.phoneMasked?.trim() ?? '') : '';
   const avatar = user?.avatar?.trim() ?? '';
-
-  const avatarDone = !syncing && Boolean(avatar || nick);
-  const nickDone = !syncing && Boolean(nick);
-  const phoneDone = !syncing && Boolean(phone);
+  const avatarDone = Boolean(avatar || nick);
+  const nickDone = Boolean(nick);
+  const phoneDone = Boolean(phone);
   const doneCount = [avatarDone, nickDone, phoneDone].filter(Boolean).length;
   const complete = doneCount === 3;
 
-  const rows: ProfileRowModel[] = [
-    {
-      key: 'avatar',
-      label: '头像',
-      value: syncing ? '同步中…' : avatarDone ? '已从微信同步' : '未上传头像',
-      done: avatarDone,
-      mark: '',
-      tone: 'blue',
-      initial: syncing ? '…' : firstChar(nick) || '微',
-      imageUrl: syncing ? '' : avatar,
-      valueSize: 'sm',
-    },
-    {
-      key: 'nick',
-      label: '昵称',
-      value: syncing ? '同步中…' : nick || '微信用户',
-      done: nickDone,
-      mark: '昵',
-      tone: 'blue',
-      initial: '',
-      imageUrl: '',
-      valueSize: 'md',
-    },
-    {
-      key: 'phone',
-      label: '手机号',
-      value: syncing ? '同步中…' : phone || '稍后在设置中补全',
-      done: phoneDone,
-      mark: '机',
-      tone: phoneDone ? 'blue' : 'orange',
-      initial: '',
-      imageUrl: '',
-      valueSize: 'md',
-    },
-  ];
-
   return {
-    syncing,
-    title: syncing ? '正在同步微信资料' : '登录成功',
-    subtitle: syncing
-      ? '授权已通过 · 自动写入昵称与手机号'
-      : phoneDone
-        ? '已自动注册账号，微信资料已写入'
-        : '已自动注册账号，手机号可稍后在设置中补全',
-    cardHint: syncing
-      ? '请稍候，完成后即可开始备考'
-      : phoneDone
-        ? '无需手动填写，授权信息自动写入'
-        : '无需手动填写，手机号可稍后在设置中补全',
-    rows,
+    mode,
+    title: '登录成功',
+    subtitle: phoneDone
+      ? '已自动注册账号，微信资料已写入'
+      : '已自动注册账号，手机号可稍后在设置中补全',
+    rows: [
+      row(
+        'avatar',
+        '头像',
+        avatarDone ? '已从微信同步' : '未上传头像',
+        avatarDone ? 'done' : 'pending',
+        '',
+        firstChar(nick),
+        avatar,
+      ),
+      row('nick', '昵称', nick || '微信用户', nickDone ? 'done' : 'pending', '昵', '', ''),
+      row(
+        'phone',
+        '手机号',
+        phoneDone ? phone : '稍后在设置中补全',
+        phoneDone ? 'done' : 'later',
+        '机',
+        '',
+        '',
+      ),
+    ],
     doneCount,
-    complete,
-    progressLabel: syncing
-      ? '资料补全中'
-      : complete
-        ? '资料已补全 3/3'
-        : `资料补全中 ${doneCount}/3`,
-    cta: syncing ? '同步完成后可进入' : '开始备考',
-    ctaNote: syncing ? '预计几秒内完成' : '将进入首页，选择领域与证书',
+    progressLabel: complete ? '资料已补全 3/3' : `资料补全中 ${doneCount}/3`,
+    fill: complete ? 'full' : 'partial',
   };
 }

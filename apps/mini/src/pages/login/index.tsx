@@ -4,11 +4,10 @@ import { useRef, useState } from 'react';
 import { AuthApiError, fetchCurrentUser, loginWithWechatCode } from '../../services/auth-api';
 import { clearToken, readToken, saveToken } from '../../services/session';
 import { requestWechatLoginCode } from '../../services/wechat-auth';
+import { AttemptGate, isAccountDisabled, type Phase, withSuggestedSyncDeadline } from './flow';
 import './index.css';
 import { buildProfile } from './profile';
-import { LoginChecking, LoginLanding, LoginProfile } from './ui';
-
-type Phase = 'checking' | 'landing' | 'authorizing' | 'filling' | 'ready';
+import { LoginAuthFailed, LoginChecking, LoginLanding, LoginProfile } from './ui';
 
 function readStatusBarHeight(): number {
   try {
@@ -24,6 +23,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [inset] = useState(readStatusBarHeight);
   const phaseRef = useRef<Phase>('checking');
+  const attempts = useRef(new AttemptGate());
 
   const setCurrentPhase = (next: Phase) => {
     phaseRef.current = next;
@@ -33,12 +33,18 @@ export default function LoginPage() {
   useDidShow(() => {
     void Taro.setNavigationBarColor({
       frontColor: '#000000',
-      backgroundColor: '#F4F8E8',
+      backgroundColor: '#F5F5F7',
     }).catch(() => undefined);
-    if (phaseRef.current === 'authorizing' || phaseRef.current === 'filling') {
+    const current = phaseRef.current;
+    if (
+      current === 'authorizing' ||
+      current === 'filling' ||
+      current === 'authFailed' ||
+      current === 'syncFailed'
+    ) {
       return;
     }
-    if (phaseRef.current === 'ready') {
+    if (current === 'ready') {
       void refreshReadyUser();
       return;
     }
@@ -59,6 +65,9 @@ export default function LoginPage() {
         clearToken();
         setUser(null);
         setCurrentPhase('landing');
+        if (caught.status === 403) {
+          setError('账号已停用');
+        }
       }
     }
   };
@@ -81,29 +90,87 @@ export default function LoginPage() {
     }
   };
 
+  const syncWithCode = async (code: string, attempt: number) => {
+    setCurrentPhase('filling');
+    try {
+      const result = await withSuggestedSyncDeadline(loginWithWechatCode({ code }));
+      if (!attempts.current.isCurrent(attempt)) {
+        return;
+      }
+      saveToken(result.token);
+      setUser(result.user);
+      setCurrentPhase('ready');
+    } catch (caught) {
+      if (!attempts.current.isCurrent(attempt)) {
+        return;
+      }
+      if (isAccountDisabled(caught)) {
+        setError('账号已停用');
+        setUser(null);
+        setCurrentPhase('landing');
+        return;
+      }
+      setUser(null);
+      setCurrentPhase('syncFailed');
+    }
+  };
+
   const onLogin = async () => {
     if (phaseRef.current === 'authorizing' || phaseRef.current === 'filling') {
       return;
     }
+    const attempt = attempts.current.issue();
     setError('');
     setUser(null);
     setCurrentPhase('authorizing');
     try {
       const code = await requestWechatLoginCode();
-      setCurrentPhase('filling');
-      const result = await loginWithWechatCode({ code });
-      saveToken(result.token);
-      setUser(result.user);
-      setCurrentPhase('ready');
-    } catch (caught) {
-      const message = caught instanceof Error ? caught.message : '登录失败，请重试';
-      setError(message);
-      setCurrentPhase('landing');
-      void Taro.showToast({
-        title: message === '授权已取消' ? '授权已取消' : '登录失败',
-        icon: 'none',
-      });
+      if (!attempts.current.isCurrent(attempt)) {
+        return;
+      }
+      await syncWithCode(code, attempt);
+    } catch {
+      if (!attempts.current.isCurrent(attempt)) {
+        return;
+      }
+      setCurrentPhase('authFailed');
     }
+  };
+
+  const onCancelAuth = () => {
+    if (phaseRef.current !== 'authorizing') {
+      return;
+    }
+    attempts.current.invalidate();
+    setCurrentPhase('authFailed');
+  };
+
+  const onResync = async () => {
+    if (phaseRef.current === 'authorizing' || phaseRef.current === 'filling') {
+      return;
+    }
+    const attempt = attempts.current.issue();
+    setError('');
+    setUser(null);
+    setCurrentPhase('filling');
+    try {
+      const code = await requestWechatLoginCode();
+      if (!attempts.current.isCurrent(attempt)) {
+        return;
+      }
+      await syncWithCode(code, attempt);
+    } catch {
+      if (!attempts.current.isCurrent(attempt)) {
+        return;
+      }
+      setCurrentPhase('authFailed');
+    }
+  };
+
+  const onBack = () => {
+    setError('');
+    setUser(null);
+    setCurrentPhase('landing');
   };
 
   const onStart = () => {
@@ -114,13 +181,22 @@ export default function LoginPage() {
     return <LoginChecking inset={inset} />;
   }
 
-  if (phase === 'filling' || (phase === 'ready' && user)) {
+  if (phase === 'filling' || phase === 'syncFailed' || (phase === 'ready' && user)) {
+    const mode = phase === 'filling' ? 'syncing' : phase === 'syncFailed' ? 'failed' : 'ready';
     return (
       <LoginProfile
         inset={inset}
-        model={buildProfile(user, phase === 'filling')}
+        model={buildProfile(user, mode)}
         onStart={onStart}
+        onResync={() => void onResync()}
+        onBack={onBack}
       />
+    );
+  }
+
+  if (phase === 'authFailed') {
+    return (
+      <LoginAuthFailed inset={inset} onRetry={() => void onLogin()} onBack={onBack} />
     );
   }
 
@@ -130,6 +206,7 @@ export default function LoginPage() {
       error={error}
       authorizing={phase === 'authorizing'}
       onLogin={() => void onLogin()}
+      onCancel={onCancelAuth}
     />
   );
 }
