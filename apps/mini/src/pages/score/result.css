@@ -74,7 +74,7 @@
 
 .u-foot.sc-foot.sc-foot-review {
   padding: 10px 20px calc(22px + env(safe-area-inset-bottom));
-  background: #f7f8f4;
+  background: #f5f5f7;
   border-top: 0;
   box-shadow: 0 -10px 16px rgba(247, 248, 244, 0.92);
 }

@@ -1,7 +1,7 @@
 export default definePageConfig({
   navigationStyle: 'custom',
   navigationBarTitleText: '邀请有礼',
-  backgroundColor: '#F7F8F4',
+  backgroundColor: '#f5f5f7',
   enableShareAppMessage: true,
   enableShareTimeline: true,
 });

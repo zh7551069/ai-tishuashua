@@ -90,7 +90,7 @@ export function ScoreList(props: { tick: number }) {
       navPlain
       bodyFill
       title="练习记录"
-      background="#F7F8F4"
+      background="#f5f5f7"
       navClassName="pr-nav"
       backMark={<Image className="u-back-ico" src={iconBack} mode="aspectFit" />}
     >

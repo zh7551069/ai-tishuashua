@@ -232,7 +232,7 @@ export default function KnowledgePage() {
   return (
     <Screen
       bare
-      background="#F7F8F4"
+      background="#f5f5f7"
       bodyFill
       footerClassName="kp-foot"
       footer={

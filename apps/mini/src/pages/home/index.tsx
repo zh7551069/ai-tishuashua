@@ -113,7 +113,7 @@ export default function HomePage() {
   return (
     <Screen
       bare
-      background="#F7F8F4"
+      background="#f5f5f7"
       footerClassName="dp-foot"
       footer={
         ready && plan ? (

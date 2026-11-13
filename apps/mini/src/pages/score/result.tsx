@@ -159,7 +159,7 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
       footerClassName={
         review ? 'sc-foot sc-foot-review' : plain ? 'sc-foot sc-foot-plain' : 'sc-foot'
       }
-      background="#F7F8F4"
+      background="#f5f5f7"
       title={review ? '错题回顾' : '答题结果'}
       onBack={review ? () => setReview(false) : leave}
       right={

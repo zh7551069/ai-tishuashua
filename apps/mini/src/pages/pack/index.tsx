@@ -158,7 +158,7 @@ export default function PackIndexPage() {
   };
 
   return (
-    <Screen bare background="#F7F8F4">
+    <Screen bare background="#f5f5f7">
       <AppNav
         title={DAILY_PLAN_GREETING}
         subtitle={

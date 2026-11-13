@@ -28,8 +28,8 @@ export default defineAppConfig({
   ],
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#F7F8F4',
-    backgroundColor: '#F7F8F4',
+    navigationBarBackgroundColor: '#f5f5f7',
+    backgroundColor: '#f5f5f7',
     navigationBarTitleText: '题刷刷',
     navigationBarTextStyle: 'black',
   },

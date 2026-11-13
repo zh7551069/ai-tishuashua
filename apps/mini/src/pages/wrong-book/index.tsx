@@ -150,7 +150,7 @@ export default function WrongBookPage() {
       navPlain
       bodyFill
       title="错题本"
-      background="#F7F8F4"
+      background="#f5f5f7"
       right={right}
     >
       {failed ? (

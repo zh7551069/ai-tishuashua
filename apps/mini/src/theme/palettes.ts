@@ -28,7 +28,7 @@ export type Palette = {
 
 const INK = '#1C1917';
 const MUTED = '#78716C';
-const CANVAS = '#F7F8F4';
+const CANVAS = '#f5f5f7';
 const SURFACE = '#FFFFFF';
 
 export const PALETTES: readonly Palette[] = [
