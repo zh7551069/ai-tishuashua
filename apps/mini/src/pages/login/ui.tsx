@@ -159,8 +159,7 @@ function FeatureCard() {
 function NoticeCard() {
   return (
     <View className="lg-notice">
-      <Text className="lg-notice-text">仅支持微信联合登录。授权成功后自动注册并登录，</Text>
-      <Text className="lg-notice-text">将从微信同步昵称与手机号，用于账号与学习记录。</Text>
+      <Text className="lg-notice-text">仅支持微信联合登录。授权成功后自动注册并登录，将从微信同步昵称与手机号，用于账号与学习记录。</Text>
     </View>
   );
 }

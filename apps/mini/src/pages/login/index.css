@@ -14,7 +14,7 @@
 .lg-mark {
   position: absolute;
   left: 139px;
-  top: 28px;
+  top: 64px;
   width: 112px;
   height: 112px;
   border-radius: 26px;
@@ -74,7 +74,7 @@
 .lg-welcome {
   position: absolute;
   left: 115px;
-  top: 214px;
+  top: 200px;
   width: 160px;
   height: 24px;
   color: #6e6e73;
@@ -210,12 +210,7 @@
   top: 236px;
   width: 342px;
   height: 64px;
-  padding: 11px 12px 0;
-  background: #ffffff;
-  border-radius: 14px;
-  box-shadow:
-    0 1px 4px 0 rgba(0, 0, 0, 0.06),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  padding: 0 12px 0;
   box-sizing: border-box;
 }
 
@@ -334,7 +329,7 @@
 }
 
 .lg-at-16 {
-  top: 16px;
+  top: 32px;
 }
 
 .lg-at-47 {
