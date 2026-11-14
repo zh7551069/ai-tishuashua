@@ -221,8 +221,8 @@ CI 和本机都可以编出微信小程序产物，但预览和真机调试要�
 
 1. `pnpm dev:mini`，等 `apps/mini/dist` 生成。这条命令会持续监听。
 2. 打开微信开发者工具，导入目录 `apps/mini`（不要导入成云开发项目）。
-3. `project.config.json` 里 `miniprogramRoot` 是 `dist/`，默认 `appid` 是 `touristappid`，`urlCheck` 为 `false`，方便连本机 API。
-4. 有真实小程序后，在 `apps/mini/.env.development` 设置 `TARO_APP_ID`。Taro 会在构建时写入 AppId。`AppSecret` 仍然只放在 API。
+3. `project.config.json` 里 `miniprogramRoot` 是 `dist/`，`appid` 是 `wx4a05165349e0e67c`，`urlCheck` 为 `false`，方便连本机 API。
+4. `apps/mini/.env.development` 已设置 `TARO_APP_ID`。Taro 会在构建时写入 AppId。`AppSecret` 仍然只放在 API。
 5. 开发者工具里编译预览。登录页调用 `Taro.login()` 取得 `code`，再 POST 到 API。请求体里没有 AppSecret。协议和隐私从登录页打开。登录后可从首页或登录成功页进入设置，授权微信手机号；这不是短信登录。无刷题包会去选领域；保存后回到首页。路径见 [docs/packs.md](docs/packs.md) 和 [docs/wechat-login.md](docs/wechat-login.md)。
 6. 上线前在微信公众平台配置 request 合法域名，并把 `urlCheck` 改回开启。本机 `http://127.0.0.1` 不能作为线上合法域名。
 
