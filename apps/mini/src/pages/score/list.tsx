@@ -7,12 +7,10 @@ import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
 import { isAuthFailure } from '../../services/guard';
 import { fetchQuizScores } from '../../services/quiz-api';
 import { clearToken, readToken } from '../../services/session';
-// 返回、箭头、空态图标来自 Bridge SVG，栅成 PNG。微信 image 不画 svg。
+// 返回、箭头来自 Bridge SVG，栅成 PNG。空态插画与 TB-53 约定同一文件，不另做一套。
 import iconBack from './assets/pr-back.png';
 import iconChevron from './assets/pr-chevron.png';
-import iconDisc from './assets/pr-empty-disc.png';
-import iconMark from './assets/pr-empty-mark.png';
-import iconRing from './assets/pr-empty-ring.png';
+import emptyArt from './assets/fce3e94d4972dd07e14d641a10011733bb4e7ba0.png';
 import './list.css';
 import {
   buildInsight,
@@ -243,22 +241,20 @@ function RecordCard(props: { item: QuizScoreSummary; now: Date }) {
       className="pr-card pr-session"
       onClick={() => void Taro.navigateTo({ url: `/pages/score/index?sessionId=${props.item.id}` })}
     >
-      <View className="pr-row1">
-        <View className={exam ? 'pr-badge pr-badge-exam' : 'pr-badge pr-badge-practice'}>
-          <Text className="pr-badge-text">{card.badge}</Text>
+      <View className="pr-session-main">
+        <View className="pr-row1">
+          <View className={exam ? 'pr-badge pr-badge-exam' : 'pr-badge pr-badge-practice'}>
+            <Text className="pr-badge-text">{card.badge}</Text>
+          </View>
+          <Text className="pr-title">{card.title}</Text>
         </View>
-        <Text className="pr-title">{card.title}</Text>
-        <Text
-          className={card.tone === 'good' ? 'pr-result pr-tone-good' : 'pr-result pr-tone-weak'}
-        >
-          {card.score}
-        </Text>
-      </View>
-      <View className="pr-row2">
         <Text className="pr-meta">{card.meta}</Text>
-        <View className="pr-chev">
-          <Image className="pr-chev-ico" src={iconChevron} mode="aspectFit" />
-        </View>
+      </View>
+      <Text className={card.tone === 'good' ? 'pr-result pr-tone-good' : 'pr-result pr-tone-weak'}>
+        {card.score}
+      </Text>
+      <View className="pr-chev">
+        <Image className="pr-chev-ico" src={iconChevron} mode="aspectFit" />
       </View>
     </View>
   );
@@ -282,11 +278,7 @@ function EmptyState(props: {
         </View>
       ) : null}
       <View className="pr-empty">
-        <View className="pr-empty-icon">
-          <Image className="pr-empty-disc" src={iconDisc} mode="aspectFit" />
-          <Image className="pr-empty-ring" src={iconRing} mode="aspectFit" />
-          <Image className="pr-empty-mark" src={iconMark} mode="aspectFit" />
-        </View>
+        <Image className="pr-empty-art" src={emptyArt} mode="aspectFit" />
         <Text className="pr-empty-title">{props.title}</Text>
         <Text className="pr-empty-sub">{props.detail}</Text>
         <View className="pr-go" onClick={props.onAction}>
