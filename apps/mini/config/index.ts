@@ -57,6 +57,63 @@ export default defineConfig<'webpack5'>(async (merge) => {
       },
       webpackChain(chain) {
         chain.resolve.plugin('tsconfig-paths').use(TsconfigPathsPlugin);
+
+        // @tarojs/webpack5-runner@4.3.1 BaseConfig.setMinimizer 把 CSS 压缩器
+        // 登记为 cssoWebpackPlugin，minify 仍走 cssnano。pxtransform 把 calc()
+        // 里的 px 收成 rpx 后，postcss-calc 会报 UNKNOWN_DIMENSION。只关 calc，
+        // test / preset 里原有的 discardComments 等选项保持不动。
+        const cssMinimizerName = 'cssoWebpackPlugin';
+        // webpack-chain 的 Optimization 类型只暴露 minimizer()，登记表在运行时的 minimizers 上。
+        const minimizers = (
+          chain.optimization as typeof chain.optimization & {
+            minimizers: {
+              has(name: string): boolean;
+              get(name: string): {
+                tap(fn: (args: Record<string, unknown>[]) => Record<string, unknown>[]): unknown;
+              };
+              values(): Array<{ name?: string }>;
+            };
+          }
+        ).minimizers;
+        const minimizing =
+          chain.get('mode') === 'production' && chain.optimization.get('minimize') !== false;
+        if (minimizing && !minimizers.has(cssMinimizerName)) {
+          const found = minimizers
+            .values()
+            .map((item: { name?: string }) => item.name ?? '(unnamed)')
+            .join(', ');
+          throw new Error(
+            `未找到 CSS minimizer「${cssMinimizerName}」（@tarojs/webpack5-runner 4.3.1）。当前：${found || '(none)'}`,
+          );
+        }
+        if (minimizers.has(cssMinimizerName)) {
+          minimizers.get(cssMinimizerName).tap((args: Record<string, unknown>[]) => {
+            const options = args[0] ?? {};
+            const minimizerOptions = (options.minimizerOptions ?? {}) as { preset?: unknown };
+            const preset = minimizerOptions.preset;
+            if (!Array.isArray(preset)) {
+              throw new Error(
+                `CSS minimizer「${cssMinimizerName}」的 minimizerOptions.preset 不是数组，无法关闭 postcss-calc`,
+              );
+            }
+            const [presetName, presetOptions] = preset as [unknown, unknown];
+            const nextPresetOptions =
+              presetOptions !== null && typeof presetOptions === 'object'
+                ? { ...(presetOptions as Record<string, unknown>), calc: false }
+                : { calc: false };
+            args[0] = {
+              ...options,
+              minimizerOptions: {
+                ...minimizerOptions,
+                preset: [presetName, nextPresetOptions],
+              },
+            };
+            return args;
+          });
+        }
+
+        // 设计稿 PNG 超过 webpack 默认体积，且主包没有 async chunk。只关 performance hint。
+        chain.performance.hints(false);
       },
     },
   };
