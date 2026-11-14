@@ -630,7 +630,7 @@
 
 .qs-set-knob {
   position: absolute;
-  top: 2px;
+  top: 3px;
   left: 2px;
   width: 27px;
   height: 27px;
@@ -640,7 +640,7 @@
 }
 
 .qs-set-switch-on .qs-set-knob {
-  left: 21px;
+  left: 23px;
 }
 
 .qs-set-off {
