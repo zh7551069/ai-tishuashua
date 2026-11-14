@@ -1,0 +1,581 @@
+html,
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-synthesis-weight: none;
+  background: transparent;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.content-layer {
+  position: relative;
+  z-index: 0;
+}
+
+.frame,
+.shape,
+.text,
+.svg-container,
+.mask-container {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 0;
+}
+
+.svg-container>svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  shape-rendering: geometricPrecision;
+}
+
+.svg-container>img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.self-stretch {
+  align-self: stretch;
+}
+
+.grow {
+  flex-grow: 1;
+}
+
+.min-w-0 {
+  min-width: 0px;
+}
+
+.min-h-0 {
+  min-height: 0px;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.relative {
+  position: relative;
+}
+
+.box-border {
+  box-sizing: border-box;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.whitespace-pre {
+  white-space: pre;
+}
+
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.gap-\[12px\] {
+  gap: 12px;
+}
+
+.gap-\[6px\] {
+  gap: 6px;
+}
+
+.gap-\[10px\] {
+  gap: 10px;
+}
+
+.gap-\[4px\] {
+  gap: 4px;
+}
+
+.gap-\[2px\] {
+  gap: 2px;
+}
+
+.gap-\[3px\] {
+  gap: 3px;
+}
+
+.gap-\[8px\] {
+  gap: 8px;
+}
+
+.rounded-\[20px\] {
+  border-radius: 20px;
+}
+
+.rounded-\[18px\] {
+  border-radius: 18px;
+}
+
+.rounded-\[999px\] {
+  border-radius: 999px;
+}
+
+.rounded-\[16px\] {
+  border-radius: 16px;
+}
+
+.text-\[15px\] {
+  font-size: 15px;
+}
+
+.text-\[18px\] {
+  font-size: 18px;
+}
+
+.text-\[20px\] {
+  font-size: 20px;
+}
+
+.text-\[12px\] {
+  font-size: 12px;
+}
+
+.text-\[11px\] {
+  font-size: 11px;
+}
+
+.text-\[14px\] {
+  font-size: 14px;
+}
+
+.text-\[22px\] {
+  font-size: 22px;
+}
+
+.text-\[16px\] {
+  font-size: 16px;
+}
+
+.text-\[28px\] {
+  font-size: 28px;
+}
+
+.text-\[13px\] {
+  font-size: 13px;
+}
+
+.text-\[10px\] {
+  font-size: 10px;
+}
+
+.text-\[8px\] {
+  font-size: 8px;
+}
+
+.leading-\[22px\] {
+  line-height: 22px;
+}
+
+.leading-\[17px\] {
+  line-height: 17px;
+}
+
+.leading-\[15px\] {
+  line-height: 15px;
+}
+
+.tracking-\[-0\.2px\] {
+  letter-spacing: -0.2px;
+}
+
+.tracking-\[-0\.3px\] {
+  letter-spacing: -0.3px;
+}
+
+.tracking-\[0\.1px\] {
+  letter-spacing: 0.1px;
+}
+
+.tracking-\[-0\.4px\] {
+  letter-spacing: -0.4px;
+}
+
+.tracking-\[-0\.1px\] {
+  letter-spacing: -0.1px;
+}
+
+.tracking-\[-0\.6px\] {
+  letter-spacing: -0.6px;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.h-\[840px\] {
+  height: 840px;
+}
+
+.w-\[390px\] {
+  width: 390px;
+}
+
+.h-\[54px\] {
+  height: 54px;
+}
+
+.h-\[48px\] {
+  height: 48px;
+}
+
+.h-\[704px\] {
+  height: 704px;
+}
+
+.h-\[34px\] {
+  height: 34px;
+}
+
+.w-\[124px\] {
+  width: 124px;
+}
+
+.h-\[124px\] {
+  height: 124px;
+}
+
+.h-\[84px\] {
+  height: 84px;
+}
+
+.h-\[5px\] {
+  height: 5px;
+}
+
+.w-\[128px\] {
+  width: 128px;
+}
+
+.h-\[12px\] {
+  height: 12px;
+}
+
+.w-\[17px\] {
+  width: 17px;
+}
+
+.w-\[16px\] {
+  width: 16px;
+}
+
+.w-\[25px\] {
+  width: 25px;
+}
+
+.h-\[96px\] {
+  height: 96px;
+}
+
+.w-\[350px\] {
+  width: 350px;
+}
+
+.w-\[219px\] {
+  width: 219px;
+}
+
+.h-\[32px\] {
+  height: 32px;
+}
+
+.w-\[116px\] {
+  width: 116px;
+}
+
+.w-\[1px\] {
+  width: 1px;
+}
+
+.h-\[50px\] {
+  height: 50px;
+}
+
+.w-\[170px\] {
+  width: 170px;
+}
+
+.h-\[56px\] {
+  height: 56px;
+}
+
+.h-\[1px\] {
+  height: 1px;
+}
+
+.w-\[217px\] {
+  width: 217px;
+}
+
+.w-\[224px\] {
+  width: 224px;
+}
+
+.w-\[43\.71px\] {
+  width: 43.71px;
+}
+
+.w-\[318px\] {
+  width: 318px;
+}
+
+.w-\[32px\] {
+  width: 32px;
+}
+
+.w-\[260px\] {
+  width: 260px;
+}
+
+.w-\[230px\] {
+  width: 230px;
+}
+
+.h-\[55px\] {
+  height: 55px;
+}
+
+.h-\[16px\] {
+  height: 16px;
+}
+
+.h-\[28px\] {
+  height: 28px;
+}
+
+.w-\[28px\] {
+  width: 28px;
+}
+
+.h-\[14px\] {
+  height: 14px;
+}
+
+.w-\[8px\] {
+  width: 8px;
+}
+
+.h-\[18px\] {
+  height: 18px;
+}
+
+.h-\[37px\] {
+  height: 37px;
+}
+
+.w-\[37px\] {
+  width: 37px;
+}
+
+.h-\[10px\] {
+  height: 10px;
+}
+
+.w-\[12px\] {
+  width: 12px;
+}
+
+.w-\[34px\] {
+  width: 34px;
+}
+
+.left-\[0px\] {
+  left: 0px;
+}
+
+.top-\[0px\] {
+  top: 0px;
+}
+
+.left-\[470px\] {
+  left: 470px;
+}
+
+.left-\[133px\] {
+  left: 133px;
+}
+
+.top-\[11px\] {
+  top: 11px;
+}
+
+.left-\[16\.36px\] {
+  left: 16.36px;
+}
+
+.left-\[7\.86px\] {
+  left: 7.86px;
+}
+
+.top-\[24px\] {
+  top: 24px;
+}
+
+.pl-\[28px\] {
+  padding-left: 28px;
+}
+
+.pr-\[28px\] {
+  padding-right: 28px;
+}
+
+.pt-\[16px\] {
+  padding-top: 16px;
+}
+
+.px-\[20px\] {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.pb-\[16px\] {
+  padding-bottom: 16px;
+}
+
+.pl-\[20px\] {
+  padding-left: 20px;
+}
+
+.pr-\[20px\] {
+  padding-right: 20px;
+}
+
+.pt-\[8px\] {
+  padding-top: 8px;
+}
+
+.pl-\[18px\] {
+  padding-left: 18px;
+}
+
+.pr-\[16px\] {
+  padding-right: 16px;
+}
+
+.pt-\[18px\] {
+  padding-top: 18px;
+}
+
+.pb-\[14px\] {
+  padding-bottom: 14px;
+}
+
+.pl-\[16px\] {
+  padding-left: 16px;
+}
+
+.pr-\[14px\] {
+  padding-right: 14px;
+}
+
+.pt-\[14px\] {
+  padding-top: 14px;
+}
+
+.px-\[16px\] {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.pb-\[12px\] {
+  padding-bottom: 12px;
+}
+
+.pl-\[14px\] {
+  padding-left: 14px;
+}
+
+.pl-\[12px\] {
+  padding-left: 12px;
+}
+
+.px-\[5px\] {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.px-\[4px\] {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.text-\[rgb\(28\,25\,23\)\] {
+  color: rgb(28, 25, 23);
+}
+
+.text-\[rgb\(120\,113\,108\)\] {
+  color: rgb(120, 113, 108);
+}
+
+.text-\[rgb\(255\,255\,255\)\] {
+  color: rgb(255, 255, 255);
+}
+
+.text-\[rgb\(77\,124\,15\)\] {
+  color: rgb(77, 124, 15);
+}
+
+.z-\[1\] {
+  z-index: 1;
+}
+
+.z-\[2\] {
+  z-index: 2;
+}
+
+.z-\[3\] {
+  z-index: 3;
+}
+
+.z-\[4\] {
+  z-index: 4;
+}
+
+[data-figma-render] .fr-l7j0nm {
+  background: rgb(245, 245, 247)
+}

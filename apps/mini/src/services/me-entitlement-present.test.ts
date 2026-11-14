@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -19,6 +20,7 @@ import {
   ME_DAILY_SHARE_ROUTE,
   ME_INVITE_META,
   ME_INVITE_ROUTE,
+  ME_OPEN_MEMBER_LABEL,
   ME_LEDGER_MEMBER_META,
   ME_MEMBER_CARD_NOTE,
   ME_MEMBER_CARD_TITLE,
@@ -34,6 +36,7 @@ import {
   presentMeEntitlement,
   presentMeGrowth,
 } from './me-entitlement-present';
+import { MEMBER_PAGE_TITLE } from './membership-present';
 
 const miniRoot = join(__dirname, '../..');
 
@@ -157,6 +160,61 @@ test('签到和分享文案按会员态分支，不改余额', () => {
   assert.equal(presentMeGrowth(false).shareMeta, ME_SHARE_META_FREE);
   assert.equal(presentMeGrowth(true).shareMeta, ME_SHARE_META_MEMBER);
   assert.equal(presentMeGrowth(true).inviteMeta, ME_INVITE_META);
+});
+
+test('我页场次卡按钮是直通会员，开通会员页标题不跟着改', () => {
+  assert.equal(ME_OPEN_MEMBER_LABEL, '直通会员');
+  assert.equal(MEMBER_PAGE_TITLE, '开通会员');
+  const memberConfig = readFileSync(
+    join(miniRoot, 'src/pages/commerce/member/index.config.ts'),
+    'utf8',
+  );
+  const memberPage = readFileSync(join(miniRoot, 'src/pages/commerce/member/index.tsx'), 'utf8');
+  const blocks = readFileSync(join(miniRoot, 'src/pages/me/commerce-blocks.tsx'), 'utf8');
+  const exhausted = readFileSync(join(miniRoot, 'src/services/exhausted-sheet.ts'), 'utf8');
+  assert.match(memberConfig, /navigationBarTitleText: '开通会员'/);
+  assert.match(memberPage, /MEMBER_PAGE_TITLE/);
+  assert.equal(memberPage.includes('直通会员'), false);
+  assert.match(blocks, /ME_OPEN_MEMBER_LABEL/);
+  assert.equal(blocks.includes('开通会员'), false);
+  assert.match(exhausted, /开通会员 · 不限场/);
+  assert.equal(exhausted.includes('直通会员'), false);
+});
+
+test('场次卡只换背景插画，资料卡和会员卡图哈希不动', () => {
+  const quota = readFileSync(join(miniRoot, 'src/pages/me/assets/quota-art-bg.png'));
+  const profile = readFileSync(join(miniRoot, 'src/pages/me/assets/profile-art.png'));
+  const member = readFileSync(join(miniRoot, 'src/pages/me/assets/member-art-bg.png'));
+  assert.equal(
+    createHash('sha256').update(quota).digest('hex'),
+    'da00ae93798b7d38e7cd6a3e5b5a4b12e3dee25834e60c3ff9b57f13787e8b99',
+  );
+  assert.equal(quota.length, 856306);
+  assert.equal(
+    createHash('sha256').update(profile).digest('hex'),
+    '459fd944e0f3251b3ef3a2d59c50fcf930bee11fd673ff62c82a64fbca8eea7b',
+  );
+  assert.equal(
+    createHash('sha256').update(member).digest('hex'),
+    '82b31547234efd09a1f86cc100b5361bdcff4b8f4b4a5e42a9aa32b1ef45bd1c',
+  );
+});
+
+test('签到两态：未签到胶囊在标签行，已签到用 37/34/28 套圈', () => {
+  const page = readFileSync(join(miniRoot, 'src/pages/me/index.tsx'), 'utf8');
+  const css = readFileSync(join(miniRoot, 'src/pages/me/commerce.css'), 'utf8');
+  assert.match(page, /ms-lab-row/);
+  assert.match(page, /day\.dot === 'today' \? <Text className="ms-today-pill">今天<\/Text>/);
+  assert.match(page, /ms-dot-today-on/);
+  assert.match(page, /ms-tint-ring/);
+  assert.equal(page.includes('ms-dot-ring'), false);
+  assert.match(css, /\.ms-home \.ms-week-on \.ms-dot-slot \{[^}]*top: 24px/);
+  assert.match(css, /\.ms-home \.ms-week-on \.ms-day-on \.ms-dot-today-on \{[^}]*top: 19\.5px/);
+  assert.match(css, /\.ms-home \.ms-cta-text \{[^}]*font-size: 16px/);
+  assert.match(css, /\.ms-home \.ms-cta-done \.ms-cta-text \{[^}]*font-size: 15px/);
+  assert.match(css, /width: 37px;\s*height: 37px/);
+  assert.match(css, /width: 34px;\s*height: 34px/);
+  assert.match(css, /inset 0 0 0 1\.5px var\(--ts-accent-100\)/);
 });
 
 test('导航只指向会员页、加油包页、明细、任务和增长占位页', () => {
