@@ -181,23 +181,25 @@ test('我页场次卡按钮是直通会员，开通会员页标题不跟着改',
   assert.equal(exhausted.includes('直通会员'), false);
 });
 
-test('场次卡只换背景插画，资料卡和会员卡图哈希不动', () => {
+test('我页三张插画锁定为按展示尺寸缩小后的字节', () => {
   const quota = readFileSync(join(miniRoot, 'src/pages/me/assets/quota-art-bg.png'));
   const profile = readFileSync(join(miniRoot, 'src/pages/me/assets/profile-art.png'));
   const member = readFileSync(join(miniRoot, 'src/pages/me/assets/member-art-bg.png'));
   assert.equal(
     createHash('sha256').update(quota).digest('hex'),
-    'da00ae93798b7d38e7cd6a3e5b5a4b12e3dee25834e60c3ff9b57f13787e8b99',
+    '5e2a1b1ed7392daa45c930640aa00832c80571db09f4ea28a64af5a322737be8',
   );
-  assert.equal(quota.length, 856306);
+  assert.equal(quota.length, 124291);
   assert.equal(
     createHash('sha256').update(profile).digest('hex'),
-    '459fd944e0f3251b3ef3a2d59c50fcf930bee11fd673ff62c82a64fbca8eea7b',
+    'c68c4a7b36eabe75688fcb1d1d869e05675af39ebad5d192c880a63b80f00060',
   );
+  assert.equal(profile.length, 79739);
   assert.equal(
     createHash('sha256').update(member).digest('hex'),
-    '82b31547234efd09a1f86cc100b5361bdcff4b8f4b4a5e42a9aa32b1ef45bd1c',
+    'fbf8c5739eeb5340df66a8128afbd236626df27337ff710f415dacb999268602',
   );
+  assert.equal(member.length, 62772);
 });
 
 test('签到两态：未签到胶囊在标签行，已签到用 37/34/28 套圈', () => {
