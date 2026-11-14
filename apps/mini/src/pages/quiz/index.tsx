@@ -32,6 +32,12 @@ import iconKnob from './assets/icon-knob.png';
 import hero from './assets/settings-hero.jpg';
 import typeCheck from './assets/type-check.svg';
 import { quizSettingsFooterLine } from './footer-copy';
+import {
+  applyWholePackSwitch,
+  dailyPlanPointSelected,
+  dailyPlanSessionKnowledgePointIds,
+  toggleDailyPlanPoint,
+} from './whole-pack';
 import './index.css';
 
 const KNOWN_TYPES = new Set<string>(QUIZ_TYPES);
@@ -156,6 +162,20 @@ export default function QuizSettingsPage() {
     });
   };
 
+  const packPointIds = pack?.knowledgePoints.map((item) => item.id) ?? [];
+
+  const toggleWholePack = () => {
+    const next = applyWholePackSwitch(!wholePack, packPointIds);
+    setWholePack(next.wholePack);
+    setKept(next.kept);
+  };
+
+  const toggleDailyPoint = (id: string) => {
+    const next = toggleDailyPlanPoint({ wholePack, kept: kept ?? [] }, id, packPointIds);
+    setWholePack(next.wholePack);
+    setKept(next.kept);
+  };
+
   const start = async () => {
     if (!pack || blocked) {
       return;
@@ -166,6 +186,9 @@ export default function QuizSettingsPage() {
     if (fromDailyPlan && !wholePack && (!kept || kept.length === 0)) {
       return;
     }
+    const dailyPointIds = fromDailyPlan
+      ? dailyPlanSessionKnowledgePointIds({ wholePack, kept: kept ?? [] })
+      : undefined;
     setBusy(true);
     try {
       const result = await gate.run({
@@ -184,8 +207,8 @@ export default function QuizSettingsPage() {
                 : { enabled: true, kind: 'paper', paperMinutes },
             ...(fromRetrain
               ? { source: 'retrain_similar' as const, knowledgePointIds: kept ?? [] }
-              : fromDailyPlan && !wholePack
-                ? { knowledgePointIds: kept ?? [] }
+              : dailyPointIds !== undefined
+                ? { knowledgePointIds: dailyPointIds }
                 : {}),
           }),
       });
@@ -306,19 +329,12 @@ export default function QuizSettingsPage() {
             <View className="qs-chips">
               {pack.knowledgePoints.map((item) => {
                 const id = item.id.toLowerCase();
-                const on = !wholePack && (kept ?? []).includes(id);
+                const on = dailyPlanPointSelected({ wholePack, kept: kept ?? [] }, id);
                 return (
                   <View
                     key={item.id}
                     className={classes('qs-chip', on && 'qs-chip-on')}
-                    onClick={() => {
-                      if (wholePack) {
-                        setWholePack(false);
-                        setKept([id]);
-                        return;
-                      }
-                      toggleKept(id);
-                    }}
+                    onClick={() => toggleDailyPoint(id)}
                   >
                     <Text className={classes('qs-chip-label', on && 'qs-chip-label-on')}>
                       {item.name}
@@ -327,7 +343,7 @@ export default function QuizSettingsPage() {
                 );
               })}
             </View>
-            <View className="qs-timer-row" onClick={() => setWholePack((value) => !value)}>
+            <View className="qs-timer-row" onClick={toggleWholePack}>
               <Text className="qs-label">整包练习</Text>
               <View className={classes('qs-switch', wholePack && 'qs-switch-on')}>
                 <Image className="qs-knob" src={iconKnob} mode="aspectFit" />
