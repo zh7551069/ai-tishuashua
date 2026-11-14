@@ -25,8 +25,10 @@ import {
 } from '../../../services/quiz-api';
 import { bandHeadline, scoreBand } from '../../../ui/score-band';
 import iconBack from '../../../assets/me-settings/3fbuza.svg';
-import { QuizOption } from '../../../components/QuizOption';
 import { startWrongSetRetrain } from '../../../services/wrong-set-retrain-start';
+import markCheck from './assets/mark-check.svg';
+import markRight from './assets/mark-right.svg';
+import markWrong from './assets/mark-wrong.svg';
 import { RetrainBar } from '../../score/retrain-bar';
 import '../../score/review.css';
 import './index.css';
@@ -36,6 +38,7 @@ import {
   optionFace,
   questionHint,
   type CellTone,
+  type OptionFace,
 } from './option-state';
 
 export default function QuizPaperPage() {
@@ -354,13 +357,11 @@ function PaperNav(props: { mode: QuizMode | null; onBack: () => void }) {
         <Image className="u-back-ico" src={iconBack} mode="aspectFit" />
       </View>
       <Text className="paper-nav-title">答题</Text>
-      <View className="u-pin-side">
-        {props.mode ? (
-          <Text className={props.mode === 'exam' ? 'paper-mode paper-mode-exam' : 'paper-mode'}>
-            {QUIZ_MODE_LABELS[props.mode]}
-          </Text>
-        ) : null}
-      </View>
+      {props.mode ? (
+        <Text className={props.mode === 'exam' ? 'paper-mode paper-mode-exam' : 'paper-mode'}>
+          {QUIZ_MODE_LABELS[props.mode]}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -387,19 +388,19 @@ function AnswerBar(props: {
         >
           <Text className="paper-prev-text">上一题</Text>
         </View>
-        <View
-          className={atLast && !practiceHandIn ? 'paper-next paper-btn-off' : 'paper-next'}
-          onClick={practiceHandIn ? props.onSubmit : atLast ? undefined : props.onNext}
-        >
-          <Text className="paper-next-text">{practiceHandIn ? '交卷' : '下一题'}</Text>
+        <View className="paper-board-btn" onClick={props.onBoard}>
+          <Text className="paper-board-text">题板</Text>
         </View>
         {props.mode === 'exam' ? (
           <View className="paper-handin" onClick={props.onSubmit}>
             <Text className="paper-handin-text">交卷</Text>
           </View>
         ) : null}
-        <View className="paper-board-btn" onClick={props.onBoard}>
-          <Text className="paper-board-text">题板</Text>
+        <View
+          className={atLast && !practiceHandIn ? 'paper-next paper-btn-off' : 'paper-next'}
+          onClick={practiceHandIn ? props.onSubmit : atLast ? undefined : props.onNext}
+        >
+          <Text className="paper-next-text">{practiceHandIn ? '交卷' : '下一题'}</Text>
         </View>
       </View>
     </View>
@@ -449,7 +450,7 @@ function QuestionView(props: {
   const revealed = props.question.review !== null;
   const hint = questionHint(props.session.mode, props.question.type, revealed);
   return (
-    <View className="paper-stack">
+    <View>
       <ProgressCard
         session={props.session}
         index={props.index}
@@ -457,16 +458,8 @@ function QuestionView(props: {
         leftSeconds={props.leftSeconds}
       />
       <View className="paper-question">
-        <View className="paper-type-row">
-          <Text
-            className={
-              props.session.mode === 'exam' ? 'paper-badge paper-badge-exam' : 'paper-badge'
-            }
-          >
-            {PAPER_TYPE_LABEL[props.question.type]}
-          </Text>
-          {hint ? <Text className="paper-hint">{hint}</Text> : null}
-        </View>
+        <Text className="paper-badge">{PAPER_TYPE_LABEL[props.question.type]}</Text>
+        {hint ? <Text className="paper-hint">{hint}</Text> : null}
         <Text className="paper-stem">{props.question.stem}</Text>
         <OptionList
           mode={props.session.mode}
@@ -494,35 +487,30 @@ function ProgressCard(props: {
   const progress = props.total > 0 ? ((props.index + 1) / props.total) * 100 : 0;
   const count = `第 ${props.index + 1} / ${props.total} 题`;
   return (
-    <View className={timer.enabled ? 'paper-progress' : 'paper-progress paper-progress-free'}>
-      {timer.enabled ? (
-        <View className="paper-time-row">
-          <View className="paper-time-left">
-            <Text className="paper-time-label">
-              {timer.kind === 'paper' ? '整卷倒计时' : '每题限时'}
-            </Text>
-            <Text className="paper-time-value">
-              {props.leftSeconds === null ? '不限时' : formatClock(props.leftSeconds)}
-            </Text>
-          </View>
-          <Text className="paper-time-count">{count}</Text>
+    <View className="paper-session">
+      <View className="paper-session-left">
+        <Text className="paper-qno">{count}</Text>
+        <View className="paper-bar">
+          <View className="paper-bar-fill" style={{ width: `${progress}%` }} />
         </View>
-      ) : (
-        <View className="paper-free-row">
-          <Text className="paper-time-label">不计时</Text>
-          <Text className="paper-free-count">{count}</Text>
-        </View>
-      )}
-      <View className="paper-bar">
-        <View className="paper-bar-fill" style={{ width: `${progress}%` }} />
       </View>
       {timer.enabled ? (
-        <Text className="paper-limit">
-          {timer.kind === 'paper'
-            ? `限时 ${formatClock(timer.paperMinutes * 60)}`
-            : `限时 ${formatClock(timer.perQuestionSeconds)}`}
-        </Text>
-      ) : null}
+        <View className="paper-session-time">
+          <Text className="paper-time-kicker">
+            {timer.kind === 'paper' ? '整卷倒计时' : '每题限时'}
+          </Text>
+          <Text className="paper-time-value">
+            {props.leftSeconds === null ? '不限时' : formatClock(props.leftSeconds)}
+          </Text>
+          <Text className="paper-time-limit">
+            {timer.kind === 'paper'
+              ? `限时 ${formatClock(timer.paperMinutes * 60)}`
+              : `限时 ${formatClock(timer.perQuestionSeconds)}`}
+          </Text>
+        </View>
+      ) : (
+        <Text className="paper-untimed">不计时</Text>
+      )}
     </View>
   );
 }
@@ -544,10 +532,11 @@ function OptionList(props: {
           optionId: option.id,
         });
         return (
-          <QuizOption
+          <PaperChoice
             key={option.id}
             optionId={option.id}
             text={option.text}
+            type={props.question.type}
             face={face}
             onChoose={props.onChoose}
           />
@@ -557,14 +546,60 @@ function OptionList(props: {
   );
 }
 
+function PaperChoice(props: {
+  optionId: string;
+  text: string;
+  type: QuizQuestionView['type'];
+  face: OptionFace;
+  onChoose?: (optionId: string) => void;
+}) {
+  const { face } = props;
+  const examOpen = face.control === 'check';
+  const judgePick = examOpen && props.type === 'judge';
+  const row = face.tag === 'miss' ? 'miss' : face.tone;
+  const letterTone = face.tone === 'wrong' ? 'wrong' : face.tone === 'idle' ? 'idle' : 'right';
+  return (
+    <View
+      className={`paper-option paper-option-${row}`}
+      onClick={props.onChoose ? () => props.onChoose?.(props.optionId) : undefined}
+    >
+      {examOpen && !judgePick ? (
+        <View className={face.tone === 'picked' ? 'paper-box paper-box-on' : 'paper-box'}>
+          {face.tone === 'picked' ? (
+            <Image className="paper-box-img" src={markCheck} mode="aspectFit" />
+          ) : null}
+        </View>
+      ) : null}
+      {judgePick ? null : (
+        <Text className={`paper-letter paper-letter-${letterTone}`}>{props.optionId}</Text>
+      )}
+      <Text
+        className={
+          face.tone === 'wrong' ? 'paper-option-text paper-option-text-wrong' : 'paper-option-text'
+        }
+      >
+        {props.text}
+      </Text>
+      {judgePick && face.tone === 'picked' ? (
+        <View className="paper-tick">
+          <Image className="paper-tick-img" src={markCheck} mode="aspectFit" />
+        </View>
+      ) : null}
+      {!examOpen && face.tone === 'right' ? (
+        <Image className="paper-mark" src={markRight} mode="aspectFit" />
+      ) : null}
+      {!examOpen && face.tone === 'wrong' ? (
+        <Image className="paper-mark" src={markWrong} mode="aspectFit" />
+      ) : null}
+    </View>
+  );
+}
+
 function AnalysisBlock(props: { text: string; follow?: boolean }) {
   return (
     <View className={props.follow ? 'paper-analysis paper-analysis-follow' : 'paper-analysis'}>
-      <View className="paper-analysis-bar" />
-      <View className="paper-analysis-copy">
-        <Text className="paper-analysis-title">解析</Text>
-        <Text className="paper-analysis-body">{props.text || '这道题没有解析。'}</Text>
-      </View>
+      <Text className="paper-analysis-title">解析</Text>
+      <Text className="paper-analysis-body">{props.text || '这道题没有解析。'}</Text>
     </View>
   );
 }
@@ -584,27 +619,33 @@ function BoardGrid(props: {
   onPick: (index: number) => void;
 }) {
   const rows = Math.ceil(props.questions.length / 5);
-  const height = rows * 56 + Math.max(0, rows - 1) * 10;
-  const grid = (
-    <View className="paper-grid">
-      {props.questions.map((question, questionIndex) => {
-        const tone: CellTone = cellTone({
-          current: questionIndex === props.index,
-          outcome: question.review?.outcome ?? null,
-          answered: question.selected.length > 0,
-        });
-        return (
-          <View
-            key={question.id}
-            className={`paper-cell paper-cell-${tone}`}
-            onClick={() => props.onPick(questionIndex)}
-          >
-            <Text className={`paper-cell-num paper-cell-num-${tone}`}>{question.ordinal}</Text>
-          </View>
-        );
-      })}
+  const height = rows * 56 + Math.max(0, rows - 1) * 8;
+  const cells = props.questions.map((question, questionIndex) => {
+    const tone: CellTone = cellTone({
+      current: questionIndex === props.index,
+      outcome: question.review?.outcome ?? null,
+      answered: question.selected.length > 0,
+    });
+    return (
+      <View
+        key={question.id}
+        className={`paper-cell paper-cell-${tone}`}
+        onClick={() => props.onPick(questionIndex)}
+      >
+        <Text className={`paper-cell-num paper-cell-num-${tone}`}>{question.ordinal}</Text>
+      </View>
+    );
+  });
+  const padded = cells.slice();
+  while (padded.length % 5 !== 0) {
+    padded.push(<View key={`pad-${padded.length}`} className="paper-cell paper-cell-pad" />);
+  }
+  const rowNodes = Array.from({ length: padded.length / 5 }, (_, row) => (
+    <View key={row} className="paper-grid-row">
+      {padded.slice(row * 5, row * 5 + 5)}
     </View>
-  );
+  ));
+  const grid = <View className="paper-grid">{rowNodes}</View>;
   if (height <= 280) {
     return grid;
   }
