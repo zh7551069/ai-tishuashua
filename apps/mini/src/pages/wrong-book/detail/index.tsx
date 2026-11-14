@@ -19,7 +19,9 @@ import {
   type RetrainTarget,
 } from '../../../services/retrain';
 import { clearWrongItem, fetchWrongItem } from '../../../services/wrong-book-api';
-import iconChevron from './assets/icon-chevron.png';
+import iconCheck from './assets/nlugsn.svg';
+import iconChevron from './assets/12l7icc.svg';
+import iconCross from './assets/kgqhof.svg';
 import './index.css';
 import { detailMeta, detailOptionFace, detailSources, type DetailSource } from './present';
 
@@ -249,21 +251,20 @@ export default function WrongBookDetailPage() {
                 });
                 return (
                   <View key={option.id} className={`wd-opt wd-opt-${face.tone}`}>
-                    <View className="wd-opt-main">
-                      <View className={`wd-letter wd-letter-${face.tone}`}>
-                        <Text className={`wd-letter-text wd-letter-text-${face.tone}`}>
-                          {option.id}
-                        </Text>
-                      </View>
-                      <Text className={`wd-opt-text wd-opt-text-${face.tone}`}>{option.text}</Text>
+                    <View className={`wd-letter wd-letter-${face.tone}`}>
+                      <Text className={`wd-letter-text wd-letter-text-${face.tone}`}>
+                        {option.id}
+                      </Text>
                     </View>
-                    {face.tags.length > 0 ? (
-                      <View className="wd-tagline">
-                        {face.tags.map((tag) => (
-                          <Text key={tag.text} className={`wd-opt-tag wd-opt-tag-${tag.tone}`}>
-                            {tag.text}
-                          </Text>
-                        ))}
+                    <Text className={`wd-opt-text wd-opt-text-${face.tone}`}>{option.text}</Text>
+                    {face.tone === 'right' ? (
+                      <View className="wd-mark">
+                        <Image className="wd-mark-check" src={iconCheck} mode="aspectFit" />
+                      </View>
+                    ) : null}
+                    {face.tone === 'wrong' ? (
+                      <View className="wd-mark">
+                        <Image className="wd-mark-cross" src={iconCross} mode="aspectFit" />
                       </View>
                     ) : null}
                   </View>
