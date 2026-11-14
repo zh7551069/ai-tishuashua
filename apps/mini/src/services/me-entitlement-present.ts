@@ -6,7 +6,8 @@ import { BUSINESS_TZ, type EntitlementBalances, type EntitlementView } from '@ti
 
 export const ME_USAGE_TITLE = '今日剩余场次';
 export const ME_USAGE_UNIT = '场';
-export const ME_OPEN_MEMBER_LABEL = '开通会员';
+/** 「我」页场次卡按钮。开通会员页标题是 MEMBER_PAGE_TITLE，两处分开，不跟着这颗按钮改。 */
+export const ME_OPEN_MEMBER_LABEL = '直通会员';
 export const ME_MEMBER_CARD_TITLE = '题刷刷会员 · 生效中';
 export const ME_MEMBER_CARD_NOTE = '提炼不限 · 可升级补差价续费';
 export const ME_LEDGER_TITLE = '场次明细';

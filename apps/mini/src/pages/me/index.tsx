@@ -211,7 +211,11 @@ export default function MePage() {
       bodyFill={failed}
       backMark={<BridgeBack />}
     >
-      <View className={failed ? `ms-home ms-error-fill ms-theme-${themeId}` : `ms-home ms-theme-${themeId}`}>
+      <View
+        className={
+          failed ? `ms-home ms-error-fill ms-theme-${themeId}` : `ms-home ms-theme-${themeId}`
+        }
+      >
         {!ready && !error ? (
           <View className="ms-body">
             <LoadingBlock label="正在读取个人中心" />
@@ -276,14 +280,28 @@ function MeBody(props: {
             {view.streakText}
           </Text>
         </View>
-        <View className="ms-week">
-          {view.week.map((day) => (
-            <View key={day.label} className="ms-day">
-              <Text className="ms-day-label">{day.label}</Text>
-              {day.dot === 'today' ? <Text className="ms-today-pill">今天</Text> : null}
-              <DayDot dot={day.dot} />
-            </View>
-          ))}
+        <View
+          className={
+            view.week.some((day) => day.dot === 'today-on') ? 'ms-week ms-week-on' : 'ms-week'
+          }
+        >
+          {view.week.map((day) => {
+            const isToday = day.dot === 'today' || day.dot === 'today-on';
+            return (
+              <View
+                key={day.label}
+                className={day.dot === 'today-on' ? 'ms-day ms-day-on' : 'ms-day'}
+              >
+                <View className="ms-lab-row">
+                  <Text className={isToday ? 'ms-day-label ms-day-label-today' : 'ms-day-label'}>
+                    {day.label}
+                  </Text>
+                  {day.dot === 'today' ? <Text className="ms-today-pill">今天</Text> : null}
+                </View>
+                <DayDot dot={day.dot} />
+              </View>
+            );
+          })}
         </View>
         <Text className="ms-checkin-note">{props.checkinNote}</Text>
         <View
@@ -362,24 +380,36 @@ function Stat(props: { label: string; value: string; unit?: string; muted?: bool
 function DayDot(props: { dot: WeekDot }) {
   if (props.dot === 'today-on') {
     return (
-      <View className="ms-dot-ring">
-        <View className="ms-dot ms-brand-bg">
-          <CheckMark />
+      <View className="ms-dot-today-on">
+        <View className="ms-tint-ring">
+          <View className="ms-dot ms-brand-bg">
+            <CheckMark />
+          </View>
         </View>
       </View>
     );
   }
   if (props.dot === 'past') {
     return (
-      <View className="ms-dot ms-brand-bg">
-        <CheckMark />
+      <View className="ms-dot-slot">
+        <View className="ms-dot ms-brand-bg">
+          <CheckMark />
+        </View>
       </View>
     );
   }
   if (props.dot === 'today') {
-    return <View className="ms-dot ms-dot-today" />;
+    return (
+      <View className="ms-dot-slot">
+        <View className="ms-dot ms-dot-today" />
+      </View>
+    );
   }
-  return <View className="ms-dot ms-dot-hollow" />;
+  return (
+    <View className="ms-dot-slot">
+      <View className="ms-dot ms-dot-hollow" />
+    </View>
+  );
 }
 
 function MenuRow(props: {
