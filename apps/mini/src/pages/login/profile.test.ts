@@ -151,7 +151,7 @@ describe('login page sources', () => {
     }
   });
 
-  test('样式导出与页内主视觉字节未改', () => {
+  test('样式导出字节未改，页内主视觉是缩小后的 board-mark', () => {
     const expected = [
       ['index.html', 96797, '0b87c2be30db9600be1b45f003a45f19678e8ad5810a96c32655690b6039e7fa'],
       ['styles.css', 7640, '47dc9cdbdf263b4850b5e1789c3616c8057af808a5d7f21d1c745bf552026f7e'],
@@ -168,7 +168,8 @@ describe('login page sources', () => {
     }
     assert.equal(
       sha256(join(pageDir, 'assets/board-mark.png')),
-      '18765a77acdf4190a9beb5875bfa1f711a84396ca6f8ad10777ca1d4a01aef84',
+      'ff2360fd00993718c135e23708651e581658e5af372685b51d3308906e34f09d',
     );
+    assert.equal(statSync(join(pageDir, 'assets/board-mark.png')).size, 25762);
   });
 });
