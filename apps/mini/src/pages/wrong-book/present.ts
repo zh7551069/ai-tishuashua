@@ -1,4 +1,4 @@
-import type { QuizTypeCode, WrongBookItem, WrongItemStatus } from '@tishuashua/shared';
+import type { WrongBookItem, WrongItemStatus } from '@tishuashua/shared';
 
 export type StatusFilter = WrongItemStatus | 'all';
 
@@ -42,16 +42,6 @@ export function formatWrongDate(iso: string): string {
 export function knowledgeLine(item: WrongBookItem): string {
   const name = item.kpNames?.map((value) => value.trim()).find(Boolean);
   return name ? `${item.certName} · ${name}` : item.certName;
-}
-
-export function typeClass(type: QuizTypeCode | null): string {
-  if (type === 'multi') {
-    return 'wb-type wb-type-multi';
-  }
-  if (type === 'judge') {
-    return 'wb-type wb-type-judge';
-  }
-  return 'wb-type';
 }
 
 export function inScope(
