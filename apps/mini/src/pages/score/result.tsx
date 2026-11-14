@@ -1,6 +1,11 @@
 import { Image, Text, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import { type PackView, type QuizSessionView } from '@tishuashua/shared';
+import {
+  QUIZ_DIFFICULTY_LABELS,
+  type PackView,
+  type QuizResultView,
+  type QuizSessionView,
+} from '@tishuashua/shared';
 import { useEffect, useState } from 'react';
 import { Screen } from '../../components/Screen';
 import { ErrorBlock, LoadingBlock } from '../../components/StateBlock';
@@ -9,7 +14,7 @@ import { fetchPack } from '../../services/pack-api';
 import { fetchQuizSession } from '../../services/quiz-api';
 import { startWrongSetRetrain } from '../../services/wrong-set-retrain-start';
 import iconChevron from './assets/icon-chevron.png';
-import iconStar from './assets/icon-star.png';
+import celebrateArt from './assets/f0114f64c2773fdcbfd45bf1155f8fb4c6b41e78.png';
 import { RetrainBar } from './retrain-bar';
 import { ReviewView } from './review';
 import './review.css';
@@ -24,23 +29,11 @@ import {
   packLine,
   resultTone,
   wrongQuestions,
+  type BannerModel,
+  type HeroModel,
   type KnowledgeBar,
 } from './model';
 import './result.css';
-
-const CONFETTI = [
-  'sc-d1',
-  'sc-d2',
-  'sc-d3',
-  'sc-d4',
-  'sc-d5',
-  'sc-d6',
-  'sc-d7',
-  'sc-d8',
-  'sc-d9',
-  'sc-d10',
-];
-const RIBS = ['sc-r1', 'sc-r2', 'sc-r3', 'sc-r4', 'sc-r5', 'sc-r6'];
 
 export function ScoreResult(props: { sessionId: string; tick: number }) {
   const [session, setSession] = useState<QuizSessionView | null>(null);
@@ -124,6 +117,7 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
     session && tone && celebrate && !review
       ? celebrateFor(session, tone, weak.length, bars.length > 0)
       : null;
+  const comments = !plain && weak.length > 0 ? commentLines(bars) : [];
 
   const retry = () => {
     if (!session?.packId) {
@@ -156,9 +150,7 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
       back
       centerTitle
       navClassName={review ? 'sc-nav sc-nav-review' : 'sc-nav'}
-      footerClassName={
-        review ? 'sc-foot sc-foot-review' : plain ? 'sc-foot sc-foot-plain' : 'sc-foot'
-      }
+      footerClassName={review ? 'sc-foot sc-foot-review' : 'sc-foot'}
       background="#f5f5f7"
       title={review ? '错题回顾' : '答题结果'}
       onBack={review ? () => setReview(false) : leave}
@@ -166,10 +158,8 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
         review ? (
           <Text className="wr-count">{wrong.length} 题</Text>
         ) : badge ? (
-          <View className={badge.exam ? 'sc-badge sc-badge-exam' : 'sc-badge'}>
-            <Text className={badge.exam ? 'sc-badge-text sc-badge-text-exam' : 'sc-badge-text'}>
-              {badge.text}
-            </Text>
+          <View className="sc-badge">
+            <Text className="sc-badge-text">{badge.text}</Text>
           </View>
         ) : null
       }
@@ -184,12 +174,9 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
             />
           ) : (
             <Actions
-              plain={plain}
               exam={session.mode === 'exam'}
-              showWrong={plain && wrong.length > 0}
               showDrill={!plain && weak.length > 0}
               onHome={() => void Taro.reLaunch({ url: '/pages/home/index' })}
-              onReview={() => setReview(true)}
               onRetry={retry}
               onDrill={drill}
             />
@@ -197,11 +184,7 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
         ) : null
       }
     >
-      <View
-        className={[plain ? 'sc-stack sc-stack-plain' : 'sc-stack', review ? 'sc-stack-review' : '']
-          .filter(Boolean)
-          .join(' ')}
-      >
+      <View className={review ? 'sc-stack sc-stack-review' : 'sc-stack'}>
         {error ? <ErrorBlock detail={error} onRetry={() => void load()} onBack={leave} /> : null}
         {!ready && !error ? <LoadingBlock label="正在加载成绩" /> : null}
         {ready && session && session.status !== 'submitted' ? (
@@ -223,6 +206,16 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
             bars={bars}
             wrongCount={wrong.length}
             plain={plain}
+            exam={session.mode === 'exam'}
+            correctCount={result.correctCount}
+            missedCount={Math.max(0, result.questionCount - result.correctCount)}
+            thirdLabel={session.mode === 'exam' ? '及格线' : '难度 · 题量'}
+            thirdValue={
+              session.mode === 'exam'
+                ? passChip(result)
+                : `${QUIZ_DIFFICULTY_LABELS[session.settings.difficulty]} · ${result.questionCount}`
+            }
+            comments={comments}
             onReview={() => setReview(true)}
             onDrill={drill}
           />
@@ -245,12 +238,18 @@ export function ScoreResult(props: { sessionId: string; tick: number }) {
 
 function ResultBody(props: {
   packTitle: string;
-  banner: ReturnType<typeof bannerFor>;
-  hero: NonNullable<ReturnType<typeof heroFor>>;
+  banner: BannerModel | null;
+  hero: HeroModel;
   duration: ReturnType<typeof durationFor>;
   bars: KnowledgeBar[];
   wrongCount: number;
   plain: boolean;
+  exam: boolean;
+  correctCount: number;
+  missedCount: number;
+  thirdLabel: string;
+  thirdValue: string;
+  comments: string[];
   onReview: () => void;
   onDrill: () => void;
 }) {
@@ -261,25 +260,30 @@ function ResultBody(props: {
         <Text className="sc-pack-kicker">刷题包</Text>
         <Text className="sc-pack-title">{props.packTitle}</Text>
       </View>
-      {props.banner ? <Banner banner={props.banner} /> : null}
-      <Hero hero={props.hero} />
+      <Hero banner={props.banner} hero={props.hero} plain={props.plain} exam={props.exam} />
+      <View className="sc-stats">
+        <Stat label="正确" value={String(props.correctCount)} />
+        <Stat label="错误" value={String(props.missedCount)} />
+        <Stat label={props.thirdLabel} value={props.thirdValue} />
+      </View>
       {props.duration ? <Duration duration={props.duration} /> : null}
       {props.bars.length > 0 ? (
         <View className="sc-know">
           <View className="sc-know-head">
             <Text className="sc-know-title">知识点掌握</Text>
+            <View className="sc-know-gap" />
             <Text className="sc-know-meta">正确/题数</Text>
           </View>
           {props.bars.map((bar) => (
             <View key={bar.id} className="sc-kp">
               <View className="sc-kp-name">
-                <Text>{bar.name}</Text>
+                <Text className="sc-kp-label">{bar.name}</Text>
                 {bar.weak ? <Text className="sc-weak">薄弱</Text> : null}
               </View>
               <View className="sc-mini">
                 <View
                   className="sc-mini-fill"
-                  style={{ width: `${Math.round(bar.rate * 100)}%`, background: bar.color }}
+                  style={{ width: `${Math.round(bar.rate * 100)}%` }}
                 />
               </View>
               <Text className="sc-ratio">
@@ -289,9 +293,21 @@ function ResultBody(props: {
           ))}
           {weak ? (
             <Text className="sc-drill" onClick={props.onDrill}>
-              {props.plain ? '针对薄弱知识点再练' : '针对薄弱知识点再练 →'}
+              针对薄弱知识点再练 →
             </Text>
           ) : null}
+        </View>
+      ) : null}
+      {props.comments.length > 0 ? (
+        <View className="sc-ai">
+          <Text className="sc-ai-title">AI 点评</Text>
+          <View className="sc-ai-body">
+            {props.comments.map((line) => (
+              <Text key={line} className="sc-ai-line">
+                {line}
+              </Text>
+            ))}
+          </View>
         </View>
       ) : null}
       {props.wrongCount > 0 ? (
@@ -308,45 +324,64 @@ function ResultBody(props: {
   );
 }
 
-function Banner(props: { banner: NonNullable<ReturnType<typeof bannerFor>> }) {
-  const theme = props.banner.theme;
+function Stat(props: { label: string; value: string }) {
   return (
-    <View className={`sc-banner sc-banner-${theme}`}>
-      <View className="sc-banner-icon">
-        <Text className="sc-banner-mark">{props.banner.mark}</Text>
+    <View className="sc-stat">
+      <Text className="sc-stat-k">{props.label}</Text>
+      <Text className="sc-stat-v">{props.value}</Text>
+    </View>
+  );
+}
+
+function Hero(props: {
+  banner: BannerModel | null;
+  hero: HeroModel;
+  plain: boolean;
+  exam: boolean;
+}) {
+  const hero = props.hero;
+  const ring = ringParts(hero);
+  const caption = props.exam ? hero.kicker : hero.unit;
+  if (props.plain) {
+    return (
+      <View className="sc-hero sc-hero-plain">
+        <Ring ring={ring} color={hero.color} rate={hero.rate} />
+        <Text className="sc-hero-score">{hero.unit}</Text>
       </View>
-      <View className="sc-banner-copy">
-        <Text className="sc-banner-title">{props.banner.title}</Text>
-        <Text className="sc-banner-detail">{props.banner.detail}</Text>
+    );
+  }
+  const theme = props.banner?.theme;
+  return (
+    <View
+      className={
+        theme ? `sc-hero sc-hero-banner sc-hero-${theme}` : 'sc-hero sc-hero-banner sc-hero-plain'
+      }
+    >
+      <View className="sc-hero-copy">
+        {props.banner ? (
+          <Text className={`sc-hero-title sc-hero-title-${theme}`}>{props.banner.title}</Text>
+        ) : hero.headline ? (
+          <Text className="sc-hero-title sc-hero-title-green">{hero.headline}</Text>
+        ) : null}
+        <Text className="sc-hero-detail">{props.banner ? props.banner.detail : hero.foot}</Text>
+      </View>
+      <View className="sc-hero-side">
+        <Ring ring={ring} color={hero.color} rate={hero.rate} />
+        {caption ? <Text className="sc-hero-caption">{caption}</Text> : null}
       </View>
     </View>
   );
 }
 
-function Hero(props: { hero: NonNullable<ReturnType<typeof heroFor>> }) {
-  const hero = props.hero;
-  const footClass =
-    hero.footTone === 'green'
-      ? 'sc-foot-green'
-      : hero.footTone === 'red'
-        ? 'sc-foot-red'
-        : 'sc-foot-muted';
+function Ring(props: { ring: { value: string; mark: string }; color: string; rate: number }) {
   return (
-    <View className="sc-hero">
-      <View
-        className="sc-ring"
-        style={{ background: `conic-gradient(${hero.color} ${hero.rate * 360}deg, #E7E5E4 0deg)` }}
-      >
-        <View className="sc-ring-hole">
-          <Text className="sc-ring-num">{hero.center}</Text>
-          <Text className="sc-ring-unit">{hero.unit}</Text>
-        </View>
-      </View>
-      <View className="sc-meta">
-        {hero.kicker ? <Text className="sc-kicker">{hero.kicker}</Text> : null}
-        {hero.headline ? <Text className="sc-headline">{hero.headline}</Text> : null}
-        <Text className="sc-correct">{hero.correctLine}</Text>
-        <Text className={footClass}>{hero.foot}</Text>
+    <View
+      className="sc-ring"
+      style={{ background: `conic-gradient(${props.color} ${props.rate * 360}deg, #E7E5E4 0deg)` }}
+    >
+      <View className="sc-ring-hole">
+        <Text className="sc-ring-num">{props.ring.value}</Text>
+        <Text className="sc-ring-mark">{props.ring.mark}</Text>
       </View>
     </View>
   );
@@ -356,23 +391,21 @@ function Duration(props: { duration: NonNullable<ReturnType<typeof durationFor>>
   const duration = props.duration;
   return (
     <View className="sc-time">
-      <View className="sc-time-left">
-        <Text className="sc-time-label">用时</Text>
-        <View className="sc-time-row">
+      <Text className="sc-time-label">用时</Text>
+      <View className="sc-time-row">
+        <View className="sc-time-clock">
           <Text className="sc-time-value">{duration.elapsed}</Text>
           {duration.unlimited ? (
             <Text className="sc-time-limit">不限时</Text>
           ) : (
-            <Text className="sc-time-limit">/ {duration.limit}</Text>
+            <Text className="sc-time-limit"> / {duration.limit}</Text>
           )}
         </View>
+        {duration.usedText ? <Text className="sc-time-meta">{duration.usedText}</Text> : null}
       </View>
       {duration.usedPercent !== null ? (
-        <View className="sc-time-right">
-          <View className="sc-time-track">
-            <View className="sc-time-fill" style={{ width: `${duration.usedPercent}%` }} />
-          </View>
-          <Text className="sc-time-meta">{duration.usedText}</Text>
+        <View className="sc-time-track">
+          <View className="sc-time-fill" style={{ width: `${duration.usedPercent}%` }} />
         </View>
       ) : null}
     </View>
@@ -380,34 +413,21 @@ function Duration(props: { duration: NonNullable<ReturnType<typeof durationFor>>
 }
 
 function Actions(props: {
-  plain: boolean;
   exam: boolean;
-  showWrong: boolean;
   showDrill: boolean;
   onHome: () => void;
-  onReview: () => void;
   onRetry: () => void;
   onDrill: () => void;
 }) {
   const retryLabel = props.exam ? '再考一次' : '再练一次';
-  const rowClass = props.plain
-    ? 'sc-actions sc-actions-plain'
-    : props.showDrill
-      ? 'sc-actions sc-actions-3'
-      : 'sc-actions';
   return (
-    <View className={rowClass}>
+    <View className={props.showDrill ? 'sc-actions sc-actions-3' : 'sc-actions'}>
       <View className="sc-btn sc-btn-home" onClick={props.onHome}>
         <Text className="sc-btn-label">回首页</Text>
       </View>
-      {props.showWrong ? (
-        <View className="sc-btn sc-btn-wrong" onClick={props.onReview}>
-          <Text className="sc-btn-label sc-btn-label-red">错题回顾</Text>
-        </View>
-      ) : null}
       {props.showDrill ? (
         <View className="sc-btn sc-btn-mid" onClick={props.onRetry}>
-          <Text className="sc-btn-label sc-btn-label-blue">{retryLabel}</Text>
+          <Text className="sc-btn-label sc-btn-label-green">{retryLabel}</Text>
         </View>
       ) : (
         <View className="sc-btn sc-btn-primary" onClick={props.onRetry}>
@@ -427,49 +447,68 @@ function Celebrate(props: {
   party: NonNullable<ReturnType<typeof celebrateFor>>;
   onClose: () => void;
 }) {
-  const exam = props.party.kind === 'exam';
   return (
     <View className="sc-mask" onClick={props.onClose}>
-      <View className="sc-wash" />
-      <View className={exam ? 'sc-glow sc-glow-exam' : 'sc-glow'} />
-      {CONFETTI.map((name) => (
-        <View key={name} className={`sc-confetti ${name}`} />
-      ))}
-      {RIBS.map((name) => (
-        <View key={name} className={`sc-rib ${name}`} />
-      ))}
-      <View className="sc-celebrate" onClick={props.onClose}>
+      <View className="sc-celebrate">
         <View className="sc-card">
-          <View className={exam ? 'sc-accent sc-accent-exam' : 'sc-accent'} />
-          <Text className={exam ? 'sc-cele-badge sc-cele-badge-exam' : 'sc-cele-badge'}>
-            {props.party.badge}
-          </Text>
-          <View className={exam ? 'sc-star-ring sc-star-ring-exam' : 'sc-star-ring'}>
-            <View className={exam ? 'sc-star-inner sc-star-inner-exam' : 'sc-star-inner'}>
-              <Image className="sc-star" src={iconStar} mode="aspectFit" />
-            </View>
+          <View className="sc-cele-art-wrap">
+            <Image className="sc-cele-art" src={celebrateArt} mode="aspectFit" />
           </View>
+          <Text className="sc-cele-badge">{props.party.badge}</Text>
           <Text className="sc-cele-title">{props.party.title}</Text>
           <Text className="sc-cele-sub">{props.party.subtitle}</Text>
-          <View className={exam ? 'sc-cele-score sc-cele-score-exam' : 'sc-cele-score'}>
-            <Text className="sc-cele-kicker">{props.party.kicker}</Text>
-            <View className="sc-cele-num">
-              <Text className={exam ? 'sc-cele-value sc-cele-value-exam' : 'sc-cele-value'}>
-                {props.party.value}
-              </Text>
-              <Text className={exam ? 'sc-cele-unit sc-cele-unit-exam' : 'sc-cele-unit'}>
-                {props.party.unit}
-              </Text>
-            </View>
-            <Text className="sc-cele-foot">{props.party.foot}</Text>
+          <View className="sc-cele-score">
+            <Text className="sc-cele-line">
+              {props.party.kicker} {props.party.value} {props.party.unit}
+            </Text>
+            <Text className="sc-cele-line">{props.party.foot}</Text>
           </View>
           <Text className="sc-cele-context">{props.party.context}</Text>
           <View className="sc-cele-cta">
             <Text className="sc-cele-cta-label">继续加油</Text>
           </View>
+          <Text className="sc-cele-hint">点按任意处关闭</Text>
         </View>
-        <Text className="sc-cele-hint">点按任意处关闭</Text>
       </View>
     </View>
   );
+}
+
+function ringParts(hero: HeroModel): { value: string; mark: string } {
+  if (hero.center.endsWith('%')) {
+    return { value: hero.center.slice(0, -1), mark: '%' };
+  }
+  return { value: hero.center, mark: hero.unit };
+}
+
+function passChip(result: QuizResultView): string {
+  if (result.passScore === null || result.passed === null) {
+    return '未设及格线';
+  }
+  const line = Number.isInteger(result.passScore)
+    ? String(result.passScore)
+    : String(Math.round(result.passScore * 10) / 10);
+  return `${line} · ${result.passed ? '已通过' : '未通过'}`;
+}
+
+function commentLines(bars: readonly KnowledgeBar[]): string[] {
+  const strong = nameList(bars.filter((bar) => !bar.weak));
+  const weak = nameList(bars.filter((bar) => bar.weak));
+  const lines: string[] = [];
+  if (strong) {
+    lines.push(`${strong}尚可`);
+  }
+  if (weak) {
+    lines.push(`${weak}偏弱`);
+    lines.push('带上薄弱知识点，直达出题设置');
+  }
+  return lines;
+}
+
+function nameList(bars: readonly KnowledgeBar[]): string {
+  if (bars.length === 0) {
+    return '';
+  }
+  const names = bars.slice(0, 2).map((bar) => bar.name);
+  return bars.length > 2 ? `${names.join('、')}等` : names.join('、');
 }

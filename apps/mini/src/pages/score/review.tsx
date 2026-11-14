@@ -82,7 +82,16 @@ export function ReviewView(props: {
                     {QUIZ_TYPE_LABELS[question.type]}
                   </Text>
                 </View>
-                {point ? <Text className="wr-kp">{point}</Text> : null}
+                {point ? <Text className="wr-kp">{point}</Text> : <View className="wr-kp" />}
+                {opened ? null : (
+                  <View
+                    className="wr-toggle wr-toggle-inline"
+                    onClick={() => props.onToggle(question.id)}
+                  >
+                    <Text className="wr-toggle-label">查看解析</Text>
+                    <Text className="wr-toggle-chev">⌄</Text>
+                  </View>
+                )}
               </View>
               <Text className="wr-stem">{question.stem}</Text>
               {opened ? (
@@ -102,14 +111,12 @@ export function ReviewView(props: {
                 </View>
               ) : (
                 <View className="wr-compare">
-                  <View className="wr-compare-block">
-                    <Text className="wr-compare-label wr-mine">你的答案</Text>
+                  <View className="wr-compare-block wr-compare-mine">
                     <Text className="wr-compare-value wr-mine">
                       {answerLine(question, question.selected)}
                     </Text>
                   </View>
-                  <View className="wr-compare-block">
-                    <Text className="wr-compare-label wr-right">正确答案</Text>
+                  <View className="wr-compare-block wr-compare-right">
                     <Text className="wr-compare-value wr-right">
                       {answerLine(question, question.review?.answer ?? [])}
                     </Text>
@@ -127,19 +134,15 @@ export function ReviewView(props: {
                   </View>
                 </View>
               ) : null}
-              <View
-                className={opened ? 'wr-toggle wr-toggle-shut' : 'wr-toggle'}
-                onClick={() => props.onToggle(question.id)}
-              >
-                <Text
-                  className={opened ? 'wr-toggle-label wr-toggle-label-shut' : 'wr-toggle-label'}
+              {opened ? (
+                <View
+                  className="wr-toggle wr-toggle-shut"
+                  onClick={() => props.onToggle(question.id)}
                 >
-                  {opened ? '收起解析' : '查看解析'}
-                </Text>
-                <Text className={opened ? 'wr-toggle-chev wr-toggle-chev-shut' : 'wr-toggle-chev'}>
-                  {opened ? '⌃' : '›'}
-                </Text>
-              </View>
+                  <Text className="wr-toggle-label">收起解析</Text>
+                  <Text className="wr-toggle-chev">⌃</Text>
+                </View>
+              ) : null}
             </View>
           );
         })}
