@@ -28,7 +28,6 @@ import { fetchPack } from '../../services/pack-api';
 import { queryValue } from '../../services/query';
 import { createQuizSession } from '../../services/quiz-api';
 import { RETRAIN_KP_HELP, parseIdList } from '../../services/retrain';
-import iconKnob from './assets/icon-knob.png';
 import hero from './assets/settings-hero.jpg';
 import typeCheck from './assets/type-check.svg';
 import { quizSettingsFooterLine } from './footer-copy';
