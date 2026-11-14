@@ -1,6 +1,10 @@
 import { Button, Image, Text, View } from '@tarojs/components';
 import Taro, { useDidHide, useDidShow, useRouter } from '@tarojs/taro';
 import {
+  DEFAULT_PAPER_MINUTES,
+  DEFAULT_PER_QUESTION_SECONDS,
+  DEFAULT_QUIZ_COUNT,
+  DEFAULT_QUIZ_DIFFICULTY,
   QUIZ_COUNTS,
   QUIZ_DIFFICULTIES,
   QUIZ_DIFFICULTY_LABELS,
@@ -9,6 +13,8 @@ import {
   QUIZ_TYPES,
   QUIZ_TYPE_LABELS,
   type QuizCount,
+  type QuizDifficulty,
+  type QuizMode,
   type QuizSessionView,
   type QuizTimer,
   type QuizTypeCode,
@@ -20,9 +26,12 @@ import { isAuthFailure, withAuth } from '../../../services/guard';
 import { queryValue } from '../../../services/query';
 import { cancelQuizSession, createQuizSession, fetchQuizSession } from '../../../services/quiz-api';
 import { isQuizType, variantProgressUrl, variantSessionInput } from '../../../services/retrain';
-import iconKnob from '../assets/icon-knob.png';
+import hero from '../assets/settings-hero.jpg';
+import typeCheck from '../assets/type-check.svg';
+import { quizSettingsFooterLine } from '../footer-copy';
 import { SpinGlyph, StatusGlyph } from '../glyphs';
 import '../index.css';
+import '../overlay.css';
 
 const VARIANT_PACK_LINE = '题型变异 · 练习 · 1 题';
 
@@ -283,30 +292,37 @@ export default function QuizProgressPage() {
   const percent = total > 0 ? Math.min(100, Math.round((generated / total) * 100)) : 8;
   const failed = session?.status === 'failed' || Boolean(error);
   const isVariant = session ? session.source === 'variant' : fromVariant;
+  const footerLine = isVariant ? null : settingsFooter(session);
 
   return (
     <Screen
       back
       centerTitle
       navPlain
-      navClassName="qs-nav"
-      title="出题设置"
+      navClassName={isVariant ? 'qs-nav' : 'qs-nav qs-set-nav'}
+      title={isVariant ? '' : '出题设置'}
       footer={
-        <View className="u-btn qs-cta dlg-foot-cta">
-          <Text className="dlg-cta-text">AI 开始出题</Text>
-        </View>
+        footerLine ? (
+          <View className="qs-set-foot-col">
+            <View className="qs-set-foot-line">
+              <Text className="qs-set-foot-summary">{footerLine}</Text>
+            </View>
+            <View className="qs-set-cta qs-set-cta-on dlg-ghost-cta">
+              <Text>AI 开始出题</Text>
+            </View>
+          </View>
+        ) : null
       }
-      footerClassName="qs-foot"
+      footerClassName={footerLine ? 'qs-set-foot' : undefined}
     >
       <View className="dlg-stage">
-        <SettingsGhost session={session} variant={isVariant} />
+        {isVariant ? <VariantGhost /> : <SettingsGhost session={session} />}
       </View>
       <View className="dlg-scrim" catchMove>
-        <View className="dlg-card" catchMove>
+        <View className={failed ? 'dlg-stage-sheet dlg-stage-center' : 'dlg-stage-sheet'} catchMove>
           {isVariant ? (
             <VariantCard
               failed={failed}
-              percent={percent}
               cancelling={cancelling}
               retrying={retrying || gate.sheetOpen}
               onCancel={() => void cancel()}
@@ -356,63 +372,67 @@ function NormalCard(props: {
     return (
       <>
         <StatusGlyph kind="danger" />
-        <Text className="dlg-title">出题失败</Text>
-        <View className="dlg-bodyblock">
-          <Text className="dlg-body">网络不稳定，题目未能生成完成</Text>
-          <View className="dlg-banner">
-            <Text className="dlg-banner-text">已生成进度不会保留</Text>
-          </View>
+        <Text className="dlg-stage-title dlg-stage-title-danger">出题失败</Text>
+        <Text className="dlg-stage-sub">网络不稳定，题目未能生成完成</Text>
+        <View className="dlg-note dlg-note-danger">
+          <Text className="dlg-note-text">已生成进度不会保留</Text>
         </View>
-        <Button
-          className="dlg-btn dlg-btn-block dlg-btn-primary"
-          hoverClass="none"
-          loading={props.retrying}
-          disabled={props.retrying}
-          onClick={props.onRetry}
-        >
-          重新出题
-        </Button>
-        <View className="dlg-link" onClick={props.onBack}>
-          <Text className="dlg-link-text">返回设置</Text>
+        <View className="dlg-actions-stack dlg-actions-stack-fail">
+          <Button
+            className="dlg-btn dlg-btn-primary"
+            hoverClass="none"
+            loading={props.retrying}
+            disabled={props.retrying}
+            onClick={props.onRetry}
+          >
+            重新出题
+          </Button>
+          <Button className="dlg-btn dlg-btn-line" hoverClass="none" onClick={props.onBack}>
+            返回设置
+          </Button>
         </View>
       </>
     );
   }
   const lines = props.session ? metaLines(props.session) : null;
+  const shownTotal = props.total > 0 ? String(props.total) : '…';
   return (
     <>
-      <SpinGlyph />
-      <View className="dlg-titleblock">
-        <Text className="dlg-title">正在出题…</Text>
-        <Text className="dlg-sub">预计很快完成</Text>
+      <View
+        className="dlg-ring"
+        style={{
+          background: `conic-gradient(var(--ts-accent) ${props.percent * 3.6}deg, rgb(231, 229, 228) 0deg)`,
+        }}
+      >
+        <View className="dlg-ring-hole">
+          <Text className="dlg-ring-num">{props.generated}</Text>
+          <Text className="dlg-ring-den">/{shownTotal}</Text>
+        </View>
       </View>
-      <Text className="dlg-count">
-        已生成 {props.generated} / {props.total || '…'}
+      <Text className="dlg-stage-title">正在出题…</Text>
+      <Text className="dlg-stage-sub">预计很快完成</Text>
+      <Text className="dlg-stage-count">
+        已生成 {props.generated} / {shownTotal}
       </Text>
-      <View className="dlg-bar">
-        <View className="dlg-bar-fill" style={{ width: `${props.percent}%` }} />
-      </View>
       {lines ? (
-        <View className="dlg-meta">
-          <Text className="dlg-meta-line">{lines.topic}</Text>
-          <Text className="dlg-meta-line">{lines.timer}</Text>
+        <View className="dlg-summary">
+          <Text className="dlg-summary-title">{lines.topic}</Text>
+          <Text className="dlg-summary-sub">{lines.timer}</Text>
         </View>
       ) : null}
-      <Button
-        className="dlg-btn dlg-btn-block dlg-btn-cancel"
-        hoverClass="none"
-        disabled={props.cancelling}
-        onClick={props.onCancel}
+      <View className="dlg-grow" />
+      <View
+        className={props.cancelling ? 'dlg-text-btn dlg-text-btn-off' : 'dlg-text-btn'}
+        onClick={props.cancelling ? undefined : props.onCancel}
       >
-        取消
-      </Button>
+        <Text className="dlg-text-btn-label">取消</Text>
+      </View>
     </>
   );
 }
 
 function VariantCard(props: {
   failed: boolean;
-  percent: number;
   cancelling: boolean;
   retrying: boolean;
   onCancel: () => void;
@@ -423,24 +443,24 @@ function VariantCard(props: {
     return (
       <>
         <StatusGlyph kind="danger" />
-        <Text className="dlg-title">变异题生成失败</Text>
-        <View className="dlg-bodyblock">
-          <Text className="dlg-body">题目未能生成，可重试（将开启新会话）</Text>
-          <View className="dlg-banner">
-            <Text className="dlg-banner-text">已生成进度不会保留</Text>
-          </View>
+        <Text className="dlg-stage-title dlg-stage-title-danger">变异题生成失败</Text>
+        <Text className="dlg-stage-sub">题目未能生成，可重试（将开启新会话）</Text>
+        <View className="dlg-note dlg-note-danger">
+          <Text className="dlg-note-text">已生成进度不会保留</Text>
         </View>
-        <Button
-          className="dlg-btn dlg-btn-block dlg-btn-primary"
-          hoverClass="none"
-          loading={props.retrying}
-          disabled={props.retrying}
-          onClick={props.onRetry}
-        >
-          重新生成
-        </Button>
-        <View className="dlg-link" onClick={props.onBack}>
-          <Text className="dlg-link-text">返回详情</Text>
+        <View className="dlg-actions-stack dlg-actions-stack-fail">
+          <Button
+            className="dlg-btn dlg-btn-primary"
+            hoverClass="none"
+            loading={props.retrying}
+            disabled={props.retrying}
+            onClick={props.onRetry}
+          >
+            重新生成
+          </Button>
+          <Button className="dlg-btn dlg-btn-line" hoverClass="none" onClick={props.onBack}>
+            返回详情
+          </Button>
         </View>
       </>
     );
@@ -448,146 +468,171 @@ function VariantCard(props: {
   return (
     <>
       <SpinGlyph />
-      <View className="dlg-titleblock">
-        <Text className="dlg-title">正在生成变异题…</Text>
-        <Text className="dlg-sub">基于本题换题型或语境</Text>
+      <Text className="dlg-stage-title">正在生成变异题…</Text>
+      <Text className="dlg-stage-sub">基于本题换题型或语境</Text>
+      <Text className="dlg-stage-count dlg-stage-count-muted">预计很快完成</Text>
+      <View className="dlg-summary">
+        <Text className="dlg-summary-title">{VARIANT_PACK_LINE}</Text>
       </View>
-      <Text className="dlg-count">预计很快完成</Text>
-      <View className="dlg-bar">
-        <View className="dlg-bar-fill" style={{ width: `${props.percent}%` }} />
+      <View className="dlg-note dlg-note-ok">
+        <Text className="dlg-note-text">答对不消灭原错题</Text>
       </View>
-      <View className="dlg-meta">
-        <Text className="dlg-meta-line">{VARIANT_PACK_LINE}</Text>
-        <Text className="dlg-meta-line">答对不消灭原错题</Text>
-      </View>
-      <Button
-        className="dlg-btn dlg-btn-block dlg-btn-cancel"
-        hoverClass="none"
-        disabled={props.cancelling}
-        onClick={props.onCancel}
+      <View className="dlg-grow" />
+      <View
+        className={props.cancelling ? 'dlg-text-btn dlg-text-btn-off' : 'dlg-text-btn'}
+        onClick={props.cancelling ? undefined : props.onCancel}
       >
-        取消
-      </Button>
+        <Text className="dlg-text-btn-label">取消</Text>
+      </View>
     </>
   );
 }
 
-function SettingsGhost(props: { session: QuizSessionView | null; variant: boolean }) {
-  const settings = props.session?.settings;
-  const count = settings && isListedCount(settings.count) ? settings.count : 20;
-  const difficulty = settings?.difficulty ?? 'medium';
-  const types = new Set(settings?.types ?? (['single', 'multi'] as QuizTypeCode[]));
-  const mode = props.variant ? 'practice' : (settings?.mode ?? 'practice');
-  const timer = settings?.timer ?? { enabled: true, kind: 'paper' as const, paperMinutes: 30 };
-  const packLine = props.variant
-    ? VARIANT_PACK_LINE
-    : props.session?.context.certName || props.session?.context.packName || '当前刷题包';
+function SettingsGhost(props: { session: QuizSessionView | null }) {
+  const face = settingsFace(props.session);
+  const paper = face.timer.enabled && face.timer.kind === 'paper';
+  const amount = !face.timer.enabled
+    ? DEFAULT_PAPER_MINUTES
+    : face.timer.kind === 'paper'
+      ? face.timer.paperMinutes
+      : face.timer.perQuestionSeconds;
+  const packName =
+    props.session?.context.certName || props.session?.context.packName || '当前刷题包';
   return (
-    <View className="qs-stack">
+    <View className="qs-stack qs-set">
+      <View className="qs-hero">
+        <Image className="qs-hero-img" src={hero} mode="scaleToFill" />
+      </View>
       <View className="qs-pack">
         <Text className="qs-kicker">当前刷题包</Text>
-        <Text className="qs-pack-line">{packLine}</Text>
+        <Text className="qs-pack-line">{packName}</Text>
       </View>
-      <View className="qs-panel">
-        <View className="qs-block">
-          <View className="qs-head">
-            <Text className="qs-label">题量</Text>
+      <View className="qs-form">
+        <View className="qs-sec">
+          <View className="qs-sec-head">
+            <Text className="qs-sec-label">题量</Text>
           </View>
-          <View className="qs-chips">
+          <View className="qs-choice-row">
             {QUIZ_COUNTS.map((item) => (
-              <GhostChip key={item} count label={String(item)} on={item === count} />
+              <View
+                key={item}
+                className={classes(
+                  'qs-count',
+                  item === face.count ? 'qs-count-on' : 'qs-count-off',
+                )}
+              >
+                <Text
+                  className={classes('qs-count-label', item === face.count && 'qs-count-label-on')}
+                >
+                  {item}
+                </Text>
+              </View>
             ))}
           </View>
-          <View className="qs-rule" />
         </View>
-        <View className="qs-block">
-          <View className="qs-head">
-            <Text className="qs-label">难度</Text>
+        <View className="qs-sec">
+          <View className="qs-sec-head">
+            <Text className="qs-sec-label">难度</Text>
           </View>
-          <View className="qs-chips">
+          <View className="qs-diff">
             {QUIZ_DIFFICULTIES.map((item) => (
-              <GhostChip key={item} label={QUIZ_DIFFICULTY_LABELS[item]} on={item === difficulty} />
+              <View
+                key={item}
+                className={classes('qs-diff-item', item === face.difficulty && 'qs-diff-on')}
+              >
+                <Text
+                  className={classes(
+                    'qs-diff-label',
+                    item === face.difficulty && 'qs-diff-label-on',
+                  )}
+                >
+                  {QUIZ_DIFFICULTY_LABELS[item]}
+                </Text>
+              </View>
             ))}
           </View>
-          <Text className="qs-hint">影响题干复杂度与干扰项强度</Text>
-          <View className="qs-rule" />
+          <Text className="qs-sec-hint">影响题干复杂度与干扰项强度</Text>
         </View>
-        <View className="qs-block">
-          <View className="qs-head">
-            <Text className="qs-label">题型</Text>
-            <Text className="qs-aside">可多选</Text>
-          </View>
-          <View className="qs-chips">
-            {QUIZ_TYPES.map((item) => (
-              <GhostChip key={item} label={QUIZ_TYPE_LABELS[item]} on={types.has(item)} />
-            ))}
-          </View>
-          <View className="qs-rule" />
-        </View>
-        <View>
-          <View className="qs-timer-row">
-            <Text className="qs-label">计时</Text>
-            <View className={timer.enabled ? 'qs-switch qs-switch-on' : 'qs-switch'}>
-              <Image className="qs-knob" src={iconKnob} mode="aspectFit" />
+        <View className="qs-sec">
+          <View className="qs-sec-head">
+            <Text className="qs-sec-label">题型</Text>
+            <View className="qs-multi">
+              <Text className="qs-multi-label">可多选</Text>
             </View>
           </View>
-          {timer.enabled ? (
-            <TimerGhost timer={timer} />
+          <View className="qs-choice-row">
+            {QUIZ_TYPES.map((item) => {
+              const on = face.types.has(item);
+              return (
+                <View key={item} className={classes('qs-type', on ? 'qs-type-on' : 'qs-type-off')}>
+                  <View
+                    className={classes('qs-type-tick', on ? 'qs-type-tick-on' : 'qs-type-tick-off')}
+                  >
+                    {on ? (
+                      <Image className="qs-type-check" src={typeCheck} mode="aspectFit" />
+                    ) : null}
+                  </View>
+                  <Text className={classes('qs-type-label', on && 'qs-type-label-on')}>
+                    {QUIZ_TYPE_LABELS[item]}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+        <View className={classes('qs-timer-card', face.timer.enabled && 'qs-timer-card-on')}>
+          <View className="qs-set-timer-row">
+            <Text className="qs-set-timer-label">计时</Text>
+            <View className={classes('qs-set-switch', face.timer.enabled && 'qs-set-switch-on')}>
+              <View className="qs-set-knob" />
+            </View>
+          </View>
+          {face.timer.enabled ? (
+            <View className="qs-set-on">
+              <Text className="qs-set-field">计时方式</Text>
+              <View className="qs-set-seg">
+                <View className={classes('qs-set-seg-item', paper && 'qs-set-seg-on')}>
+                  <Text className={classes('qs-set-seg-label', paper && 'qs-set-seg-label-on')}>
+                    整卷倒计时
+                  </Text>
+                </View>
+                <View className={classes('qs-set-seg-item', !paper && 'qs-set-seg-on')}>
+                  <Text className={classes('qs-set-seg-label', !paper && 'qs-set-seg-label-on')}>
+                    每题限时
+                  </Text>
+                </View>
+              </View>
+              <Text className="qs-set-field">{paper ? '总时长（分钟）' : '每题限时（秒）'}</Text>
+              <View className="qs-set-stepper">
+                <View className={classes('qs-set-step', !paper && 'qs-set-step-pin')}>
+                  <Text className="qs-set-sign">−</Text>
+                </View>
+                <Text className="qs-set-num">{amount}</Text>
+                <View className={classes('qs-set-step', !paper && 'qs-set-step-pin')}>
+                  <Text className="qs-set-sign">+</Text>
+                </View>
+              </View>
+            </View>
           ) : (
-            <Text className="qs-hint qs-timer-off">关闭后不限时作答</Text>
+            <Text className="qs-set-off">关闭后不限时作答</Text>
           )}
         </View>
-        <View className="qs-rule qs-split" />
-        <View className="qs-block qs-block-last">
-          <View className="qs-head">
-            <Text className="qs-label">模式</Text>
-          </View>
-          <View className="qs-chips">
-            {QUIZ_MODES.map((item) => (
-              <GhostChip key={item} label={QUIZ_MODE_LABELS[item]} on={item === mode} />
-            ))}
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function TimerGhost(props: { timer: QuizTimer }) {
-  if (!props.timer.enabled) {
-    return null;
-  }
-  const paper = props.timer.kind === 'paper';
-  const amount =
-    props.timer.kind === 'paper' ? props.timer.paperMinutes : props.timer.perQuestionSeconds;
-  return (
-    <View className="qs-timer-on">
-      <View className="qs-method">
-        <Text className="qs-field">计时方式</Text>
-        <View className="qs-seg">
-          <View className={paper ? 'qs-seg-item qs-seg-on' : 'qs-seg-item'}>
-            <Text className={paper ? 'qs-seg-label qs-seg-label-on' : 'qs-seg-label'}>
-              整卷倒计时
-            </Text>
-          </View>
-          <View className={paper ? 'qs-seg-item' : 'qs-seg-item qs-seg-on'}>
-            <Text className={paper ? 'qs-seg-label' : 'qs-seg-label qs-seg-label-on'}>
-              每题限时
-            </Text>
-          </View>
-        </View>
-      </View>
-      <View className="qs-duration">
-        <Text className="qs-field">{paper ? '总时长（分钟）' : '每题限时（秒）'}</Text>
-        <View className="qs-stepper">
-          <View className="qs-step">
-            <Text className="qs-step-sign">−</Text>
-          </View>
-          <View className="qs-step-val">
-            <Text className="qs-step-num">{amount}</Text>
-          </View>
-          <View className="qs-step-plus">
-            <Text className="qs-step-sign">+</Text>
+        <View className="qs-panel qs-mode">
+          <View className="qs-block qs-block-last">
+            <View className="qs-head">
+              <Text className="qs-label">模式</Text>
+            </View>
+            <View className="qs-chips">
+              {QUIZ_MODES.map((item) => (
+                <View key={item} className={classes('qs-chip', item === face.mode && 'qs-chip-on')}>
+                  <Text
+                    className={classes('qs-chip-label', item === face.mode && 'qs-chip-label-on')}
+                  >
+                    {QUIZ_MODE_LABELS[item]}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         </View>
       </View>
@@ -595,14 +640,66 @@ function TimerGhost(props: { timer: QuizTimer }) {
   );
 }
 
-function GhostChip(props: { label: string; on: boolean; count?: boolean }) {
+function VariantGhost() {
   return (
-    <View className={classes('qs-chip', props.count && 'qs-chip-count', props.on && 'qs-chip-on')}>
-      <Text className={classes('qs-chip-label', props.on && 'qs-chip-label-on')}>
-        {props.label}
-      </Text>
+    <View className="dlg-variant-bg">
+      <View className="dlg-variant-pack">
+        <Text className="dlg-variant-pack-text">{VARIANT_PACK_LINE}</Text>
+      </View>
+      <View className="dlg-variant-card">
+        <View className="dlg-sk dlg-sk-pill" />
+        <View className="dlg-sk dlg-sk-line" />
+        <View className="dlg-sk dlg-sk-short" />
+        <View className="dlg-sk dlg-sk-block" />
+        <View className="dlg-sk dlg-sk-block" />
+        <View className="dlg-sk dlg-sk-block" />
+      </View>
     </View>
   );
+}
+
+function settingsFace(session: QuizSessionView | null): {
+  count: QuizCount;
+  difficulty: QuizDifficulty;
+  types: Set<QuizTypeCode>;
+  mode: QuizMode;
+  timer: QuizTimer;
+} {
+  const settings = session?.settings;
+  const count = settings && isListedCount(settings.count) ? settings.count : DEFAULT_QUIZ_COUNT;
+  const listed = (settings?.types ?? (['single', 'multi'] as QuizTypeCode[])).filter(
+    (item): item is QuizTypeCode => isQuizType(item),
+  );
+  const types = new Set(listed.length > 0 ? listed : (['single', 'multi'] as QuizTypeCode[]));
+  return {
+    count,
+    difficulty: settings?.difficulty ?? DEFAULT_QUIZ_DIFFICULTY,
+    types,
+    mode: settings?.mode ?? 'practice',
+    timer: settings?.timer ?? {
+      enabled: true,
+      kind: 'paper',
+      paperMinutes: DEFAULT_PAPER_MINUTES,
+    },
+  };
+}
+
+function settingsFooter(session: QuizSessionView | null): string {
+  const face = settingsFace(session);
+  const timer = face.timer;
+  return quizSettingsFooterLine({
+    types: QUIZ_TYPES.filter((item) => face.types.has(item)),
+    count: face.count,
+    difficulty: face.difficulty,
+    timerOn: timer.enabled,
+    timerKind: timer.enabled ? timer.kind : 'paper',
+    paperMinutes:
+      timer.enabled && timer.kind === 'paper' ? timer.paperMinutes : DEFAULT_PAPER_MINUTES,
+    perQuestionSeconds:
+      timer.enabled && timer.kind === 'per_question'
+        ? timer.perQuestionSeconds
+        : DEFAULT_PER_QUESTION_SECONDS,
+  }).text;
 }
 
 function metaLines(session: QuizSessionView): { topic: string; timer: string } {
