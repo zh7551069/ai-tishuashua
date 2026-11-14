@@ -1,11 +1,9 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, test } from 'node:test';
-import {
-  dailyPlanQuizPath,
-  resolveDailyPlanCta,
-} from '@tishuashua/shared';
+import { dailyPlanQuizPath, resolveDailyPlanCta } from '@tishuashua/shared';
 
 const root = join(__dirname, '..', '..');
 
@@ -73,9 +71,41 @@ describe('home daily plan wiring', () => {
     assert.equal(home.includes('/pages/pack/domain/index'), false);
     assert.match(entry, /PACK_INDEX_ROUTE = '\/pages\/pack\/index'/);
     assert.match(entry, /ME_ROUTE = '\/pages\/me\/index'/);
-    assert.equal(/requestPayment|quiz\/sessions|session-ledger|daily-share|invite/.test(home), false);
+    assert.equal(
+      /requestPayment|quiz\/sessions|session-ledger|daily-share|invite/.test(home),
+      false,
+    );
     assert.match(quiz, /intent\) === 'dailyPlan'/);
     assert.match(quiz, /knowledgePointIds: kept/);
     assert.match(quiz, /整包练习/);
+  });
+
+  test('四帧文案走现有入口，插画字节不变', () => {
+    const home = readFileSync(join(root, 'pages/home/index.tsx'), 'utf8');
+    const css = readFileSync(join(root, 'pages/home/daily-plan.css'), 'utf8');
+    assert.match(home, /全部/);
+    assert.match(home, /个知识点/);
+    assert.match(home, /domainName/);
+    assert.match(home, /DAILY_PLAN_ENCOURAGEMENT/);
+    assert.match(home, /layout !== 'empty'/);
+    assert.equal(home.includes('或点击右上方'), false);
+    assert.equal(home.includes('仅显示当前包'), false);
+    assert.equal(home.includes('待练习优先'), false);
+    assert.equal(home.includes('dp-tool-plus'), false);
+    assert.equal(home.includes('已完成'), false);
+    assert.equal(home.includes('待练习'), false);
+    assert.match(css, /#a8a29e/);
+    const male = readFileSync(join(root, 'assets/hero/male.jpg'));
+    const female = readFileSync(join(root, 'assets/hero/female.jpg'));
+    assert.equal(male.length, 19510);
+    assert.equal(female.length, 21314);
+    assert.equal(
+      createHash('sha256').update(male).digest('hex'),
+      '2b2639279cd6d049972df63f65ea405bde10dd4f0c569f4135d2a9d0a2478dfd',
+    );
+    assert.equal(
+      createHash('sha256').update(female).digest('hex'),
+      'd5bdc0607378ee677114ac8119dd7dd32d8a30f03c8dfccfbb7d24487a3d615a',
+    );
   });
 });

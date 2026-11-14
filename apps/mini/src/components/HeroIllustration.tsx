@@ -11,7 +11,7 @@ const SRC: Record<HeroGender, string> = {
   male,
 };
 
-/** 只读本地性别。没有设置入口，点右上人物图标也不会写这个键。 */
+/** 只读本地性别。没有设置入口，点人物按钮也不会写这个键。 */
 export function HeroIllustration(props: { className?: string }) {
   const [gender, setGender] = useState<HeroGender>('female');
   useDidShow(() => {

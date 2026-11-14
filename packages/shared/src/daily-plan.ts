@@ -180,7 +180,7 @@ export function dailyPlanFootnote(plan: DailyPlanView): string {
   }
   const active = plan.activePack;
   if (layout === 'multi' && active && !active.unavailable && active.remainingCount > 0) {
-    return `将继续 ${active.name} 剩余的 ${active.remainingCount} 项练习`;
+    return `将继续 ${active.name} 剩余的 ${active.remainingCount} 项`;
   }
   return DAILY_PLAN_ENCOURAGEMENT;
 }
