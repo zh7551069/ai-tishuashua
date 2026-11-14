@@ -1,4 +1,4 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Button, Image, Text, View } from '@tarojs/components';
 import Taro, { useDidHide, useDidShow, useRouter } from '@tarojs/taro';
 import {
   COURSEWARE_MAX_BYTES,
@@ -19,6 +19,17 @@ import {
 } from '../../services/courseware-api';
 import { isAuthFailure, withAuth } from '../../services/guard';
 import { queryValue } from '../../services/query';
+import heroArt from './assets/34e62d817b98623d6716f2af5723fb544b71c43f.png';
+import warnDot from './assets/1e598rw.svg';
+import warnRing from './assets/1f0ejwt.svg';
+import failRing from './assets/1pne4os.svg';
+import failStem from './assets/1plpjzi.svg';
+import kpCheck from './assets/1tqs0lt.svg';
+import failBang from './assets/17oivkj.svg';
+import dotDone from './assets/3n2t8c.svg';
+import failHalo from './assets/yiieln.svg';
+import warnStem from './assets/87atmm.svg';
+import dotActive from './assets/8uuni2.svg';
 import './index.css';
 
 const PAGE_TITLE = '上传课件或书籍';
@@ -362,16 +373,10 @@ export default function CoursewarePage() {
   };
 
   const shownFile = fileOf(job, localFile);
-  const subtitle =
-    phase === 'uploading'
-      ? '正在上传文件…'
-      : phase === 'extracting'
-        ? 'AI 正在学习材料…'
-        : phase === 'success'
-          ? '提炼完成 · 可勾选加入刷题包'
-          : phase === 'fail'
-            ? '提炼失败'
-            : '出题时自主上传 · AI 提炼知识点';
+  const uploadShown = clampPercent(uploadPercent);
+  const extractShown = clampPercent(job?.progress ?? 0);
+  const extractCopy = extractLines(job?.stage ?? 'learning', shownFile?.name ?? '');
+  const draftCount = job?.drafts.length ?? 0;
 
   const footer =
     phase === 'pick' ? (
@@ -415,29 +420,23 @@ export default function CoursewarePage() {
     ) : null;
 
   return (
-    <Screen
-      back
-      centerTitle
-      title={PAGE_TITLE}
-      subtitle={subtitle}
-      footer={footer}
-      footerClassName="cw-foot"
-      bodyFill={phase === 'fail'}
-    >
+    <Screen back centerTitle title={PAGE_TITLE} footer={footer} footerClassName="cw-foot">
       {phase === 'pick' ? (
-        <View className="cw-body">
+        <View className="cw-body cw-body-pick">
           <View className="cw-drop" onClick={() => void choose()}>
-            <View className="cw-drop-ico">
-              <Text className="cw-drop-arrow">↑</Text>
-            </View>
+            <Image className="cw-drop-hero" src={heroArt} mode="aspectFit" />
             <Text className="cw-drop-title">点击选择文件上传</Text>
             <Text className="cw-drop-sub">支持 PPT / PPTX / PDF / DOC · 单文件 ≤ 50MB</Text>
           </View>
-          <View className="cw-card">
-            <Text className="cw-card-title">上传后会发生什么</Text>
-            <Text className="cw-card-line">1. 上传课件或书籍文件</Text>
-            <Text className="cw-card-line">2. AI 自动学习并提炼知识点（可能较慢）</Text>
-            <Text className="cw-card-line">3. 提炼完成后可勾选回树，加入刷题包</Text>
+          <View className="cw-what">
+            <Text className="cw-what-title">上传后会发生什么</Text>
+            <Text className="cw-what-line">1. 上传课件或书籍文件</Text>
+            <Text className="cw-what-line cw-what-line-rule">
+              2. AI 自动学习并提炼知识点（可能较慢）
+            </Text>
+            <Text className="cw-what-line cw-what-line-rule">
+              3. 提炼完成后可勾选回树，加入刷题包
+            </Text>
           </View>
           {error ? <Text className="cw-inline-error">{error}</Text> : null}
         </View>
@@ -445,10 +444,22 @@ export default function CoursewarePage() {
 
       {phase === 'uploading' ? (
         <View className="cw-body">
+          <View className="cw-head">
+            <View className="cw-chip">
+              <Text className="cw-chip-text">上传中</Text>
+            </View>
+          </View>
+          <View className="cw-hero cw-block">
+            <Text className="cw-metric">{uploadShown}%</Text>
+            <Text className="cw-hero-sum">{uploadSum(uploadShown, shownFile)}</Text>
+            <View className="cw-bar">
+              <View className="cw-bar-fill" style={{ width: `${uploadShown}%` }} />
+            </View>
+          </View>
           <FileCard
             name={shownFile?.name || '课件'}
             meta={sizeLine(shownFile)}
-            percent={uploadPercent}
+            percent={uploadShown}
           />
           <StageCard stage="uploading" titled />
         </View>
@@ -456,23 +467,37 @@ export default function CoursewarePage() {
 
       {phase === 'extracting' ? (
         <View className="cw-body">
-          <View className="cw-ring-block">
-            <View className="cw-ring">
-              <Text className="cw-ring-num">{clampPercent(job?.progress ?? 0)}%</Text>
+          <View className="cw-head">
+            <View className="cw-chip">
+              <Text className="cw-chip-text">AI 提取中</Text>
             </View>
-            <Text className="cw-ring-eta">预计还需 {job?.estimatedMinutes ?? 1} 分钟</Text>
-            <Text className="cw-ring-hint">材料越长，提炼越慢，可先去做别的</Text>
+            <Text className="cw-head-note">预计还需 {job?.estimatedMinutes ?? 1} 分钟</Text>
+          </View>
+          <View className="cw-hero cw-block">
+            <Text className="cw-kicker">提取进度</Text>
+            <Text className="cw-metric">{extractShown}%</Text>
+            <View className="cw-bar">
+              <View className="cw-bar-fill" style={{ width: `${extractShown}%` }} />
+            </View>
+            <Text className="cw-hero-title">{extractCopy.title}</Text>
+            <Text className="cw-hero-sub">{extractCopy.sub}</Text>
           </View>
           <FileCard
             name={shownFile?.name || '课件'}
             meta={learningStatus(job?.stage ?? 'learning')}
             metaTone="brand"
-            compact
           />
-          <StageCard stage={job?.stage ?? 'learning'} uploadSettled />
+          <StageCard stage={job?.stage ?? 'learning'} titled uploadSettled />
           <View className="cw-slow">
-            <Text className="cw-slow-title">过程较慢</Text>
-            <Text className="cw-slow-sub">可后台继续，关闭本页不影响提炼</Text>
+            <View className="cw-warn">
+              <Image className="cw-warn-ring" src={warnRing} mode="aspectFit" />
+              <Image className="cw-warn-stem" src={warnStem} mode="aspectFit" />
+              <Image className="cw-warn-dot" src={warnDot} mode="aspectFit" />
+            </View>
+            <View className="cw-slow-copy">
+              <Text className="cw-slow-title">过程较慢</Text>
+              <Text className="cw-slow-sub">可后台继续，关闭本页不影响提炼</Text>
+            </View>
           </View>
           {error ? <Text className="cw-inline-error">{error}</Text> : null}
         </View>
@@ -480,59 +505,77 @@ export default function CoursewarePage() {
 
       {phase === 'success' && job ? (
         <View className="cw-body cw-body-success">
-          <View className="cw-ok">
-            <View className="cw-ok-mark">
-              <Text className="cw-ok-tick">✓</Text>
+          <View className="cw-head">
+            <View className="cw-chip">
+              <Text className="cw-chip-text">AI 提炼结果</Text>
             </View>
-            <View className="cw-ok-copy">
-              <Text className="cw-ok-title">已提炼 {job.drafts.length} 个知识点</Text>
-              <Text className="cw-ok-sub">来自「{shownFile?.name || '上传的课件'}」</Text>
-            </View>
+            <Text className="cw-head-note">提炼完成 · 可勾选加入刷题包</Text>
           </View>
-          {job.drafts.map((draft) => {
-            const on = checked.includes(draft.id);
-            return (
-              <View
-                key={draft.id}
-                className={on ? 'cw-kp cw-kp-on' : 'cw-kp'}
-                onClick={() =>
-                  setChecked((current) =>
-                    current.includes(draft.id)
-                      ? current.filter((id) => id !== draft.id)
-                      : [...current, draft.id],
-                  )
-                }
-              >
-                <View className={on ? 'cw-box cw-box-on' : 'cw-box'}>
-                  {on ? <Text className="cw-box-tick">✓</Text> : null}
+          <View className="cw-hero cw-block">
+            <Text className="cw-kicker">提炼结果</Text>
+            <Text className="cw-metric">{draftCount}</Text>
+            <Text className="cw-hero-title">提炼完成</Text>
+            <Text className="cw-hero-sub">已提炼 {draftCount} 个知识点</Text>
+            <Text className="cw-hero-sub">来自「{shownFile?.name || '上传的课件'}」</Text>
+          </View>
+          <Text className="cw-list-title">提炼知识点</Text>
+          <View className="cw-checks">
+            {job.drafts.map((draft) => {
+              const on = checked.includes(draft.id);
+              return (
+                <View
+                  key={draft.id}
+                  className={on ? 'cw-kp cw-kp-on' : 'cw-kp'}
+                  onClick={() =>
+                    setChecked((current) =>
+                      current.includes(draft.id)
+                        ? current.filter((id) => id !== draft.id)
+                        : [...current, draft.id],
+                    )
+                  }
+                >
+                  <View className={on ? 'cw-box cw-box-on' : 'cw-box'}>
+                    {on ? <Image className="cw-box-check" src={kpCheck} mode="aspectFit" /> : null}
+                  </View>
+                  <View className="cw-kp-copy">
+                    <Text className="cw-kp-name">{draft.name}</Text>
+                    <Text className="cw-kp-meta">{draftQuestionLabel(draft.id)}</Text>
+                  </View>
                 </View>
-                <View className="cw-kp-copy">
-                  <Text className="cw-kp-name">{draft.name}</Text>
-                  <Text className="cw-kp-meta">{draftQuestionLabel(draft.id)}</Text>
-                </View>
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
           {error ? <Text className="cw-inline-error">{error}</Text> : null}
         </View>
       ) : null}
 
       {phase === 'fail' ? (
-        <View className="cw-body cw-body-fail">
+        <View className="cw-body">
+          <View className="cw-head">
+            <View className="cw-chip cw-chip-fail">
+              <Text className="cw-chip-text">失败</Text>
+            </View>
+            <Text className="cw-head-note">提炼失败 · 可重新上传</Text>
+          </View>
           <View className="cw-fail">
-            <View className="cw-fail-halo">
-              <View className="cw-fail-core">
-                <Text className="cw-fail-bang">!</Text>
-              </View>
+            <View className="cw-fail-mark">
+              <Image className="cw-fail-halo" src={failHalo} mode="aspectFit" />
+              <Image className="cw-fail-ring" src={failRing} mode="aspectFit" />
+              <Image className="cw-fail-stem" src={failStem} mode="aspectFit" />
+              <Image className="cw-fail-bang" src={failBang} mode="aspectFit" />
             </View>
             <Text className="cw-fail-title">知识点提炼失败</Text>
             <FailReason message={job?.error?.message || error} />
-            {shownFile?.name ? (
-              <View className="cw-fail-chip">
-                <Text className="cw-fail-chip-text">{failChip(shownFile)}</Text>
-              </View>
-            ) : null}
           </View>
+          {shownFile?.name ? (
+            <View className="cw-current">
+              <Text className="cw-current-k">当前文件</Text>
+              <Text className="cw-current-name">{shownFile.name}</Text>
+              {formatSize(shownFile.byteSize) ? (
+                <Text className="cw-current-meta">{formatSize(shownFile.byteSize)}</Text>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       ) : null}
     </Screen>
@@ -543,17 +586,18 @@ function FailReason(props: { message: string }) {
   const message = props.message.trim();
   if (!message) {
     return (
-      <>
-        <Text className="cw-fail-line">可能是文件损坏或格式暂不支持</Text>
-        <Text className="cw-fail-line">请换一份课件重试，或稍后再试</Text>
-      </>
+      <View className="cw-fail-copy">
+        <Text className="cw-fail-line">
+          可能是文件损坏或格式暂不支持，建议换一份课件重试，或稍后再试。
+        </Text>
+      </View>
     );
   }
   return (
-    <>
+    <View className="cw-fail-copy">
       <Text className="cw-fail-line">{message}</Text>
       <Text className="cw-fail-line">请换一份课件重试，或稍后再试</Text>
-    </>
+    </View>
   );
 }
 
@@ -562,52 +606,72 @@ function FileCard(props: {
   meta: string;
   metaTone?: 'muted' | 'brand';
   percent?: number;
-  compact?: boolean;
 }) {
   const percent = props.percent === undefined ? null : clampPercent(props.percent);
   return (
-    <View className={props.compact ? 'cw-file cw-file-mini' : 'cw-file'}>
+    <View className="cw-file cw-block">
       <View className="cw-badge">
         <Text className="cw-badge-letter">{badgeLetter(props.name)}</Text>
       </View>
       <View className="cw-file-copy">
         <Text className="cw-file-name">{props.name}</Text>
-        <Text className={props.metaTone === 'brand' ? 'cw-file-status' : 'cw-file-meta'}>
-          {props.meta}
-        </Text>
+        {props.meta ? (
+          <Text className={props.metaTone === 'brand' ? 'cw-file-status' : 'cw-file-meta'}>
+            {props.meta}
+          </Text>
+        ) : null}
         {percent !== null ? (
           <View className="cw-track">
             <View className="cw-track-fill" style={{ width: `${percent}%` }} />
           </View>
         ) : null}
       </View>
-      {percent !== null ? <Text className="cw-percent">{percent}%</Text> : null}
     </View>
   );
 }
 
 function StageCard(props: { stage: ExtractStage; titled?: boolean; uploadSettled?: boolean }) {
   return (
-    <View className="cw-stages">
-      {props.titled ? <Text className="cw-card-title">处理进度</Text> : null}
-      {STEPS.map((step, index) => {
-        const state = rowState(props.stage, index, props.uploadSettled);
-        return (
-          <View key={step.stage} className="cw-stage">
-            <View className="cw-stage-left">
-              <View className={`cw-dot cw-dot-${state}`} />
+    <View className="cw-pipe cw-block">
+      {props.titled ? <Text className="cw-pipe-title">处理进度</Text> : null}
+      <View className="cw-stages">
+        {STEPS.map((step, index) => {
+          const state = rowState(props.stage, index, props.uploadSettled);
+          return (
+            <View key={step.stage} className="cw-stage">
+              <StageMark state={state} />
               <Text
                 className={state === 'wait' ? 'cw-stage-name cw-stage-name-wait' : 'cw-stage-name'}
               >
                 {step.label}
               </Text>
+              <View className={`cw-flag cw-flag-${state}`}>
+                <Text className="cw-flag-text">{FLAG[state]}</Text>
+              </View>
             </View>
-            <Text className={`cw-stage-flag cw-stage-flag-${state}`}>{FLAG[state]}</Text>
-          </View>
-        );
-      })}
+          );
+        })}
+      </View>
     </View>
   );
+}
+
+function StageMark(props: { state: RowState }) {
+  if (props.state === 'done') {
+    return (
+      <View className="cw-dot cw-dot-done">
+        <Image className="cw-dot-check" src={dotDone} mode="aspectFit" />
+      </View>
+    );
+  }
+  if (props.state === 'active') {
+    return (
+      <View className="cw-dot cw-dot-active">
+        <Image className="cw-dot-go" src={dotActive} mode="aspectFit" />
+      </View>
+    );
+  }
+  return <View className="cw-dot cw-dot-wait" />;
 }
 
 function rowState(stage: ExtractStage, index: number, uploadSettled = false): RowState {
@@ -636,6 +700,17 @@ function learningStatus(stage: ExtractStage): string {
     return '上传完成 · 等待学习';
   }
   return '上传完成 · AI 学习中';
+}
+
+function extractLines(stage: ExtractStage, fileName: string): { title: string; sub: string } {
+  const name = fileName.trim();
+  if (stage === 'extracting' || stage === 'done') {
+    return { title: '提炼知识点', sub: name ? `正在提炼${name}` : '正在提炼知识点' };
+  }
+  if (stage === 'uploading') {
+    return { title: '上传文件', sub: name ? `等待学习${name}` : '等待学习' };
+  }
+  return { title: 'AI 学习材料', sub: name ? `正在学习${name}` : '正在学习材料' };
 }
 
 function fileOf(job: ExtractJobView | null, localFile: LocalFile | null): LocalFile | null {
@@ -676,9 +751,9 @@ function sizeLine(file: LocalFile | null): string {
   return [formatSize(file.byteSize), extension].filter(Boolean).join(' · ');
 }
 
-function failChip(file: LocalFile): string {
-  const size = formatSize(file.byteSize);
-  return size ? `${file.name} · ${size}` : file.name;
+function uploadSum(percent: number, file: LocalFile | null): string {
+  const size = formatSize(file?.byteSize ?? 0);
+  return size ? `${percent}% · ${size}` : `${percent}%`;
 }
 
 function clampPercent(value: number): number {
