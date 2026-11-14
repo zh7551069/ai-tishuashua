@@ -6,10 +6,11 @@ export function ListRow(props: {
   meta?: string;
   leading?: ReactNode;
   trailing?: ReactNode;
+  className?: string;
   onClick?: () => void;
 }) {
   return (
-    <View className="yg-row" onClick={props.onClick}>
+    <View className={['yg-row', props.className].filter(Boolean).join(' ')} onClick={props.onClick}>
       {props.leading}
       <View className="yg-row-copy">
         <Text className="yg-row-title">{props.title}</Text>

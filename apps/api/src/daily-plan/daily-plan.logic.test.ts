@@ -91,7 +91,7 @@ describe('daily plan rules', () => {
       ],
       remainingCount: 2,
     });
-    assert.equal(dailyPlanFootnote(multi), '将继续 当前包 剩余的 2 项练习');
+    assert.equal(dailyPlanFootnote(multi), '将继续 当前包 剩余的 2 项');
   });
 });
 

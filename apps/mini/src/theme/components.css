@@ -39,6 +39,35 @@
   line-height: 12px;
 }
 
+.yg-ring-caps {
+  position: relative;
+}
+
+.yg-ring-rotor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 92px;
+  height: 92px;
+  transform-origin: 46px 46px;
+  pointer-events: none;
+}
+
+.yg-ring-cap {
+  position: absolute;
+  left: 42px;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.yg-ring-caps .yg-ring-hole {
+  position: relative;
+  z-index: 1;
+}
+
 .yg-week {
   display: flex;
   flex-direction: row;

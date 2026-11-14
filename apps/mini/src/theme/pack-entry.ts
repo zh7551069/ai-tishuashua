@@ -7,7 +7,7 @@ export const ME_ROUTE = '/pages/me/index';
 export type HomeEntry = 'plus' | 'cta' | 'create' | 'profile' | 'knowledge';
 
 /**
- * 首页去向。右上人物图标进「我」，不写性别。
+ * 首页去向。左侧人物按钮进「我」，不写性别。
  * 「+」/ 主 CTA / 空态「创建刷题包」都进刷题包页。
  * 知识点行仍直达出题，且必须带一个 kp。
  */
