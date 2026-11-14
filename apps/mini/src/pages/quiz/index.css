@@ -137,7 +137,7 @@
 
 .qs-chip-on {
   background: var(--ts-accent);
-  box-shadow: inset 0 0 0 1px var(--ts-accent-700);
+  box-shadow: inset 0 0 0 0px var(--ts-accent-700);
 }
 
 .qs-chip-label {
@@ -196,6 +196,7 @@
   border-radius: 999px;
   background: #d1d5db;
   box-sizing: border-box;
+  position: relative;
 }
 
 .qs-switch-on {
@@ -206,6 +207,9 @@
 .qs-knob {
   width: 27px;
   height: 27px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(28, 25, 23, 0.22);
 }
 
 .qs-timer-off {
@@ -589,7 +593,7 @@
   display: flex;
   flex-direction: column;
   margin-bottom: 16px;
-  padding: 4px 16px 16px;
+  padding: 16px 16px 16px;
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 1px 0 0 rgba(28, 25, 23, 0.03);

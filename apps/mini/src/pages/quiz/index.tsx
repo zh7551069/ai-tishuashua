@@ -346,7 +346,7 @@ export default function QuizSettingsPage() {
             <View className="qs-timer-row" onClick={toggleWholePack}>
               <Text className="qs-label">整包练习</Text>
               <View className={classes('qs-switch', wholePack && 'qs-switch-on')}>
-                <Image className="qs-knob" src={iconKnob} mode="aspectFit" />
+                <View className="qs-knob"/>
               </View>
             </View>
             {dailyMissing ? (
