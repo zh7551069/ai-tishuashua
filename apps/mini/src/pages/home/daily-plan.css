@@ -1,4 +1,5 @@
 /* 首页（新）·黄绿。尺寸对齐 design/bridge-export/mini-home-20261114（390）。
+   左上「我」头像与问候行 gap 对齐 mini-home-20261115。
    不画状态栏和 Home Indicator。共享组件只在本页覆写。 */
 
 .dp-page {
@@ -19,27 +20,22 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding-bottom: 10px;
 }
 
 .dp-me-hit {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 26px;
+  overflow: hidden;
   flex: none;
 }
 
 .dp-me {
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
-  background: var(--ts-tint);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 52px;
+  height: 52px;
+  display: block;
 }
 
 .dp-head-copy {

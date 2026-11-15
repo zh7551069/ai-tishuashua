@@ -95,6 +95,27 @@ describe('home daily plan wiring', () => {
     assert.equal(home.includes('已完成'), false);
     assert.equal(home.includes('待练习'), false);
     assert.match(css, /#a8a29e/);
+    const head = css.slice(css.indexOf('.dp-head {'), css.indexOf('.dp-me-hit'));
+    const me = css.slice(css.indexOf('.dp-me-hit'), css.indexOf('.dp-head-copy'));
+    assert.match(head, /gap: 10px/);
+    assert.equal(head.includes('gap: 8px'), false);
+    assert.match(me, /width: 52px/);
+    assert.match(me, /height: 52px/);
+    assert.match(me, /border-radius: 26px/);
+    assert.equal(me.includes('var(--ts-tint)'), false);
+    assert.match(home, /src=\{meAvatar\}/);
+    assert.match(home, /mode="aspectFill"/);
+    assert.equal(home.includes('PersonGlyph'), false);
+    assert.equal(home.includes('1wzu7cw'), false);
+    assert.equal(home.includes('1nfiptg'), false);
+    const avatar = readFileSync(join(root, 'pages/home/assets/me-avatar.png'));
+    assert.equal(avatar.readUInt32BE(16), 180);
+    assert.equal(avatar.readUInt32BE(20), 180);
+    assert.equal(avatar.length, 16299);
+    assert.equal(
+      createHash('sha256').update(avatar).digest('hex'),
+      '04e982c9f984c39a45c9bd1950c92fb8a1010c3751a472760d9875dc7bbc27d9',
+    );
     const male = readFileSync(join(root, 'assets/hero/male.jpg'));
     const female = readFileSync(join(root, 'assets/hero/female.jpg'));
     assert.equal(male.length, 19510);
