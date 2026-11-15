@@ -40,8 +40,7 @@ import iconClockStem from './assets/1e39bkr.svg';
 import iconPlus from './assets/1ezc8yr.svg';
 import iconHeroCheck from './assets/1f0w0g2.svg';
 import iconClockRing from './assets/1i25k72.svg';
-import iconPersonBody from './assets/1nfiptg.svg';
-import iconPersonHead from './assets/1wzu7cw.svg';
+import meAvatar from './assets/me-avatar.png';
 import iconRowCheck from './assets/cz6ppj.svg';
 import iconClockDot from './assets/d0fny6.svg';
 import './daily-plan.css';
@@ -70,18 +69,6 @@ function Glyph(props: { box: string; layers: readonly GlyphLayer[] }) {
         />
       ))}
     </View>
-  );
-}
-
-function PersonGlyph() {
-  return (
-    <Glyph
-      box="dp-glyph-16"
-      layers={[
-        { src: iconPersonHead, l: 5.33, t: 2.67, w: 5.33, h: 5.33 },
-        { src: iconPersonBody, l: 3.13, t: 8.67, w: 9.73, h: 4 },
-      ]}
-    />
   );
 }
 
@@ -229,9 +216,7 @@ export default function HomePage() {
           <View className="dp-stack">
             <View className="dp-head">
               <View className="dp-me-hit" onClick={() => go('profile')}>
-                <View className="dp-me">
-                  <PersonGlyph />
-                </View>
+                <Image className="dp-me" src={meAvatar} mode="aspectFill" />
               </View>
               <View className="dp-head-copy">
                 <Text className="dp-hello">{DAILY_PLAN_GREETING}</Text>
